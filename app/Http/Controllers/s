@@ -1,0 +1,2240 @@
+clients:
+public function clients_active(Request $request)
+{
+    $search = $request->search ?? '';
+
+    $sessionBranchId = session('branch_id');
+
+    // Base query
+    $query = DB::table('users')
+        ->leftJoin('branches', 'users.branch_id', '=', 'branches.branch_id')
+        ->where('users.utyp_id', '=', '3')
+        ->where('users.usr_active', '=', '1');
+
+    // Branch dropdown: branch_id = 1 ("ALL") can see every branch;
+    // everyone else only sees their own branch
+    if ($sessionBranchId == 1) {
+        $branches = DB::table('branches')
+            ->select('branch_id', 'branch_name')
+            ->where('branch_active', 1)
+            ->get();
+    } else {
+        $branches = DB::table('branches')
+            ->select('branch_id', 'branch_name')
+            ->where('branch_active', 1)
+            ->where('branch_id', $sessionBranchId)
+            ->get();
+    }
+
+    $query->select(
+        'users.usr_id',
+        'users.usr_uuid',
+        'users.branch_id',
+        'branches.branch_name',
+        'users.usr_last_name',
+        'users.usr_first_name',
+        'users.usr_middle_name',
+        'users.usr_email',
+        'users.usr_mobile',
+        'users.usr_birth_date',
+        'users.usr_active',
+    )
+        ->groupBy(
+            'users.usr_id',
+            'users.usr_uuid',
+            'users.branch_id',
+            'branches.branch_name',
+            'users.usr_last_name',
+            'users.usr_first_name',
+            'users.usr_middle_name',
+            'users.usr_email',
+            'users.usr_mobile',
+            'users.usr_birth_date',
+            'users.usr_active'
+        )
+        ->orderBy('users.usr_last_name')
+        ->orderBy('users.usr_first_name');
+
+    // Search filter
+    if (!empty($search)) {
+        $terms = preg_split('/[\s,]+/', trim($search), -1, PREG_SPLIT_NO_EMPTY);
+
+        $query->where(function ($outer) use ($terms) {
+            foreach ($terms as $term) {
+                $outer->where(function ($q) use ($term) {
+                    $q->where('users.usr_last_name', 'LIKE', "%$term%")
+                        ->orWhere('users.usr_first_name', 'LIKE', "%$term%")
+                        ->orWhere('users.usr_middle_name', 'LIKE', "%$term%")
+                        ->orWhere('users.usr_email', 'LIKE', "%$term%")
+                        ->orWhere('users.usr_mobile', 'LIKE', "%$term%")
+                        ->orWhere('branches.branch_name', 'LIKE', "%$term%");
+                });
+            }
+        });
+    }
+
+    $clients = $query->paginate(500);
+
+    // Get all addresses for listed clients
+    $clientIds = collect($clients->items())->pluck('usr_id');
+
+    $addresses = DB::table('user_addresses')
+        ->leftJoin('addresses', 'user_addresses.add_id', '=', 'addresses.add_id')
+        ->whereIn('user_addresses.usr_id', $clientIds)
+        ->select(
+            'user_addresses.*',
+            'addresses.add_name'
+        )
+        ->get()
+        ->groupBy('usr_id'); // group per client
+
+    $branches = DB::table('branches')
+        ->select('branch_id', 'branch_name')
+        ->where('branch_active', 1)
+        ->get();
+
+    $regions = DB::table('location_regions')
+        ->where('reg_active', 1)
+        ->orderBy('reg_name')
+        ->get(['reg_id', 'reg_name']);
+
+    $address_labels = DB::table('addresses')
+        ->orderBy('add_name')
+        ->get(['add_id', 'add_name']);
+
+    return view('profiling.clients.active', compact('clients', 'search', 'branches', 'addresses', 'regions', 'address_labels'));
+}
+
+@extends('layouts.themes.main')
+
+@section('content')
+    {{-- Content Header --}}
+    <div class="content-header">
+        <div class="container-fluid">
+            <div class="row mb-2">
+                <div class="col-sm-6">
+                    <h1 class="m-0">Clients</h1>
+                </div>
+                <div class="col-sm-6">
+                    <ol class="breadcrumb float-sm-right">
+                        <li class="breadcrumb-item">
+                            <a href="{{ action('App\Http\Controllers\AdminController@home') }}">Home</a>
+                        </li>
+                        <li class="breadcrumb-item">Profiling</li>
+                        <li class="breadcrumb-item active">Clients</li>
+                    </ol>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    {{-- Main Content --}}
+    <section class="content">
+        @include('layouts.partials.onclick')
+        @include('layouts.partials.alerts')
+        @include('layouts.partials.modal_style')
+        <div class="container-fluid">
+            <div class="card">
+                <div class="card-body overflow-auto">
+                    <div class="row">
+                        <div class="col-md-12">
+                            @if (session('SUPERADMIN') == '1' || session('ADMIN') == '1' || session('MANAGER') == '1' || session('PROFILING OFFICER') == '1')
+                                <a class="btn btn-danger btn-md mb-3" href="{{ url('profiling/clients/deleted') }}">
+                                    <span class="fa fa-archive"></span> Deleted Clients
+                                </a>
+
+                                <button type="button" class="btn btn-success mb-3" data-toggle="modal"
+                                    data-target="#addClientModal">
+                                    <span class="fa fa-plus"></span> Add Client
+                                </button>
+
+                                <button type="button" class="btn btn-primary mb-3" data-toggle="modal"
+                                    data-target="#batchUploadClientModal">
+                                    <span class="fa fa-upload"></span> Batch Upload Client
+                                </button>
+
+                                <a class="btn btn-secondary mb-3" href="{{ asset('images/client_csv_format.csv') }}" download>
+                                    <span class="fa fa-download"></span> CSV Format
+                                </a>
+                            @endif
+                        </div>
+                    </div>
+
+                    <div class="row">
+                        <!-- Table Column -->
+                        <div class="col-lg-12 col-md-7">
+                            <form method="GET" action="{{ url('profiling/clients/active') }}" class="mb-3">
+                                <div class="input-group">
+                                    <input type="text" name="search" id="searchInput" class="form-control"
+                                        placeholder="Search clients..." value="{{ request('search') }}">
+                                    <div class="input-group-append">
+                                        <button type="submit" class="btn btn-primary">
+                                            <span class="fa fa-search"></span> Search
+                                        </button>
+                                    </div>
+                                </div>
+                            </form>
+
+                            <table id="profilingTable" class="table table-hover table-bordered table-sm responsive">
+                                <thead>
+                                    <tr>
+                                        <th style="vertical-align: middle; text-align: center">Name</th>
+                                        <th style="vertical-align: middle; text-align: center">Branch</th>
+                                        <th style="vertical-align: middle; text-align: center" width="110px">Action</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    @foreach ($clients as $client)
+                                        <tr>
+                                            <td style="vertical-align: middle; text-align: left">
+                                                {{ $client->usr_last_name }}, {{ $client->usr_first_name }}
+                                                {{ $client->usr_middle_name }}
+                                                <br />
+                                                <small>{{ $client->usr_email }}</small>
+                                                <br />
+                                                <em><small>Last login: {{ getLastLogin($client->usr_id) }}</small></em>
+                                            </td>
+                                            <td style="vertical-align: middle; text-align: center">
+                                                {{ $client->branch_name }}
+                                            </td>
+                                            <td style="vertical-align: middle; text-align: center">
+                                                <a class="btn btn-primary btn-sm mb-1" href="javascript:void(0)"
+                                                    data-toggle="modal"
+                                                    data-target="#viewClientModal-{{ $client->usr_id }}">
+                                                    <span class="fa fa-eye"></span>
+                                                </a>
+                                                <a class="btn btn-warning btn-sm mb-1" href="javascript:void(0)"
+                                                    data-toggle="modal" data-target="#updateBranchModal-{{ $client->usr_id }}">
+                                                    <span class="fa fa-edit"></span>
+                                                </a>
+                                                <a class="btn btn-success btn-sm mb-1" href="javascript:void(0)"
+                                                    data-toggle="modal" data-target="#addressModal-{{ $client->usr_id }}">
+                                                    <span class="fa fa-home"></span>
+                                                </a>
+                                                <a class="btn btn-info btn-sm mb-1" href="javascript:void(0)"
+                                                    data-toggle="modal" data-target="#resetModal-{{ $client->usr_id }}">
+                                                    <span class="fa fa-key"></span>
+                                                </a>
+                                                @if (session('SUPERADMIN') == '1' || session('ADMIN') == '1' || session('MANAGER') == '1')
+                                                    <a class="btn btn-danger btn-sm mb-1" href="javascript:void(0)"
+                                                        data-toggle="modal"
+                                                        data-target="#deleteModal-{{ $client->usr_id }}">
+                                                        <span class="fa fa-trash"></span>
+                                                    </a>
+                                                @endif
+                                            </td>
+                                        </tr>
+                                    @endforeach
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    {{-- Add Client Modal --}}
+    <div class="modal fade" id="addClientModal" tabindex="-1" role="dialog" aria-labelledby="addClientModalLabel"
+        aria-hidden="true">
+        <div class="modal-dialog modal-lg" role="document">
+            <form action="{{ url('profiling/clients/add') }}" method="POST">
+                @csrf
+                <div class="modal-content">
+                    <div class="modal-header bg-success text-white">
+                        <h5 class="modal-title text-white" id="addClientModalLabel">
+                            <span class="fa fa-plus text-white"></span> Add Client
+                        </h5>
+                        <button type="button" class="close text-white" data-dismiss="modal" aria-label="Close">
+                            <span aria-hidden="true">&times;</span>
+                        </button>
+                    </div>
+
+                    <div class="modal-body">
+                        <div class="row">
+                            {{-- First Name --}}
+                            <div class="col-md-4 mb-3">
+                                <label for="add_client_first_name">First Name <span class="text-danger">*</span></label>
+                                <input type="text" class="form-control" id="add_client_first_name" name="usr_first_name"
+                                    placeholder="First Name" required>
+                            </div>
+
+                            {{-- Middle Name --}}
+                            <div class="col-md-4 mb-3">
+                                <label for="add_client_middle_name">Middle Name</label>
+                                <input type="text" class="form-control" id="add_client_middle_name" name="usr_middle_name"
+                                    placeholder="Middle Name">
+                            </div>
+
+                            {{-- Last Name --}}
+                            <div class="col-md-4 mb-3">
+                                <label for="add_client_last_name">Last Name <span class="text-danger">*</span></label>
+                                <input type="text" class="form-control" id="add_client_last_name" name="usr_last_name"
+                                    placeholder="Last Name" required>
+                            </div>
+
+                            {{-- Email --}}
+                            <div class="col-md-6 mb-3">
+                                <label for="add_client_email">Email <span class="text-danger">*</span></label>
+                                <input type="email" class="form-control" id="add_client_email" name="usr_email"
+                                    placeholder="Email" required>
+                            </div>
+
+                            {{-- Mobile --}}
+                            <div class="col-md-6 mb-3">
+                                <label for="add_client_mobile">
+                                    Mobile Number
+                                    <small class="text-muted">(9123456789)</small>
+                                </label>
+                                <input type="number" class="form-control" id="add_client_mobile" name="usr_mobile"
+                                    placeholder="Mobile Number" oninput="this.value=this.value.slice(0,10)">
+                            </div>
+
+                            {{-- Branch --}}
+                            <div class="col-md-12 mb-3">
+                                <label for="add_client_branch_id">Branch <span class="text-danger">*</span></label>
+                                <select class="form-control" id="add_client_branch_id" name="branch_id" required>
+                                    @foreach ($branches as $branch)
+                                        @if ($branch->branch_id != 1)
+                                            <option value="{{ $branch->branch_id }}">
+                                                {{ $branch->branch_name }}
+                                            </option>
+                                        @endif
+                                    @endforeach
+                                </select>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-secondary" data-dismiss="modal">
+                            <span class="fa fa-close"></span> Close
+                        </button>
+                        <button type="submit" class="btn btn-success">
+                            <span class="fa fa-save"></span> Save Client
+                        </button>
+                    </div>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    {{-- Batch Upload Client Modal --}}
+    <div class="modal fade" id="batchUploadClientModal" tabindex="-1" role="dialog"
+        aria-labelledby="batchUploadClientModalLabel" aria-hidden="true">
+        <div class="modal-dialog" role="document">
+            <form action="{{ url('profiling/clients/import') }}" method="POST" enctype="multipart/form-data">
+                @csrf
+                <div class="modal-content">
+                    <div class="modal-header bg-primary text-white">
+                        <h5 class="modal-title text-white" id="batchUploadClientModalLabel">
+                            <span class="fa fa-upload"></span> Batch Upload Client
+                        </h5>
+                        <button type="button" class="close text-white" data-dismiss="modal" aria-label="Close">
+                            <span aria-hidden="true">&times;</span>
+                        </button>
+                    </div>
+                    <div class="modal-body">
+                        <div class="form-group">
+                            <label for="csv_file">CSV File <span class="text-danger">*</span></label>
+                            <input type="file" class="form-control-file" id="csv_file" name="csv_file"
+                                accept=".csv,text/csv" required>
+                            <small class="text-muted d-block mt-2">
+                                Columns: First Name, Middle Name, Last Name, Email, Mobile Number.
+                                <a href="{{ asset('images/client_csv_format.csv') }}" download>Download format</a>
+                            </small>
+                        </div>
+                    </div>
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-secondary" data-dismiss="modal">
+                            <span class="fa fa-close"></span> Close
+                        </button>
+                        <button type="submit" class="btn btn-primary">
+                            <span class="fa fa-upload"></span> Upload
+                        </button>
+                    </div>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    @foreach ($clients as $client)
+        {{-- View Client Modal --}}
+        <div class="modal fade" id="viewClientModal-{{ $client->usr_id }}" tabindex="-1">
+            <div class="modal-dialog modal-lg">
+                <div class="modal-content">
+
+                    <div class="modal-header bg-primary text-white">
+                        <h5 class="modal-title">Client Details</h5>
+                        <button type="button" class="close text-white" data-dismiss="modal">
+                            &times;
+                        </button>
+                    </div>
+
+                    <div class="modal-body">
+
+                        {{-- PERSONAL INFO --}}
+                        <h6 class="font-weight-bold text-black">Personal Information
+                        </h6>
+                        <hr class="mt-1 mb-2">
+
+                        <div class="row mb-2">
+                            <div class="col-md-4">
+                                <small class="text-muted">First Name</small>
+                                <div>{{ $client->usr_first_name }}</div>
+                            </div>
+                            <div class="col-md-4">
+                                <small class="text-muted">Middle Name</small>
+                                <div>{{ $client->usr_middle_name ?? '-' }}</div>
+                            </div>
+                            <div class="col-md-4">
+                                <small class="text-muted">Last Name</small>
+                                <div>{{ $client->usr_last_name }}</div>
+                            </div>
+                        </div>
+
+                        <div class="row mb-2">
+                            <div class="col-md-4">
+                                <small class="text-muted">Branch</small>
+                                <div>{{ $client->branch_name }}</div>
+                            </div>
+                            <div class="col-md-4">
+                                <small class="text-muted">Email</small>
+                                <div>{{ $client->usr_email }}</div>
+                            </div>
+                            <div class="col-md-4">
+                                <small class="text-muted">Mobile</small>
+                                <div>{{ $client->usr_mobile }}</div>
+                            </div>
+                        </div>
+
+                        <div class="row mb-3">
+                            <div class="col-md-6">
+                                <small class="text-muted">Birthdate</small>
+                                <div>
+                                    {{ $client->usr_birth_date ?? '-' }}
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <small class="text-muted">Age</small>
+                                <div>
+                                    @if ($client->usr_birth_date)
+                                        {{ \Carbon\Carbon::parse($client->usr_birth_date)->age }}
+                                        years old
+                                    @else
+                                        -
+                                    @endif
+                                </div>
+                            </div>
+                        </div>
+
+                        {{-- ADDRESSES --}}
+                        <h6 class="font-weight-bold text-black">Addresses</h6>
+                        <hr class="mt-1 mb-2">
+
+                        <div class="row">
+                            @php
+                                $clientAddresses = $addresses[$client->usr_id] ?? collect();
+                            @endphp
+
+                            @if ($clientAddresses->isEmpty())
+                                <div class="col-12">
+                                    <div class="alert alert-light text-center mb-0">
+                                        No address registered
+                                    </div>
+                                </div>
+                            @else
+                                @foreach ($clientAddresses as $addr)
+                                    <div class="col-md-6 mb-2">
+                                        <div
+                                            class="card border {{ $addr->uadd_active ? 'border-success' : 'border-secondary' }}">
+                                            <div class="card-body p-2">
+
+                                                <strong>
+                                                    {{ $addr->add_name ?? 'Address' }}
+                                                </strong>
+
+                                                @if ($addr->uadd_street)
+                                                    <div class="small">
+                                                        {{ $addr->uadd_street }}
+                                                    </div>
+                                                @endif
+
+                                                @php
+                                                    $location = collect([
+                                                        $addr->uadd_barangay,
+                                                        $addr->uadd_city,
+                                                        $addr->uadd_province,
+                                                    ])
+                                                        ->filter()
+                                                        ->implode(', ');
+                                                @endphp
+
+                                                @if ($location)
+                                                    <div class="small">
+                                                        {{ $location }}</div>
+                                                @endif
+
+                                                @if ($addr->uadd_region)
+                                                    <div class="small text-muted">
+                                                        {{ $addr->uadd_region }}
+                                                    </div>
+                                                @endif
+
+                                                <div class="mt-1">
+                                                    <span
+                                                        class="badge {{ $addr->uadd_active ? 'badge-success' : 'badge-secondary' }}">
+                                                        {{ $addr->uadd_active ? 'Active' : 'Inactive' }}
+                                                    </span>
+                                                </div>
+
+                                            </div>
+                                        </div>
+                                    </div>
+                                @endforeach
+                            @endif
+                        </div>
+
+                    </div>
+
+                    <div class="modal-footer">
+                        <button class="btn btn-secondary" data-dismiss="modal">
+                            <span class="fa fa-close"></span> Close
+                        </button>
+                    </div>
+
+                </div>
+            </div>
+        </div>
+
+        {{-- Update Branch Modal --}}
+        <div class="modal fade" id="updateBranchModal-{{ $client->usr_id }}" tabindex="-1" role="dialog"
+            aria-labelledby="updateBranchModalLabel" aria-hidden="true">
+            <div class="modal-dialog" role="document">
+                <form action="{{ url('profiling/clients/update/branch', $client->usr_id) }}" method="POST">
+                    @csrf
+                    <div class="modal-content">
+                        <div class="modal-header bg-warning text-white">
+                            <h5 class="modal-title text-black" id="updateBranchModalLabel">
+                                Update Branch
+                            </h5>
+                            <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                                <span aria-hidden="true">&times;</span>
+                            </button>
+                        </div>
+                        <div class="modal-body">
+                            <div class="form-group">
+                                <label>Name: <span style="color:black;">{{ $client->usr_first_name }}
+                                        {{ $client->usr_last_name }}</span></label>
+                            </div>
+                            <div class="form-group">
+                                <label for="branch_id-{{ $client->usr_id }}">Branch <span class="text-danger">*</span></label>
+                                <select class="form-control" id="branch_id-{{ $client->usr_id }}" name="branch_id" required>
+                                    @foreach ($branches as $branch)
+                                        @if ($branch->branch_id != 1)
+                                            <option value="{{ $branch->branch_id }}"
+                                                @if ($branch->branch_id == $client->branch_id) selected @endif>
+                                                {{ $branch->branch_name }}
+                                            </option>
+                                        @endif
+                                    @endforeach
+                                </select>
+                            </div>
+                        </div>
+                        <div class="modal-footer">
+                            <button type="button" class="btn btn-secondary" data-dismiss="modal">
+                                <span class="fa fa-close"></span> Close
+                            </button>
+                            <button type="submit" class="btn btn-warning">
+                                <span class="fa fa-save"></span> Update
+                            </button>
+                        </div>
+                    </div>
+                </form>
+            </div>
+        </div>
+
+        {{-- Addresses Modal --}}
+        <div class="modal fade" id="addressModal-{{ $client->usr_id }}" tabindex="-1">
+            <div class="modal-dialog modal-lg">
+                <div class="modal-content">
+                    <div class="modal-header bg-success text-white">
+                        <h5 class="modal-title text-white">
+                            <span class="fa fa-home"></span> Addresses - {{ $client->usr_first_name }} {{ $client->usr_last_name }}
+                        </h5>
+                        <button type="button" class="close text-white" data-dismiss="modal">&times;</button>
+                    </div>
+
+                    <div class="modal-body">
+                        @php $clientAddresses = $addresses[$client->usr_id] ?? collect(); @endphp
+
+                        {{-- Existing addresses --}}
+                        @forelse ($clientAddresses as $addr)
+                            <div class="card border {{ $addr->uadd_active ? 'border-success' : 'border-secondary' }} mb-2">
+                                <div class="card-body p-2">
+                                    <div class="d-flex justify-content-between">
+                                        <div>
+                                            <strong>{{ $addr->add_name ?? 'Address' }}</strong>
+                                            <div class="small">{{ $addr->uadd_street }}</div>
+                                            <div class="small">
+                                                {{ collect([$addr->uadd_barangay, $addr->uadd_city, $addr->uadd_province, $addr->uadd_region])->filter()->implode(', ') }}
+                                            </div>
+                                            <span class="badge {{ $addr->uadd_active ? 'badge-success' : 'badge-secondary' }}">
+                                                {{ $addr->uadd_active ? 'Active' : 'Inactive' }}
+                                            </span>
+                                        </div>
+                                        <div>
+                                            <button type="button" class="btn btn-warning btn-sm"
+                                                data-toggle="collapse" data-target="#editAddr-{{ $addr->uadd_id }}">
+                                                <span class="fa fa-edit"></span> Edit
+                                            </button>
+                                        </div>
+                                    </div>
+
+                                    {{-- Edit form --}}
+                                    <div class="collapse mt-2" id="editAddr-{{ $addr->uadd_id }}">
+                                        <form method="POST" action="{{ url('profiling/clients/address/edit', $client->usr_id) }}">
+                                            @csrf
+                                            <input type="hidden" name="uadd_id" value="{{ $addr->uadd_id }}">
+                                            <div class="row loc-group">
+                                                <div class="col-md-6 mb-2">
+                                                    <label class="small font-weight-bold">Label</label>
+                                                    <select name="add_id" class="form-control form-control-sm label-select">
+                                                        <option value="">-- KEEP CURRENT --</option>
+                                                        @foreach ($address_labels as $al)
+                                                            <option value="{{ $al->add_id }}" {{ $addr->add_id == $al->add_id ? 'selected' : '' }}>
+                                                                {{ $al->add_name }}
+                                                            </option>
+                                                        @endforeach
+                                                        <option value="__new__">+ Create new label...</option>
+                                                    </select>
+                                                    <input type="text" name="new_add_name"
+                                                        class="form-control form-control-sm mt-1 new-label-input d-none"
+                                                        placeholder="New label name (e.g. Office)" maxlength="100">
+                                                </div>
+                                                <div class="col-md-6 mb-2">
+                                                    <label class="small font-weight-bold">Street / House No.</label>
+                                                    <input type="text" name="street" class="form-control form-control-sm"
+                                                        value="{{ $addr->uadd_street }}">
+                                                </div>
+
+                                                <div class="col-md-3 mb-2">
+                                                    <label class="small font-weight-bold">Region</label>
+                                                    <select class="form-control form-control-sm loc-region">
+                                                        <option value="">-- KEEP CURRENT --</option>
+                                                        @foreach ($regions as $r)
+                                                            <option value="{{ $r->reg_id }}" data-name="{{ $r->reg_name }}">{{ $r->reg_name }}</option>
+                                                        @endforeach
+                                                    </select>
+                                                    <input type="hidden" name="region" class="h-region">
+                                                </div>
+                                                <div class="col-md-3 mb-2">
+                                                    <label class="small font-weight-bold">Province</label>
+                                                    <select class="form-control form-control-sm loc-province" disabled>
+                                                        <option value="">-- SELECT PROVINCE --</option>
+                                                    </select>
+                                                    <input type="hidden" name="province" class="h-province">
+                                                </div>
+                                                <div class="col-md-3 mb-2">
+                                                    <label class="small font-weight-bold">Municipality</label>
+                                                    <select class="form-control form-control-sm loc-municipality" disabled>
+                                                        <option value="">-- SELECT MUNICIPALITY --</option>
+                                                    </select>
+                                                    <input type="hidden" name="municipality" class="h-municipality">
+                                                </div>
+                                                <div class="col-md-3 mb-2">
+                                                    <label class="small font-weight-bold">Barangay</label>
+                                                    <select class="form-control form-control-sm loc-barangay" disabled>
+                                                        <option value="">-- SELECT BARANGAY --</option>
+                                                    </select>
+                                                    <input type="hidden" name="barangay" class="h-barangay">
+                                                </div>
+
+                                                <div class="col-md-4 mb-2">
+                                                    <label class="small font-weight-bold">Latitude</label>
+                                                    <input type="text" name="latitude" class="form-control form-control-sm"
+                                                        value="{{ $addr->uadd_latitude }}">
+                                                </div>
+                                                <div class="col-md-4 mb-2">
+                                                    <label class="small font-weight-bold">Longitude</label>
+                                                    <input type="text" name="longitude" class="form-control form-control-sm"
+                                                        value="{{ $addr->uadd_longitude }}">
+                                                </div>
+                                                <div class="col-md-4 mb-2 d-flex align-items-end">
+                                                    <div class="custom-control custom-switch">
+                                                        <input type="checkbox" class="custom-control-input"
+                                                            id="active_{{ $addr->uadd_id }}" name="uadd_active" value="1"
+                                                            {{ $addr->uadd_active ? 'checked' : '' }}>
+                                                        <label class="custom-control-label" for="active_{{ $addr->uadd_id }}">Active</label>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                            <button type="submit" class="btn btn-warning btn-sm">
+                                                <span class="fa fa-save"></span> Update Address
+                                            </button>
+                                        </form>
+                                    </div>
+                                </div>
+                            </div>
+                        @empty
+                            <div class="alert alert-light text-center">No address registered</div>
+                        @endforelse
+
+                        {{-- Add address --}}
+                        <hr>
+                        <button type="button" class="btn btn-success btn-sm mb-2"
+                            data-toggle="collapse" data-target="#addAddr-{{ $client->usr_id }}">
+                            <span class="fa fa-plus"></span> Add Address
+                        </button>
+
+                        <div class="collapse" id="addAddr-{{ $client->usr_id }}">
+                            <form method="POST" action="{{ url('profiling/clients/address/add', $client->usr_id) }}">
+                                @csrf
+                                <div class="row loc-group">
+                                    <div class="col-md-6 mb-2">
+                                        <label class="small font-weight-bold">Label</label>
+                                        <select name="add_id" class="form-control form-control-sm label-select">
+                                            @foreach ($address_labels as $al)
+                                                <option value="{{ $al->add_id }}">{{ $al->add_name }}</option>
+                                            @endforeach
+                                            <option value="__new__">+ Create new label...</option>
+                                        </select>
+                                        <input type="text" name="new_add_name"
+                                            class="form-control form-control-sm mt-1 new-label-input d-none"
+                                            placeholder="New label name (e.g. Office)" maxlength="100">
+                                    </div>
+                                    <div class="col-md-6 mb-2">
+                                        <label class="small font-weight-bold">Street / House No.</label>
+                                        <input type="text" name="street" class="form-control form-control-sm">
+                                    </div>
+
+                                    <div class="col-md-3 mb-2">
+                                        <label class="small font-weight-bold">Region</label>
+                                        <select class="form-control form-control-sm loc-region">
+                                            <option value="">-- SELECT REGION --</option>
+                                            @foreach ($regions as $r)
+                                                <option value="{{ $r->reg_id }}" data-name="{{ $r->reg_name }}">{{ $r->reg_name }}</option>
+                                            @endforeach
+                                        </select>
+                                        <input type="hidden" name="region" class="h-region">
+                                    </div>
+                                    <div class="col-md-3 mb-2">
+                                        <label class="small font-weight-bold">Province</label>
+                                        <select class="form-control form-control-sm loc-province" disabled>
+                                            <option value="">-- SELECT PROVINCE --</option>
+                                        </select>
+                                        <input type="hidden" name="province" class="h-province">
+                                    </div>
+                                    <div class="col-md-3 mb-2">
+                                        <label class="small font-weight-bold">Municipality</label>
+                                        <select class="form-control form-control-sm loc-municipality" disabled>
+                                            <option value="">-- SELECT MUNICIPALITY --</option>
+                                        </select>
+                                        <input type="hidden" name="municipality" class="h-municipality">
+                                    </div>
+                                    <div class="col-md-3 mb-2">
+                                        <label class="small font-weight-bold">Barangay</label>
+                                        <select class="form-control form-control-sm loc-barangay" disabled>
+                                            <option value="">-- SELECT BARANGAY --</option>
+                                        </select>
+                                        <input type="hidden" name="barangay" class="h-barangay">
+                                    </div>
+
+                                    <div class="col-md-6 mb-2">
+                                        <label class="small font-weight-bold">Latitude</label>
+                                        <input type="text" name="latitude" class="form-control form-control-sm">
+                                    </div>
+                                    <div class="col-md-6 mb-2">
+                                        <label class="small font-weight-bold">Longitude</label>
+                                        <input type="text" name="longitude" class="form-control form-control-sm">
+                                    </div>
+                                </div>
+                                <button type="submit" class="btn btn-success btn-sm">
+                                    <span class="fa fa-save"></span> Save Address
+                                </button>
+                            </form>
+                        </div>
+                    </div>
+
+                    <div class="modal-footer">
+                        <button class="btn btn-secondary" data-dismiss="modal">
+                            <span class="fa fa-close"></span> Close
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        {{-- Reset Password Modal --}}
+        <div class="modal fade" id="resetModal-{{ $client->usr_id }}" tabindex="-1" role="dialog"
+            aria-labelledby="exampleModalLabel" aria-hidden="true">
+            <div class="modal-dialog" role="document">
+                <div class="modal-content">
+                    <form method="POST"
+                        action="{{ action('App\Http\Controllers\ProfilingController@clients_reset_password', [$client->usr_id]) }}">
+                        @csrf
+                        <div class="modal-header bg-info text-white">
+                            <h5 class="modal-title text-black" id="exampleModalLabel">
+                                Please Confirm
+                            </h5>
+                            <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                                <span aria-hidden="true">&times;</span>
+                            </button>
+                        </div>
+                        <div class="modal-body">
+                            <p>Are you sure you want to RESET this client's password
+                                to
+                                <strong>123456</strong>?
+                            </p>
+                            <small>{{ $client->usr_first_name }}
+                                {{ $client->usr_last_name }}<br>{{ $client->usr_email }}</small>
+                        </div>
+                        <div class="modal-footer">
+                            <button type="button" class="btn btn-secondary" data-dismiss="modal">
+                                <span class="fa fa-close"></span> Close
+                            </button>
+                            <button type="submit" class="btn btn-info">
+                                <span class="fa fa-refresh"></span> Confirm Reset
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+
+        {{-- Delete Modal --}}
+        <div class="modal fade" id="deleteModal-{{ $client->usr_id }}" tabindex="-1" role="dialog"
+            aria-labelledby="exampleModalLabel" aria-hidden="true">
+            <div class="modal-dialog" role="document">
+                <div class="modal-content">
+                    <form method="POST"
+                        action="{{ action('App\Http\Controllers\ProfilingController@clients_delete', [$client->usr_id]) }}">
+                        @csrf
+                        <div class="modal-header bg-danger text-white">
+                            <h5 class="modal-title text-white" id="exampleModalLabel">
+                                Please Confirm
+                            </h5>
+                            <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                                <span aria-hidden="true">&times;</span>
+                            </button>
+                        </div>
+                        <div class="modal-body">
+                            <p>Are you sure you want to <strong>DELETE</strong> client
+                                <strong>{{ $client->usr_first_name }}
+                                    {{ $client->usr_last_name }}</strong>?
+                            </p>
+                        </div>
+                        <div class="modal-footer">
+                            <button type="button" class="btn btn-secondary" data-dismiss="modal">
+                                <span class="fa fa-close"></span> Close
+                            </button>
+                            <button type="submit" class="btn btn-danger">
+                                <span class="fa fa-trash"></span> Confirm Delete
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    @endforeach
+
+    {{-- Dynamic Search While Typing --}}
+    <script>
+        document.getElementById("searchInput").addEventListener("keyup", function() {
+            let value = this.value.toLowerCase();
+
+            // Select all tables with ID containing "Table"
+            let tables = document.querySelectorAll('table[id*="Table"]');
+
+            tables.forEach(function(table) {
+                let rows = table.querySelectorAll("tbody tr");
+
+                rows.forEach(function(row) {
+                    let text = row.innerText.toLowerCase();
+                    row.style.display = text.includes(value) ? "" : "none";
+                });
+            });
+        });
+    </script>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            const baseUrl = window.location.origin;
+            const csrfToken = document.querySelector('meta[name="csrf-token"]')?.getAttribute('content') || '';
+
+            // level => [next level, endpoint suffix, text key, value key]
+            const levels = {
+                region:       { next: 'province',     url: 'provinces',      text: 'prov_name', val: 'prov_id' },
+                province:     { next: 'municipality', url: 'municipalities', text: 'mun_name',  val: 'mun_id' },
+                municipality: { next: 'barangay',     url: 'barangays',      text: 'brg_name',  val: 'brg_id' },
+                barangay:     null
+            };
+            const order = ['region', 'province', 'municipality', 'barangay'];
+
+            function reset(group, level) {
+                const el = group.querySelector('.loc-' + level);
+                el.innerHTML = `<option value="">-- SELECT ${level.toUpperCase()} --</option>`;
+                el.disabled = true;
+                group.querySelector('.h-' + level).value = '';
+            }
+
+            document.addEventListener('change', async function(e) {
+                const select = e.target;
+                const group = select.closest('.loc-group');
+                if (!group) return;
+
+                const level = order.find(l => select.classList.contains('loc-' + l));
+                if (!level) return;
+
+                // save selected name into hidden input
+                group.querySelector('.h-' + level).value =
+                    select.options[select.selectedIndex]?.getAttribute('data-name') || '';
+
+                // reset everything below this level
+                order.slice(order.indexOf(level) + 1).forEach(l => reset(group, l));
+
+                const cfg = levels[level];
+                if (!cfg || !select.value) return;
+
+                const nextEl = group.querySelector('.loc-' + cfg.next);
+                nextEl.innerHTML = '<option value="">Loading...</option>';
+                try {
+                    const res = await fetch(`${baseUrl}/locations/${select.value}/${cfg.url}`, {
+                        headers: {
+                            'X-CSRF-TOKEN': csrfToken,
+                            'Accept': 'application/json',
+                            'X-Requested-With': 'XMLHttpRequest'
+                        }
+                    });
+                    if (!res.ok) throw new Error();
+                    const data = await res.json();
+                    nextEl.innerHTML = `<option value="">-- SELECT ${cfg.next.toUpperCase()} --</option>`;
+                    data.forEach(item => {
+                        nextEl.insertAdjacentHTML('beforeend',
+                            `<option value="${item[cfg.val]}" data-name="${item[cfg.text]}">${item[cfg.text]}</option>`);
+                    });
+                    nextEl.disabled = false;
+                } catch (err) {
+                    nextEl.innerHTML = '<option value="">Error loading</option>';
+                }
+            });
+        });
+    </script>
+
+    {{-- Create new address label inline --}}
+    <script>
+        document.addEventListener('change', function(e) {
+            if (!e.target.classList.contains('label-select')) return;
+            const input = e.target.parentElement.querySelector('.new-label-input');
+            const isNew = e.target.value === '__new__';
+            input.classList.toggle('d-none', !isNew);
+            input.required = isNew;
+            if (isNew) {
+                input.focus();
+            } else {
+                input.value = '';
+            }
+        });
+    </script>
+@endsection
+
+finished appointment view with connected job orders that is part of the contract:
+public function finished_appointments_view($svc_id)
+{
+    $display = DB::table('services')
+        ->leftJoin('users', 'services.usr_id', '=', 'users.usr_id')
+        ->leftJoin('branches', 'services.branch_id', '=', 'branches.branch_id')
+        ->leftJoin('service_appointments', 'services.svc_id', '=', 'service_appointments.svc_id')
+        ->leftJoin('user_addresses', 'service_appointments.uadd_id', '=', 'user_addresses.uadd_id')
+        ->leftJoin('addresses', 'user_addresses.add_id', '=', 'addresses.add_id')
+        ->leftJoin('users as approver', 'service_appointments.svca_approved_by', '=', 'approver.usr_id')
+        ->leftJoin('service_appointment_schedules', 'service_appointments.svca_id', '=', 'service_appointment_schedules.svca_id')
+        ->where('services.svc_id', $svc_id)
+        ->select(
+            'services.svc_id',
+            'services.svc_sa_number',
+            'services.svc_km_distance',
+            'services.svc_property_type',
+            'services.svc_is_package',
+            'services.svcpat_id',
+            'services.svc_is_termite',
+            'services.svc_type_treatment',
+            'services.svc_sqm_initial',
+            'services.svc_sqm_final',
+            'services.svc_with_device',
+            'services.svc_device_count',
+            'services.svc_problem_description',
+            'services.svc_status',
+            'services.svc_infestation',
+            'services.svc_initial_price',
+            'services.svc_location_price',
+            'services.svc_device_price',
+            'services.svc_fixed_price',
+            'services.svc_final_price',
+            'services.svc_balance',
+            'services.svc_payment_status',
+            'services.svc_assessment_recommendation',
+            'services.svc_rat_captured',
+            'services.svc_snake_captured',
+            'services.svc_lizard_captured',
+            'services.svc_kitten_captured',
+            'services.svc_other_captured',
+            'services.svc_technician_recommendation',
+            'services.svc_rating',
+            'services.svc_date_rated',
+            'services.svcc_id',
+            'services.svc_date_completed',
+            'users.usr_first_name',
+            'users.usr_last_name',
+            'users.usr_email',
+            'users.usr_mobile',
+            'branches.branch_id',
+            'branches.branch_name',
+            'service_appointments.svca_client_date',
+            'service_appointments.svca_client_time',
+            'service_appointments.svca_approved_date',
+            'service_appointments.svca_approved_time_from',
+            'service_appointments.svca_approved_time_to',
+            'service_appointments.svca_date_approved',
+            'service_appointment_schedules.svcas_id',
+            'service_appointment_schedules.svcas_start_date',
+            'service_appointment_schedules.svcas_start_time',
+            'service_appointment_schedules.svcas_end_date',
+            'service_appointment_schedules.svcas_time_travel',
+            'service_appointment_schedules.svcas_time_finished',
+            'service_appointment_schedules.svcas_end_time',
+            'approver.usr_first_name as approved_first_name',
+            'approver.usr_last_name as approved_last_name',
+            'service_appointment_schedules.svcas_date_assigned',
+            'user_addresses.uadd_street',
+            'user_addresses.uadd_barangay',
+            'user_addresses.uadd_city',
+            'user_addresses.uadd_province',
+            'user_addresses.uadd_region',
+            'addresses.add_name'
+        )
+        ->first();
+
+    // Currently assigned technicians (one-to-many)
+    $assignedTechs = DB::table('service_appointment_schedule_assigns')
+        ->leftJoin('users as assigned_to', 'assigned_to.usr_id', '=', 'service_appointment_schedule_assigns.svcasa_assigned_to')
+        ->where('service_appointment_schedule_assigns.svcas_id', $display->svcas_id)
+        ->where('service_appointment_schedule_assigns.svcasa_active', 1)
+        ->select(
+            'assigned_to.usr_id',
+            'assigned_to.usr_first_name',
+            'assigned_to.usr_last_name'
+        )
+        ->get();
+
+    $display->assigned_to_label = $assignedTechs->isEmpty()
+        ? null
+        : $assignedTechs->map(fn($t) => $t->usr_last_name . ', ' . $t->usr_first_name)->implode(', ');
+
+    $pestTypes = DB::table('service_order_pests')
+        ->leftJoin('service_packages', 'service_order_pests.svcp_id', '=', 'service_packages.svcp_id')
+        ->where('service_order_pests.svc_id', $svc_id)
+        ->where('service_order_pests.svcop_active', 1)
+        ->select(
+            'service_order_pests.svcop_id',
+            'service_packages.svcp_id',
+            'service_packages.svcp_pest_type'
+        )
+        ->get();
+
+    $serviceAreas = DB::table('service_orders')
+        ->leftJoin('service_package_areas', 'service_orders.svcpa_id', '=', 'service_package_areas.svcpa_id')
+        ->where('service_orders.svc_id', $svc_id)
+        ->whereNull('service_orders.svcpat_id')
+        ->where('service_orders.svco_active', 1)
+        ->select(
+            'service_orders.svco_id',
+            'service_package_areas.svcpa_id',
+            'service_package_areas.svcpa_area',
+            'service_package_areas.svcpa_cost'
+        )
+        ->get();
+
+    $termiteAreas = DB::table('service_orders')
+        ->leftJoin('service_package_area_termites', 'service_orders.svcpat_id', '=', 'service_package_area_termites.svcpat_id')
+        ->where('service_orders.svc_id', $svc_id)
+        ->whereNotNull('service_orders.svcpat_id')
+        ->where('service_orders.svco_active', 1)
+        ->select(
+            'service_orders.svco_id',
+            'service_package_area_termites.svcpat_id',
+            'service_package_area_termites.svcpat_sqm_details',
+            'service_package_area_termites.svcpat_cost'
+        )
+        ->get();
+
+    $appointmentImages = DB::table('service_appointment_images')
+        ->join('service_appointments', 'service_appointment_images.svca_id', '=', 'service_appointments.svca_id')
+        ->where('service_appointments.svc_id', $svc_id)
+        ->where('service_appointment_images.svcap_active', 1)
+        ->select('service_appointment_images.*')
+        ->get();
+
+    $technicianImages = DB::table('service_appointment_schedule_images')
+        ->join('service_appointment_schedules', 'service_appointment_schedule_images.svcas_id', '=', 'service_appointment_schedules.svcas_id')
+        ->join('service_appointments', 'service_appointment_schedules.svca_id', '=', 'service_appointments.svca_id')
+        ->where('service_appointments.svc_id', $svc_id)
+        ->where('service_appointment_schedule_images.svcasp_active', 1)
+        ->select('service_appointment_schedule_images.*')
+        ->get();
+
+    $mappingImages = DB::table('service_mapping_images')
+        ->where('svc_id', $svc_id)
+        ->where('svcmp_active', 1)
+        ->orderByDesc('svcmp_date_created')
+        ->get();
+
+    $contracts = DB::table('service_contracts')
+        ->where('svc_id', $svc_id)
+        ->where('svcc_active', 1)
+        ->orderByDesc('svcc_date_created')
+        ->get();
+
+    $hasOwnContract = $contracts->isNotEmpty();
+
+    if (!empty($display->svcc_id) && !$contracts->pluck('svcc_id')->contains($display->svcc_id)) {
+        $linkedContract = DB::table('service_contracts')
+            ->where('svcc_id', $display->svcc_id)
+            ->where('svcc_active', 1)
+            ->first();
+
+        if ($linkedContract) {
+            $contracts->push($linkedContract);
+        }
+    }
+
+    foreach ($contracts as $contract) {
+        $contract->generated_services = DB::table('services')
+            ->where('svcc_id', $contract->svcc_id)
+            ->where('svc_active', 1)
+            ->orderBy('svc_id')
+            ->select('svc_id', 'svc_sa_number', 'svc_status')
+            ->get();
+    }
+
+    // Chemicals used for this service
+    $serviceChemicals = DB::table('service_chemicals')
+        ->join('chemicals', 'service_chemicals.chem_id', '=', 'chemicals.chem_id')
+        ->where('service_chemicals.svc_id', $svc_id)
+        ->where('service_chemicals.svcch_active', 1)
+        ->select(
+            'service_chemicals.svcch_id',
+            'chemicals.chem_name',
+            'service_chemicals.svcch_expected_quantity',
+            'service_chemicals.svcch_actual_quantity',
+            'service_chemicals.svcch_unit'
+        )
+        ->get();
+
+    return view('service_orders.appointments.finished.view_finished', compact(
+        'display',
+        'pestTypes',
+        'serviceAreas',
+        'termiteAreas',
+        'appointmentImages',
+        'technicianImages',
+        'mappingImages',
+        'contracts',
+        'hasOwnContract',
+        'serviceChemicals'
+    ));
+}
+
+@php
+    function formatFrequencyLabel($type)
+    {
+        if (preg_match('/^MONTHLY-(\d)X$/', $type, $m)) {
+            $labels = ['2' => 'Twice', '3' => 'Thrice', '4' => '4 Times'];
+            return 'MONTHLY (' . ($labels[$m[1]] ?? $m[1] . 'x') . ' a month)';
+        }
+
+        $labels = [
+            'BIMONTHLY' => 'EVERY OTHER MONTH',
+        ];
+
+        return $labels[$type] ?? $type;
+    }
+@endphp
+
+<style>
+    @media print {
+        body {
+            zoom: 100%;
+        }
+
+        .no-print {
+            display: none !important;
+        }
+
+        .print-only {
+            display: block !important;
+        }
+
+        .print-hide {
+            display: none !important;
+        }
+
+        .sa-badge {
+            display: inline !important;
+            background: none !important;
+            border: none !important;
+            color: #000 !important;
+            padding: 0 !important;
+            margin: 0 !important;
+            font-size: inherit !important;
+            font-weight: normal !important;
+            box-shadow: none !important;
+            text-decoration: none !important;
+        }
+
+        .sa-badge:not(:last-child)::after {
+            content: ", ";
+        }
+    }
+
+    .table-responsive {
+        overflow: visible !important;
+    }
+
+    #sectionB {
+        overflow: visible !important;
+    }
+
+    #timelineTabs .nav-link {
+        color: #28a745;
+    }
+
+    #timelineTabs .nav-link.active {
+        color: #28a745;
+        border-color: #28a745 #28a745 #fff;
+    }
+
+    #timelineTabs .nav-link:hover {
+        color: #1e7e34;
+        border-color: #1e7e34 #1e7e34 transparent;
+    }
+
+    body.layout-fixed .content-wrapper {
+        height: auto !important;
+        min-height: auto !important;
+        overflow-y: visible !important;
+    }
+</style>
+
+@extends('layouts.themes.main')
+
+@section('content')
+    {{-- Content Header --}}
+    <div class="content-header">
+        <div class="container-fluid">
+            <div class="row mb-2">
+                <div class="col-sm-6">
+                    <h1 class="m-0">Finished Appointment</h1>
+                </div>
+                <div class="col-sm-6">
+                    <ol class="breadcrumb float-sm-right">
+                        <li class="breadcrumb-item">
+                            <a href="{{ action('App\Http\Controllers\AdminController@home') }}">Home</a>
+                        </li>
+                        <li class="breadcrumb-item">Appointment</li>
+                        <li class="breadcrumb-item">Finished</li>
+                        <li class="breadcrumb-item active">View</li>
+                    </ol>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    {{-- Main Content --}}
+    <section class="content">
+        @include('layouts.partials.onclick')
+        @include('layouts.partials.alerts')
+        @include('layouts.partials.modal_style')
+        <div class="container-fluid">
+            <div class="card">
+                <div class="card-body overflow-auto">
+                    <div class="text-center mb-2">
+                        <h5 style="margin: 0; font-weight: bold;">GO FORWARD PEST CONTROL</h5>
+                        <p style="margin: 0;">{{ $display->branch_name }}</p>
+                    </div>
+
+                    <div class="mb-4 position-relative text-center">
+                        <strong style="color: red;">SERVICE ORDER</strong>
+
+                        <strong style="position: absolute; right: 0; top: 0;">
+                            SA-{{ str_pad($display->svc_sa_number, 6, '0', STR_PAD_LEFT) }}
+                        </strong>
+                    </div>
+                    <div class="row">
+
+                        {{-- Appointment Information Display --}}
+                        <div class="table-responsive overflow-auto" id="sectionA">
+                            <table class="table table-bordered text-left align-middle">
+                                <tbody>
+                                    <tr>
+                                        <th colspan="6" class="text-center table-light">CLIENT INFORMATION</th>
+                                    </tr>
+
+                                    <tr>
+                                        <td style="font-weight: bold;">CLIENT NAME</td>
+                                        <td>{{ $display->usr_first_name }} {{ $display->usr_last_name }}</td>
+                                        <td style="font-weight: bold;">EMAIL</td>
+                                        <td>{{ $display->usr_email }}</td>
+                                        <td style="font-weight: bold;">MOBILE</td>
+                                        <td>{{ $display->usr_mobile }}</td>
+                                    </tr>
+
+                                    <tr>
+                                        <td style="font-weight: bold;">ADDRESS</td>
+                                        <td colspan="3">
+                                            {{ implode(
+                                                ', ',
+                                                array_filter([
+                                                    $display->uadd_street,
+                                                    $display->uadd_barangay,
+                                                    $display->uadd_city,
+                                                    $display->uadd_province,
+                                                    $display->uadd_region,
+                                                ]),
+                                            ) }}
+                                        </td>
+                                        <td style="font-weight: bold;">ADDRESS TYPE</td>
+                                        <td>{{ $display->add_name }}</td>
+                                    </tr>
+
+                                    <tr>
+                                        <th colspan="6" class="text-center table-light">SERVICE INFORMATION</th>
+                                    </tr>
+
+                                    <tr>
+                                        <td style="font-weight: bold;">BRANCH</td>
+                                        <td>{{ $display->branch_name }}</td>
+                                        <td style="font-weight: bold;">STATUS</td>
+                                        <td>{{ $display->svc_status }}</td>
+                                        <td style="font-weight: bold;">PAYMENT STATUS</td>
+                                        <td>{{ $display->svc_payment_status }}</td>
+                                    </tr>
+
+                                    <tr>
+                                        <td style="font-weight: bold;">PROPERTY TYPE</td>
+                                        <td>{{ $display->svc_property_type }}</td>
+                                        <td style="font-weight: bold;">INFESTATION</td>
+                                        <td>{{ $display->svc_infestation }}</td>
+                                        <td style="font-weight: bold;">DISTANCE</td>
+                                        <td>{{ $display->svc_km_distance }} KM</td>
+                                    </tr>
+
+                                    <tr>
+                                        <td style="font-weight: bold;">IS TERMITE</td>
+                                        <td>{{ $display->svc_is_termite ? 'YES' : 'NO' }}</td>
+                                        <td style="font-weight: bold;">IS PACKAGE</td>
+                                        <td colspan="3">{{ $display->svc_is_package ? 'YES' : 'NO' }}</td>
+                                    </tr>
+
+                                    <tr>
+                                        <td style="font-weight: bold;">INITIAL SQM</td>
+                                        <td>{{ $display->svc_sqm_initial ?? 'N/A' }}</td>
+                                        <td style="font-weight: bold;">FINAL SQM</td>
+                                        <td colspan="3">{{ $display->svc_sqm_final ?? 'N/A' }}</td>
+                                    </tr>
+
+                                    @if (!empty($display->svc_problem_description))
+                                        <tr>
+                                            <th colspan="6" class="text-center table-light">PROBLEM DESCRIPTION / CLIENT REQUEST</th>
+                                        </tr>
+
+                                        <tr>
+                                            <td colspan="6" style="text-align: justify">
+                                                {{ $display->svc_problem_description }}
+                                            </td>
+                                        </tr>
+                                    @endif
+
+                                    <tr>
+                                        <th colspan="6" class="text-center table-light">PRICING</th>
+                                    </tr>
+
+                                    <tr>
+                                        <td style="font-weight: bold;">INITIAL PRICE</td>
+                                        <td>₱{{ number_format($display->svc_initial_price, 2) }}</td>
+                                        <td style="font-weight: bold;">LOCATION PRICE</td>
+                                        <td>₱{{ number_format($display->svc_location_price, 2) }}</td>
+                                        <td style="font-weight: bold;">FIXED PRICE</td>
+                                        <td>₱{{ number_format($display->svc_fixed_price, 2) }}</td>
+                                    </tr>
+
+                                    <tr>
+                                        <td style="font-weight: bold;">FINAL PRICE</td>
+                                        <td>₱{{ number_format($display->svc_final_price, 2) }}</td>
+                                        <td style="font-weight: bold;">BALANCE</td>
+                                        <td colspan="3">₱{{ number_format($display->svc_balance, 2) }}</td>
+                                    </tr>
+
+                                    @if ($display->svc_is_termite)
+                                        <tr>
+                                            <th colspan="6" class="text-center table-light">TERMITE CASE</th>
+                                        </tr>
+
+                                        <tr>
+                                            <td style="font-weight: bold;">TREATMENT TYPE</td>
+                                            <td>{{ $display->svc_type_treatment }}</td>
+                                            <td style="font-weight: bold;">INITIAL SQM</td>
+                                            <td>{{ $display->svc_sqm_initial }}</td>
+                                            <td style="font-weight: bold;">FINAL SQM</td>
+                                            <td>{{ $display->svc_sqm_final }}</td>
+                                        </tr>
+
+                                        <tr>
+                                            <td style="font-weight: bold;">WITH DEVICE</td>
+                                            <td>{{ $display->svc_with_device ? 'YES' : 'NO' }}</td>
+                                            <td style="font-weight: bold;">DEVICE COUNT</td>
+                                            <td colspan="3">{{ $display->svc_device_count ?? 'N/A' }}</td>
+                                        </tr>
+                                    @endif
+
+                                    <tr>
+                                        <th colspan="6" class="text-center table-light">CHEMICAL</th>
+                                    </tr>
+
+                                    @forelse ($serviceChemicals as $chem)
+                                        <tr>
+                                            <td style="font-weight: bold;">CHEMICAL</td>
+                                            <td>{{ $chem->chem_name }}</td>
+                                            <td style="font-weight: bold;">EXPECTED QUANTITY</td>
+                                            <td>{{ $chem->svcch_expected_quantity }}</td>
+                                            <td style="font-weight: bold;">METRIC</td>
+                                            <td>{{ $chem->svcch_unit }}</td>
+                                        </tr>
+                                    @empty
+                                        <tr>
+                                            <td colspan="6" class="text-center text-muted">No chemicals recorded.</td>
+                                        </tr>
+                                    @endforelse
+
+                                    @if (!empty($display->svc_assessment_recommendation))
+                                        <tr>
+                                            <th colspan="6" class="text-center table-light">ASSESSMENT RECOMMENDATION
+                                            </th>
+                                        </tr>
+                                        <tr>
+                                            <td colspan="6" style="text-align: justify">
+                                                {{ $display->svc_assessment_recommendation }}
+                                            </td>
+                                        </tr>
+                                    @endif
+
+                                    <tr>
+                                        <th colspan="6" class="text-center table-light">SCHEDULE</th>
+                                    </tr>
+
+                                    <tr>
+                                        <td style="font-weight: bold;">DATE REQUESTED</td>
+                                        <td>{{ \Carbon\Carbon::parse($display->svca_client_date)->format('m/d/Y') }}</td>
+                                        <td style="font-weight: bold;">TIME REQUESTED</td>
+                                        <td colspan="3">{{ \Carbon\Carbon::parse($display->svca_client_time)->format('h:i A') }}</td>
+                                    </tr>
+
+                                    <tr>
+                                        <td style="font-weight: bold;">DATE APPROVED</td>
+                                        <td>{{ \Carbon\Carbon::parse($display->svca_date_approved)->format('m/d/Y') }}</td>
+                                        <td style="font-weight: bold;">TIME APPROVED</td>
+                                        <td>{{ \Carbon\Carbon::parse($display->svca_approved_time_from)->format('h:i A') }} - {{ \Carbon\Carbon::parse($display->svca_approved_time_to)->format('h:i A') }}
+                                        </td>
+                                        <td style="font-weight: bold;">APPROVED BY</td>
+                                        <td>{{ $display->approved_first_name }} {{ $display->approved_last_name }}
+                                        </td>
+                                    </tr>
+
+                                    <tr>
+                                        <td style="font-weight: bold;">DATE ASSIGNED</td>
+                                        <td>{{ \Carbon\Carbon::parse($display->svcas_date_assigned)->format('m/d/Y | h:i A') }}</td>
+                                        <td style="font-weight: bold;">ASSIGNED TO</td>
+                                        <td colspan="3">
+                                            {{ $display->assigned_to_label ?? 'N/A' }}
+                                        </td>
+                                    </tr>
+
+                                    <tr>
+                                        <td style="font-weight: bold;">DATE STARTED</td>
+                                        <td>{{ \Carbon\Carbon::parse($display->svcas_start_date)->format('m/d/Y') }}</td>
+                                        <td style="font-weight: bold;">TIME</td>
+                                        <td>{{ \Carbon\Carbon::parse($display->svcas_start_time)->format('h:i A') }} - {{ \Carbon\Carbon::parse($display->svcas_end_time)->format('h:i A') }}
+                                        </td>
+                                        <td style="font-weight: bold;">TRAVEL TIME / ELAPSED TIME</td>
+                                        <td>
+                                            @php
+                                                function formatDuration($time)
+                                                {
+                                                    [$h, $m] = explode(':', $time ?? '00:00:00');
+                                                    $h = (int) $h;
+                                                    $m = (int) $m;
+
+                                                    if ($h == 0 && $m == 0) return '-';
+
+                                                    if ($h > 0 && $m > 0) {
+                                                        return "{$h} hr" . ($h > 1 ? 's' : '') . " {$m} min" . ($m > 1 ? 's' : '');
+                                                    }
+
+                                                    if ($h > 0) {
+                                                        return "{$h} hr" . ($h > 1 ? 's' : '');
+                                                    }
+
+                                                    return "{$m} min" . ($m > 1 ? 's' : '');
+                                                }
+                                            @endphp
+
+                                            {{ formatDuration($display->svcas_time_travel) }}
+                                            /
+                                            {{ formatDuration($display->svcas_time_finished) }}
+                                        </td>
+                                    </tr>
+                                    
+                                    @if (!empty($display->svc_rating))
+                                        <tr>
+                                            <td colspan="6" class="text-center" style="padding: 20px 0;">
+                                                <div>
+                                                    <strong>CUSTOMER SATISFACTION</strong>
+                                                </div>
+
+                                                <div style="margin-top: 5px;">
+                                                    @for ($i = 1; $i <= 5; $i++)
+                                                        <i class="fa fa-star" style="font-size: 24px; color: {{ $i <= $display->svc_rating ? '#ffc107' : '#d3d3d3' }};"></i>
+                                                    @endfor
+                                                </div>
+
+                                                <div style="margin-top: 5px; font-weight: bold;">
+                                                    {{ $display->svc_rating }}/5
+                                                </div>
+
+                                                @if (!empty($display->svc_date_rated))
+                                                    <div style="margin-top: 3px; color: #6c757d;">
+                                                        {{ \Carbon\Carbon::parse($display->svc_date_rated)->format('h:i A - m/d/Y') }}
+                                                    </div>
+                                                @endif
+                                            </td>
+                                        </tr>
+                                    @endif
+                                </tbody>
+                            </table>
+                        </div>
+
+                        <div class="d-flex justify-content-end flex-wrap mb-3 no-print">
+                            @if (session('SUPERADMIN') == '1' || session('ADMIN') == '1' || session('MANAGER') == '1' || session('SALES OFFICER') == '1')
+                                <button type="button" class="btn btn-primary mr-2 mb-2" data-toggle="modal"
+                                    data-target="#updatePricingModal">
+                                    <span class="fa fa-tags"></span> Update Pricing
+                                </button>
+                            @endif
+                            @if ($display->svc_payment_status == 'PAID' && (session('SUPERADMIN') == '1' || session('ADMIN') == '1' || session('MANAGER') == '1' || session('QUALITY OFFICER') == '1'))
+                                <button type="button" class="btn btn-success mr-2 mb-2" data-toggle="modal"
+                                    data-target="#completeServiceOrderModal">
+                                    <span class="fa fa-check"></span> COMPLETE SERVICE ORDER
+                                </button>
+                            @endif
+                            @if (!$hasOwnContract && !$display->svcc_id && (session('SUPERADMIN') == '1' || session('ADMIN') == '1' || session('MANAGER') == '1' || session('SALES OFFICER') == '1'))
+                                <button type="button" class="btn btn-primary mr-2 mb-2" data-toggle="modal"
+                                    data-target="#initiateContractModal">
+                                    <span class="fa fa-file-signature"></span> INITIATE CONTRACT
+                                </button>
+                            @endif
+                            @if (session('SUPERADMIN') == '1' || session('ADMIN') == '1' || session('MANAGER') == '1' || session('ACCOUNTING OFFICER') == '1' || session('BILLING OFFICER') == '1')
+                                <a class="btn btn-info mr-2 mb-2" href="{{ url('service/order/payment/view/' . $display->svc_id) }}">
+                                    <span class="fa {{ $display->svc_payment_status == 'PAID' ? 'fa-history' : 'fa-money-bill' }}"></span> {{ $display->svc_payment_status == 'PAID' ? 'Payment History' : 'Payments' }}
+                                </a>
+                            @endif
+                            <button type="button" class="btn btn-dark mr-2 mb-2" onclick="printDefault()">
+                                <span class="fa fa-print"></span> Print
+                            </button>
+                            <div class="btn-group mr-2 mb-2">
+                                <button type="button" class="btn btn-dark dropdown-toggle" data-toggle="dropdown"
+                                    aria-haspopup="true" aria-expanded="false">
+                                    <span class="fa fa-print"></span> Print Options
+                                </button>
+                                <div class="dropdown-menu p-3" style="min-width: 200px;">
+                                    <label class="dropdown-item">
+                                        <input type="checkbox" class="print-toggle mr-1" data-target="sectionA">
+                                        Appointment Information
+                                    </label>
+                                    <label class="dropdown-item">
+                                        <input type="checkbox" class="print-toggle mr-1" data-target="sectionB"> Service
+                                        Orders
+                                    </label>
+                                    @if ($appointmentImages->count() > 0)
+                                        <label class="dropdown-item">
+                                            <input type="checkbox" class="print-toggle mr-1" data-target="sectionC">
+                                            Client Appointment Images
+                                        </label>
+                                    @endif
+                                    @if ($mappingImages->count() > 0)
+                                        <label class="dropdown-item">
+                                            <input type="checkbox" class="print-toggle mr-1" data-target="sectionD">
+                                            Mapping Images
+                                        </label>
+                                    @endif
+                                    <label class="dropdown-item">
+                                        <input type="checkbox" class="print-toggle mr-1" data-target="sectionE">
+                                        Technician Report
+                                    </label>
+                                    @if ($contracts->count() > 0)
+                                        <label class="dropdown-item">
+                                            <input type="checkbox" class="print-toggle mr-1" data-target="sectionF">
+                                            Service Contracts
+                                        </label>
+                                    @endif
+                                    <div class="dropdown-item text-center">
+                                        <button class="btn btn-primary btn-sm mt-2" onclick="handlePrint()">Confirm &
+                                            Print</button>
+                                    </div>
+                                    <div class="dropdown-item">
+                                        <p id="warning" style="color:red; display:none;" class="mt-1">Select at least
+                                            one section.</p>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        {{-- Service Order Display --}}
+                        <div class="table-responsive" id="sectionB">
+                            <hr class="no-print">
+                            @if ($display->svc_is_termite == 0)
+                                <div class="row">
+                                    {{-- PEST TYPE TABLE --}}
+                                    <div class="col-md-6">
+                                        <table class="table table-bordered text-center mb-2">
+                                            <thead>
+                                                <tr style="background-color: #f5f5f5;">
+                                                    <th colspan="3"><strong>PEST TYPE</strong></th>
+                                                </tr>
+                                                <tr style="background-color: #f5f5f5;">
+                                                    <th style="width: 50px;">No.</th>
+                                                    <th>Pest</th>
+                                                </tr>
+                                            </thead>
+                                            <tbody>
+                                                @foreach ($pestTypes as $index => $type)
+                                                    <tr>
+                                                        <td style="vertical-align: middle; text-align: center">
+                                                            {{ $index + 1 }}</td>
+                                                        <td style="vertical-align: middle; text-align: center">
+                                                            {{ $type->svcp_pest_type }}</td>
+                                                    </tr>
+                                                @endforeach
+                                            </tbody>
+                                        </table>
+                                    </div>
+
+                                    {{-- SERVICE ORDER TABLE --}}
+                                    <div class="col-md-6">
+                                        <table class="table table-bordered text-center mb-2">
+                                            <thead>
+                                                <tr style="background-color: #f5f5f5;">
+                                                    <th colspan="4"><strong>SERVICE ORDER</strong></th>
+                                                </tr>
+                                                <tr style="background-color: #f5f5f5;">
+                                                    <th style="width: 50px;">No.</th>
+                                                    <th>Service</th>
+                                                    <th>Cost</th>
+                                                </tr>
+                                            </thead>
+                                            <tbody>
+                                                @foreach ($serviceAreas as $index => $area)
+                                                    <tr>
+                                                        <td style="vertical-align: middle; text-align: center">
+                                                            {{ $index + 1 }}</td>
+                                                        <td style="vertical-align: middle; text-align: center">
+                                                            {{ $area->svcpa_area }}</td>
+                                                        <td style="vertical-align: middle; text-align: center">
+                                                            ₱{{ number_format($area->svcpa_cost, 2) }}</td>
+                                                    </tr>
+                                                @endforeach
+                                            </tbody>
+                                        </table>
+                                    </div>
+                                </div>
+                            @elseif ($display->svc_is_termite == 1)
+                                <div class="col-md-12">
+                                    <table class="table table-bordered text-center mb-2">
+                                        <thead>
+                                            <tr style="background-color: #f5f5f5;">
+                                                <th colspan="5"><strong>TERMITE DETAILS</strong></th>
+                                            </tr>
+                                            <tr style="background-color: #f5f5f5;">
+                                                <th style="width: 50px;">No.</th>
+                                                <th>SQM Details</th>
+                                                <th>Cost</th>
+                                                <th>Computation</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody>
+                                            @forelse ($termiteAreas as $index => $area)
+                                                <tr>
+                                                    <td style="vertical-align: middle; text-align: center">
+                                                        {{ $index + 1 }}</td>
+                                                    <td style="vertical-align: middle; text-align: center">
+                                                        {{ $area->svcpat_sqm_details }}</td>
+                                                    <td style="vertical-align: middle; text-align: center">
+                                                        ₱{{ number_format($area->svcpat_cost, 2) }}</td>
+                                                    <td style="vertical-align: middle; text-align: center">
+                                                        @if ($display->svc_type_treatment == 'STANDARD TREATMENT')
+                                                            <p>STANDARD TREATMENT: sqm × cost</p>
+                                                        @elseif ($display->svc_type_treatment == 'HYBRID TREATMENT')
+                                                            <p>HYBRID TREATMENT: sqm × cost + device</p>
+                                                        @else
+                                                            <p>{{ $display->svc_type_treatment }}: sqm × cost</p>
+                                                        @endif
+                                                    </td>
+                                                </tr>
+                                            @empty
+                                                <tr>
+                                                    <td colspan="5" class="text-center text-muted">No termite areas
+                                                        added.</td>
+                                                </tr>
+                                            @endforelse
+                                        </tbody>
+                                    </table>
+                                </div>
+                            @endif
+                        </div>
+
+                        {{-- Client Appointment Images --}}
+                        @if ($appointmentImages->count() > 0)
+                            <div class="table-responsive" id="sectionC">
+                                <table class="table table-bordered text-center mb-2">
+                                    <thead>
+                                        <tr style="background-color: #f5f5f5;">
+                                            <th colspan="5">
+                                                <strong>CLIENT APPOINTMENT IMAGES</strong>
+                                            </th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        <tr>
+                                            <td colspan="5" style="padding: 10px;">
+                                                <div class="row no-gutters justify-content-center" style="--bs-gutter-x: 0;">
+                                                    @foreach ($appointmentImages as $img)
+                                                        <div class="p-2" style="width:20%;">
+                                                            <a href="{{ asset('images/client_images/' . $img->svcap_image) }}"
+                                                                target="_blank"
+                                                                style="display:block; width:100%; aspect-ratio:1/1; overflow:hidden; border:1px solid #dee2e6; border-radius:4px;">
+                                                                <img src="{{ asset('images/client_images/' . $img->svcap_image) }}"
+                                                                    alt="Mapping Image"
+                                                                    style="width:100%; height:100%; object-fit:cover; display:block;">
+                                                            </a>
+                                                        </div>
+                                                    @endforeach
+                                                </div>
+                                            </td>
+                                        </tr>
+                                    </tbody>
+                                </table>
+                            </div>
+                        @endif
+
+                        {{-- Mapping Appointment Images --}}
+                        @if ($mappingImages->count() > 0)
+                            <div class="table-responsive" id="sectionD">
+                                <table class="table table-bordered text-center mb-2">
+                                    <thead>
+                                        <tr style="background-color: #f5f5f5;">
+                                            <th colspan="5">
+                                                <strong>MAPPING IMAGES</strong>
+                                            </th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        <tr>
+                                            <td colspan="5" style="padding: 10px;">
+                                                <div class="row no-gutters justify-content-center" style="--bs-gutter-x: 0;">
+                                                    @foreach ($mappingImages as $img)
+                                                        <div class="p-2" style="width:20%;">
+                                                            <a href="{{ asset('images/mappings/' . $img->svcmp_image) }}"
+                                                                target="_blank"
+                                                                style="display:block; width:100%; aspect-ratio:1/1; overflow:hidden; border:1px solid #dee2e6; border-radius:4px;">
+                                                                <img src="{{ asset('images/mappings/' . $img->svcmp_image) }}"
+                                                                    alt="Mapping Image"
+                                                                    style="width:100%; height:100%; object-fit:cover; display:block;">
+                                                            </a>
+                                                        </div>
+                                                    @endforeach
+                                                </div>
+                                            </td>
+                                        </tr>
+                                    </tbody>
+                                </table>
+                            </div>
+                        @endif
+
+                        {{-- Technician Report --}}
+                        <div class="table-responsive" id="sectionE">
+                            <table class="table table-bordered mb-2">
+                                <thead>
+                                    <tr style="background-color: #f5f5f5;">
+                                        <th class="text-center">
+                                            <strong>TECHNICIAN REPORT</strong>
+                                        </th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    {{-- Recommendation --}}
+                                    <tr>
+                                        <td>
+                                            <div class="mb-2" style="font-weight: bold; color: #495057;">
+                                                RECOMMENDATION / FINDINGS
+                                            </div>
+                                            <p style="text-align: justify; margin-bottom: 0;">
+                                                {{ $display->svc_technician_recommendation ?? 'No recommendation provided.' }}
+                                            </p>
+                                        </td>
+                                    </tr>
+
+                                    {{-- Chemical Used --}}
+                                    <tr>
+                                        <td>
+                                            <div class="mb-2" style="font-weight: bold; color: #495057;">
+                                                CHEMICAL USED
+                                            </div>
+
+                                            @forelse ($serviceChemicals as $chem)
+                                                <p class="mb-1">
+                                                    {{ $chem->svcch_actual_quantity ?? 'N/A' }} {{ $chem->svcch_unit }} - {{ $chem->chem_name }} 
+                                                    (EXPECTED: {{ $chem->svcch_expected_quantity }} {{ $chem->svcch_unit }})
+                                                </p>
+                                            @empty
+                                                <p class="mb-0 text-muted">No chemicals recorded.</p>
+                                            @endforelse
+                                        </td>
+                                    </tr>
+
+                                    {{-- Captured Animals --}}
+                                    <tr>
+                                        <td>
+                                            <div class="mb-2" style="font-weight: bold; color: #495057;">
+                                                CAPTURED PESTS
+                                            </div>
+
+                                            <div class="row text-center">
+                                                <div class="col">
+                                                    <div><strong>Rats</strong></div>
+                                                    <div>{{ $display->svc_rat_captured ?? 0 }}</div>
+                                                </div>
+
+                                                <div class="col">
+                                                    <div><strong>Snakes</strong></div>
+                                                    <div>{{ $display->svc_snake_captured ?? 0 }}</div>
+                                                </div>
+
+                                                <div class="col">
+                                                    <div><strong>Lizards</strong></div>
+                                                    <div>{{ $display->svc_lizard_captured ?? 0 }}</div>
+                                                </div>
+
+                                                <div class="col">
+                                                    <div><strong>Kittens</strong></div>
+                                                    <div>{{ $display->svc_kitten_captured ?? 0 }}</div>
+                                                </div>
+
+                                                <div class="col">
+                                                    <div><strong>Others</strong></div>
+                                                    <div>{{ $display->svc_other_captured ?? 0 }}</div>
+                                                </div>
+                                            </div>
+                                        </td>
+                                    </tr>
+
+                                    {{-- Site Documentation --}}
+                                    @if ($technicianImages->count() > 0)
+                                        <tr>
+                                            <td style="padding-top: 20px;">
+                                                <div class="mb-2" style="font-weight: bold; color: #495057;">
+                                                    SITE DOCUMENTATION
+                                                    ({{ $technicianImages->count() }}
+                                                    {{ $technicianImages->count() == 1 ? 'photo' : 'photos' }})
+                                                </div>
+
+                                                <div class="row no-gutters justify-content-center" style="--bs-gutter-x: 0;">
+                                                    @foreach ($technicianImages as $img)
+                                                        <div class="col-6 p-2">
+                                                            <a href="{{ asset('images/technician_images/' . $img->svcasp_image) }}"
+                                                                target="_blank"
+                                                                style="display:block; width:100%; padding-top:60%; position:relative; border:1px solid #dee2e6; border-radius:4px;">
+                                                                <img src="{{ asset('images/technician_images/' . $img->svcasp_image) }}"
+                                                                    alt="Technician Report Image"
+                                                                    style="position:absolute; top:0; left:0; width:100%; height:100%; object-fit:cover;">
+                                                            </a>
+                                                        </div>
+                                                    @endforeach
+                                                </div>
+                                            </td>
+                                        </tr>
+                                    @else
+                                        <tr>
+                                            <td style="padding-top: 10px;">
+                                                <div class="mb-2" style="font-weight: bold; color: #495057;">
+                                                    SITE DOCUMENTATION
+                                                </div>
+                                                <p class="text-muted text-center mb-0" style="padding: 10px 0;">
+                                                    No images attached.
+                                                </p>
+                                            </td>
+                                        </tr>
+                                    @endif
+                                </tbody>
+                            </table>
+                        </div>
+
+                        {{-- Service Contracts --}}
+                        @if ($contracts->count() > 0)
+                            <div class="table-responsive" id="sectionF">
+                                <table class="table table-bordered mb-2">
+                                    <thead>
+                                        <tr style="background-color: #f5f5f5;">
+                                            <th colspan="5" class="text-center"><strong>SERVICE CONTRACT</strong></th>
+                                        </tr>
+                                        <tr style="background-color: #f5f5f5;">
+                                            <th class="text-center" style="vertical-align: middle;">Frequency</th>
+                                            <th class="text-center" style="vertical-align: middle;">Duration</th>
+                                            <th class="text-center" style="vertical-align: middle;">Total Services</th>
+                                            <th class="text-center no-print" style="vertical-align: middle;">Contract</th>
+                                            <th class="text-center" style="vertical-align: middle;">Appointments</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        @foreach ($contracts as $contract)
+                                            <tr>
+                                                <td class="text-center" style="vertical-align: middle;">{{ formatFrequencyLabel($contract->svcc_type) }}</td>
+                                                <td class="text-center" style="vertical-align: middle;">
+                                                    @php
+                                                        // Force 2 decimal places so the fraction always represents 2-digit months
+                                                        $parts = explode('.', number_format((float) $contract->svcc_total_years, 2, '.', ''));
+                                                        $yrs = (int) $parts[0];
+                                                        $mos = (int) $parts[1];
+
+                                                        $label = '';
+                                                        if ($yrs > 0) {
+                                                            $label .= $yrs . ' Year' . ($yrs > 1 ? 's' : '');
+                                                        }
+                                                        if ($mos > 0) {
+                                                            $label .= ($label ? ' and ' : '') . $mos . ' Month' . ($mos > 1 ? 's' : '');
+                                                        }
+                                                        if (!$label) {
+                                                            $label = '0 Months';
+                                                        }
+                                                    @endphp
+                                                    {{ $label }}
+                                                </td>
+                                                <td class="text-center" style="vertical-align: middle;">{{ $contract->svcc_total_services }}</td>
+                                                <td class="text-center no-print" style="vertical-align: middle;">
+                                                    @if ($contract->svcc_contract)
+                                                        <a href="{{ asset('images/contracts/' . $contract->svcc_contract) }}"
+                                                            class="badge badge-info p-2" style="font-size: 0.85rem;"
+                                                            download target="_blank">
+                                                            <i class="fas fa-download"></i> Download
+                                                        </a>
+                                                    @else
+                                                        <span class="text-muted">No file.</span>
+                                                    @endif
+                                                </td>
+                                                <td>
+                                                    @if ($contract->generated_services->isEmpty())
+                                                        <span class="text-muted">No appointments generated.</span>
+                                                    @else
+                                                        <div class="d-flex flex-wrap" style="gap: 6px;">
+                                                            @foreach ($contract->generated_services as $svc)
+                                                                @php
+                                                                    $statusRouteMap = [
+                                                                        'CONFIRM ASSESSMENT' => 'service/order/appointments/requested/',
+                                                                        'ASSESSED' => 'service/order/appointments/assessed/',
+                                                                        'SCHEDULED' => 'service/order/appointments/scheduled/',
+                                                                        'ONGOING' => 'service/order/appointments/ongoing/',
+                                                                        'DONE REPORT' => 'service/order/appointments/finished/',
+                                                                        'COMPLETED' => 'service/order/appointments/completed/',
+                                                                    ];
+                                                                    $routePrefix = $statusRouteMap[$svc->svc_status] ?? null;
+                                                                    $saNumber = 'SA-' . str_pad($svc->svc_sa_number, 6, '0', STR_PAD_LEFT);
+                                                                @endphp
+
+                                                                @if ($routePrefix)
+                                                                    <a href="{{ url($routePrefix . $svc->svc_id) }}" target="_blank"
+                                                                        class="badge badge-primary sa-badge p-2" style="font-size: 0.85rem;">
+                                                                        {{ $saNumber }}
+                                                                    </a>
+                                                                @else
+                                                                    <span class="badge badge-secondary sa-badge p-2" style="font-size: 0.85rem;">
+                                                                        {{ $saNumber }} ({{ $svc->svc_status }})
+                                                                    </span>
+                                                                @endif
+                                                            @endforeach
+                                                        </div>
+                                                    @endif
+                                                </td>
+                                            </tr>
+                                        @endforeach
+                                    </tbody>
+                                </table>
+                            </div>
+                        @endif
+
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    {{-- Update Pricing Modal --}}
+    <div class="modal fade" id="updatePricingModal" tabindex="-1" role="dialog"
+        aria-labelledby="updatePricingModalLabel" aria-hidden="true">
+        <div class="modal-dialog" role="document">
+            <form action="{{ url('service/order/appointments/assessed/update/price') }}" method="POST">
+                @csrf
+                <div class="modal-content">
+                    <div class="modal-header bg-primary text-white">
+                        <h5 class="modal-title text-white" id="updatePricingModalLabel">
+                            <span class="fa fa-tags text-white"></span> Update Pricing
+                        </h5>
+                        <button type="button" class="close text-white" data-dismiss="modal" aria-label="Close">
+                            <span aria-hidden="true">&times;</span>
+                        </button>
+                    </div>
+
+                    <div class="modal-body">
+                        <input type="hidden" name="svc_id" value="{{ $display->svc_id }}">
+
+                        <div class="form-group mb-3">
+                            <label>Service Order Price</label>
+                            <input type="text" class="form-control"
+                                value="₱{{ number_format($display->svc_initial_price, 2) }}" readonly>
+                        </div>
+
+                        <div class="form-group mb-3">
+                            <label>Location Price</label>
+                            <input type="text" class="form-control"
+                                value="₱{{ number_format($display->svc_location_price, 2) }}" readonly>
+                        </div>
+
+                        <div class="form-group mb-3">
+                            <label>Fixed Price</label>
+                            <input type="text" class="form-control"
+                                value="₱{{ number_format($display->svc_fixed_price, 2) }}" readonly>
+                        </div>
+
+                        <div class="form-group mb-3">
+                            <label>Final Price <span class="text-danger">*</span></label>
+                            <input type="number" class="form-control" name="svc_final_price"
+                                value="{{ number_format($display->svc_final_price, 2, '.', '') }}"
+                                min="0" step="0.01" required>
+                        </div>
+                    </div>
+
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-secondary" data-dismiss="modal">
+                            <span class="fa fa-times"></span> Close
+                        </button>
+                        <button type="submit" class="btn btn-primary">
+                            <span class="fa fa-save"></span> Update
+                        </button>
+                    </div>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    {{-- Complete Service Order Confirmation Modal --}}
+    <div class="modal fade" id="completeServiceOrderModal" tabindex="-1" role="dialog"
+        aria-labelledby="completeServiceOrderModalLabel" aria-hidden="true">
+        <div class="modal-dialog modal-md" role="document">
+            <div class="modal-content">
+                <div class="modal-header bg-success text-white">
+                    <h5 class="modal-title" id="completeServiceOrderModalLabel">
+                        Confirm Completion
+                    </h5>
+                    <button type="button" class="close text-white" data-dismiss="modal">
+                        <span aria-hidden="true">&times;</span>
+                    </button>
+                </div>
+                <form method="POST"
+                    action="{{ url('service/order/appointments/finished/complete/' . $display->svc_id) }}">
+                    @csrf
+
+                    <div class="modal-body" style="text-align: center">
+                        <input type="text" class="form-control" name="svc_id" value="{{ $display->svc_id }}" hidden>
+                        Are you sure you want to mark this service order as <strong>COMPLETED</strong>?
+                        <br>
+                        <br>
+                        <strong style="color: red;">
+                            Once confirmed, the service order status will be changed to 
+                            <em>"COMPLETED"</em>. This action should only be performed 
+                            after all work has been finished and verified.
+                        </strong>
+                    </div>
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-secondary" data-dismiss="modal">
+                            <span class="fa fa-times"></span> Close
+                        </button>
+                        <button type="submit" class="btn btn-success">
+                            <span class="fa fa-check"></span> Confirm
+                        </button>
+                    </div>
+
+                </form>
+            </div>
+        </div>
+    </div>
+
+    {{-- Contract Service Modal --}}
+    <div class="modal fade" id="initiateContractModal" tabindex="-1" role="dialog"
+        aria-labelledby="initiateContractModalLabel" aria-hidden="true">
+        <div class="modal-dialog modal-md" role="document">
+            <div class="modal-content">
+                <div class="modal-header bg-warning text-white">
+                    <h5 class="modal-title" id="initiateContractModalLabel">
+                        Initiate a Contract Service
+                    </h5>
+                    <button type="button" class="close text-white" data-dismiss="modal">
+                        <span aria-hidden="true">&times;</span>
+                    </button>
+                </div>
+                <form method="POST" enctype="multipart/form-data"
+                    action="{{ url('service/order/appointments/finished/initiate/contract/' . $display->svc_id) }}">
+                    @csrf
+
+                    <div class="modal-body">
+                        <div class="form-group">
+                            <label>Frequency <span class="text-danger">*</span></label>
+                            <select name="svcc_base_frequency" id="svcc_base_frequency" class="form-control" required>
+                                <option value="WEEKLY">WEEKLY</option>
+                                <option value="MONTHLY">MONTHLY</option>
+                                <option value="BIMONTHLY">EVERY OTHER MONTH (BI-MONTHLY)</option>
+                                <option value="QUARTERLY">QUARTERLY</option>
+                                <option value="SEMI-ANNUAL">SEMI-ANNUAL</option>
+                                <option value="ANNUAL">ANNUAL</option>
+                            </select>
+                        </div>
+
+                        <div class="form-group" id="occurrenceWrapper" style="display:none;">
+                            <label>How many times per month?</label>
+                            <select name="svcc_occurrence" id="svcc_occurrence" class="form-control">
+                                <option value="1">Once</option>
+                                <option value="2">Twice</option>
+                                <option value="3">Thrice</option>
+                                <option value="4">4 Times</option>
+                            </select>
+                        </div>
+
+                        <input type="hidden" name="svcc_type" id="svcc_type">
+
+                        <div class="form-group">
+                            <label>Contract Duration <span class="text-danger">*</span></label>
+                            <input type="text" name="svcc_total_years" class="form-control"
+                                placeholder="e.g. 1.5, 3.11, 0.3" pattern="^\d+(\.\d{1,2})?$" required>
+                            <small class="form-text text-muted">
+                                Format: <strong>years.months</strong> — e.g. <code>1.5</code> = 1 year 5 months,
+                                <code>3.11</code> = 3 years 11 months, <code>0.3</code> = 3 months.
+                                (Months portion must be 0–11)
+                            </small>
+                        </div>
+
+                        <div class="form-group">
+                            <label>Contract Attachment <span class="text-danger">*</span></label>
+                            <input type="file" name="svcc_contract" class="form-control-file"
+                                accept=".jpg,.jpeg,.png,.pdf,.docx" required>
+                            <small class="form-text text-muted">Accepted: JPG, PNG, PDF, DOCX. Max 10MB.</small>
+                        </div>
+                    </div>
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-secondary" data-dismiss="modal">
+                            <span class="fa fa-times"></span> Close
+                        </button>
+                        <button type="submit" class="btn btn-success" onclick="return syncType();">
+                            <span class="fa fa-check"></span> Confirm
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        function printDefault() {
+            window.print();
+        }
+
+        function handlePrint() {
+            const checkboxes = document.querySelectorAll('.print-toggle');
+            const warning = document.getElementById('warning');
+            let anyChecked = false;
+
+            const sectionIds = ['sectionA', 'sectionB', 'sectionC', 'sectionD', 'sectionE', 'sectionF'];
+
+            sectionIds.forEach(sectionId => {
+                const section = document.getElementById(sectionId);
+                if (section) {
+                    section.classList.remove('print-hide');
+                }
+            });
+
+            checkboxes.forEach(checkbox => {
+                const targetId = checkbox.dataset.target;
+                const targetDiv = document.getElementById(targetId);
+
+                if (targetDiv) {
+                    if (checkbox.checked) {
+                        anyChecked = true;
+                        targetDiv.classList.remove('print-hide');
+                    } else {
+                        targetDiv.classList.add('print-hide');
+                    }
+                }
+            });
+
+            if (!anyChecked) {
+                warning.style.display = 'block';
+                return;
+            }
+
+            warning.style.display = 'none';
+
+            setTimeout(() => {
+                window.print();
+            }, 500);
+
+            setTimeout(() => {
+                sectionIds.forEach(sectionId => {
+                    const section = document.getElementById(sectionId);
+                    if (section) {
+                        section.classList.remove('print-hide');
+                    }
+                });
+            }, 1000);
+        }
+    </script>
+
+    <script>
+        const svccBaseFrequency = document.getElementById('svcc_base_frequency');
+        const occurrenceWrapper = document.getElementById('occurrenceWrapper');
+        const svccOccurrence = document.getElementById('svcc_occurrence');
+        const svccTypeInput = document.getElementById('svcc_type');
+
+        function syncType() {
+            if (svccBaseFrequency.value === 'MONTHLY' && svccOccurrence.value !== '1') {
+                svccTypeInput.value = 'MONTHLY-' + svccOccurrence.value + 'X';
+            } else {
+                svccTypeInput.value = svccBaseFrequency.value;
+            }
+            return true;
+        }
+
+        if (svccBaseFrequency) {
+            svccBaseFrequency.addEventListener('change', () => {
+                occurrenceWrapper.style.display = svccBaseFrequency.value === 'MONTHLY' ? 'block' : 'none';
+                syncType();
+            });
+            svccOccurrence.addEventListener('change', syncType);
+            syncType();
+        }
+    </script>
+@endsection
