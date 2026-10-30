@@ -1,6 +1,6 @@
-@extends('layouts.themes.main')
+@extends('admin.layouts.themes.main')
 
-@section('title', 'Home - Dashboard')
+@section('title', 'Home')
 
 @section('content')
     <div class="content-header">
@@ -22,36 +22,16 @@
     {{-- Main Content --}}
     <section class="content">
 
-        @include('layouts.partials.onclick')
+        @include('admin.layouts.partials.onclick')
 
         @php
-            // Define roles per tab (EASY TO UPDATE)
-            $dashboardRoles = ['SUPERADMIN', 'ADMIN', 'MANAGER', 'ACCOUNTING OFFICER', 'APPOINTMENT CLERK', 'QUALITY OFFICER']; // can see dashboard
+            // Roles that can see announcements (EASY TO UPDATE)
             $announcementRoles = [
                 'SUPERADMIN',
                 'ADMIN',
-                'MANAGER',
-                'ACCOUNTING OFFICER',
-                'BILLING OFFICER',
-                'DATA OFFICER',
-                'PROFILING OFFICER',
-                'APPOINTMENT CLERK',
-                'BOOKING OFFICER',
-                'ASSESSMENT OFFICER',
-                'SCHEDULING OFFICER',
-                'SALES OFFICER',
-                'QUALITY OFFICER'
-            ]; // can see announcements
+            ];
 
             // Check access
-            $canViewDashboard = false;
-            foreach ($dashboardRoles as $role) {
-                if (session($role) == '1') {
-                    $canViewDashboard = true;
-                    break;
-                }
-            }
-
             $canViewAnnouncements = false;
             foreach ($announcementRoles as $role) {
                 if (session($role) == '1') {
@@ -59,43 +39,24 @@
                     break;
                 }
             }
-
-            // Determine default active tab
-            if ($canViewDashboard) {
-                $activeTab = 'dashboard';
-            } else {
-                $activeTab = 'announcements';
-            }
         @endphp
 
         <ul class="nav nav-tabs" role="tablist">
-
             @if ($canViewAnnouncements)
                 <li class="nav-item">
-                    <a class="nav-link {{ $activeTab == 'announcements' ? 'active' : '' }}" id="announcements-tab"
-                        data-toggle="tab" href="#announcements-content" role="tab">
+                    <a class="nav-link active" id="announcements-tab" data-toggle="tab"
+                        href="#announcements-content" role="tab">
                         Announcements
                     </a>
                 </li>
             @endif
-
-            @if ($canViewDashboard)
-                <li class="nav-item">
-                    <a class="nav-link {{ $activeTab == 'dashboard' ? 'active' : '' }}" id="dashboard-tab" data-toggle="tab"
-                        href="#dashboard-content" role="tab">
-                        Dashboard
-                    </a>
-                </li>
-            @endif
-
         </ul>
 
         <div class="tab-content">
 
             <!-- Announcements -->
             @if ($canViewAnnouncements)
-                <div class="tab-pane fade {{ $activeTab == 'announcements' ? 'show active' : '' }}" id="announcements-content"
-                    role="tabpanel">
+                <div class="tab-pane fade show active" id="announcements-content" role="tabpanel">
                     <section class="content">
                         <div class="container-fluid">
                             <div class="row mt-3">
@@ -233,13 +194,6 @@
                 </div>
             @endif
 
-            {{-- Dashboard --}}
-            @if ($canViewDashboard)
-                <div class="tab-pane fade {{ $activeTab == 'dashboard' ? 'show active' : '' }}" id="dashboard-content"
-                    role="tabpanel">
-                    @include('home.dashboard')
-                </div>
-            @endif
         </div>
     </section>
 
