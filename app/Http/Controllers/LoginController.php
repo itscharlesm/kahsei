@@ -34,10 +34,6 @@ class LoginController extends Controller
                     return redirect()->action([AdminController::class, 'home']);
                 }
 
-                if ($user->utyp_id == 3) {
-                    return redirect()->action([ClientController::class, 'home']);
-                }
-
                 alert()->error(
                     'Access Denied',
                     'Your account does not have permission to access the system.'

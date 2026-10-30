@@ -213,7 +213,6 @@ function setUserSessionVariables($user)
 {
     Session::put('usr_id', $user->usr_id);
     Session::put('usr_uuid', $user->usr_uuid);
-    Session::put('branch_id', $user->branch_id);
     Session::put('utyp_id', $user->utyp_id);
     Session::put('usr_last_name', $user->usr_last_name);
     Session::put('usr_first_name', $user->usr_first_name);
@@ -232,14 +231,6 @@ function setUserSessionVariables($user)
         ->orderBy('r.rol_id', 'ASC') // change if using priority column
         ->select('r.rol_name')
         ->first();
-
-    // Fetch branch name
-    $branch = DB::table('branches')
-        ->where('branch_id', $user->branch_id)
-        ->select('branch_name')
-        ->first();
-
-    Session::put('branch_name', $branch ? $branch->branch_name : 'No Branch');
 
     // Store highest role name
     Session::put('role_name', $highestRole ? $highestRole->rol_name : 'No Role');
