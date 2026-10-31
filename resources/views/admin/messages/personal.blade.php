@@ -1,7 +1,7 @@
-@extends('layouts.themes.main')
+@extends('admin.layouts.themes.main')
 
 @section('page_styles')
-    @include('messages.partials.styles')
+    @include('admin.messages.partials.styles')
 @endsection
 
 @section('content')
@@ -27,13 +27,13 @@
     </div>
 
     <section class="content">
-        @include('layouts.partials.onclick')
-        @include('layouts.partials.alerts')
+        @include('admin.layouts.partials.onclick')
+        @include('admin.layouts.partials.alerts')
 
         <div class="container-fluid">
             <div class="row messages-shell messages-panel">
                 <div class="col-md-4 col-lg-3 px-0 d-none d-md-block" id="msg-sidebar">
-                    @include('messages.partials.sidebar', [
+                    @include('admin.messages.partials.sidebar', [
                         'conversations' => $conversations,
                         'search' => $search,
                         'searchAction' => url('messages/chat/' . $mesg_group_id),
@@ -43,7 +43,7 @@
 
                 <div class="col-12 col-md-8 col-lg-9 px-0 d-flex flex-column messages-active-chat-panel" id="msg-chat-panel">
                     <div class="card mb-0 messages-thread-card messages-active-chat-card">
-                        @include('messages.partials.thread_header', ['chatContext' => $chatContext])
+                        @include('admin.messages.partials.thread_header', ['chatContext' => $chatContext])
 
                         <div class="messages-thread-list" id="chatMessages">
                             @if ($messages->hasPages() && $messages->currentPage() > 1)
@@ -191,7 +191,7 @@
         </div>
     </section>
 
-    @include('messages.partials.compose_modal', ['users' => $users])
+    @include('admin.messages.partials.compose_modal', ['users' => $users])
 
     <div class="modal fade" id="editMessageModal" tabindex="-1" role="dialog" aria-labelledby="editMessageModalLabel">
         <div class="modal-dialog" role="document">
@@ -236,5 +236,5 @@
 @endsection
 
 @section('page_scripts')
-    @include('messages.partials.scripts')
+    @include('admin.messages.partials.scripts')
 @endsection

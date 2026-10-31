@@ -31,7 +31,7 @@ class MessageController extends Controller
         $conversations = $this->getConversationRail($currentUserId, $search);
         $users = $this->getComposeUsers($currentUserId);
 
-        return view('messages.main', compact('conversations', 'users', 'search'));
+        return view('admin.messages.main', compact('conversations', 'users', 'search'));
     }
 
     public function personal(Request $request, $mesg_group_id)
@@ -46,7 +46,7 @@ class MessageController extends Controller
             ->where('mesg_active', 1)
             ->exists();
 
-        if (! $isMember) {
+        if (!$isMember) {
             abort(403, 'Unauthorized');
         }
 
@@ -65,7 +65,7 @@ class MessageController extends Controller
             ->get();
 
         // Determine if group or private
-        $isGroup = $members->count() > 2 || ! empty($groupInfo->mesg_group_name);
+        $isGroup = $members->count() > 2 || !empty($groupInfo->mesg_group_name);
 
         // Fetch messages paginated (oldest first for chat display)
         $messages = DB::table('messages as m')
@@ -96,7 +96,7 @@ class MessageController extends Controller
         $users = $this->getComposeUsers($currentUserId);
         $chatContext = $this->buildChatContext($groupInfo, $members, $currentUserId);
 
-        return view('messages.personal', compact(
+        return view('admin.messages.personal', compact(
             'messages',
             'members',
             'isGroup',
@@ -123,14 +123,14 @@ class MessageController extends Controller
             ->where('mesg_active', 1)
             ->exists();
 
-        if (! $isMember) {
+        if (!$isMember) {
             abort(403);
         }
 
         $payload = $this->validateMessagePayload($request);
         $this->createMessage((int) $request->mesg_group_id, (int) $currentUserId, $payload);
 
-        return redirect()->to(url('messages/chat/'.$request->mesg_group_id));
+        return redirect()->to(url('messages/chat/' . $request->mesg_group_id));
     }
 
     public function renameGroup(Request $request, $mesg_group_id)
@@ -154,7 +154,7 @@ class MessageController extends Controller
             ]);
 
         return redirect()
-            ->to(url('messages/chat/'.$mesg_group_id))
+            ->to(url('messages/chat/' . $mesg_group_id))
             ->with('successMessage', 'Group chat renamed successfully.');
     }
 
@@ -170,10 +170,10 @@ class MessageController extends Controller
 
         $avatar = $validated['group_avatar'];
         $oldAvatar = $this->getCurrentGroupAvatar($groupId);
-        $fileName = 'group_'.$groupId.'_'.time().'_'.generateuuid().'.'.strtolower($avatar->getClientOriginalExtension());
+        $fileName = 'group_' . $groupId . '_' . time() . '_' . generateuuid() . '.' . strtolower($avatar->getClientOriginalExtension());
         $folderPath = public_path('images/messages/group_images');
 
-        if (! is_dir($folderPath)) {
+        if (!is_dir($folderPath)) {
             mkdir($folderPath, 0755, true);
         }
 
@@ -189,7 +189,7 @@ class MessageController extends Controller
         $this->deleteUnusedGroupAvatar($oldAvatar, $groupId);
 
         return redirect()
-            ->to(url('messages/chat/'.$groupId))
+            ->to(url('messages/chat/' . $groupId))
             ->with('successMessage', 'Group chat avatar updated successfully.');
     }
 
@@ -210,7 +210,7 @@ class MessageController extends Controller
         $this->deleteUnusedGroupAvatar($oldAvatar, $groupId);
 
         return redirect()
-            ->to(url('messages/chat/'.$groupId))
+            ->to(url('messages/chat/' . $groupId))
             ->with('successMessage', 'Group chat avatar removed successfully.');
     }
 
@@ -240,7 +240,7 @@ class MessageController extends Controller
                 $allParticipants = array_unique(array_merge([$currentUserId], $recipients));
                 sort($allParticipants);
 
-                if (! isset($groupId)) {
+                if (!isset($groupId)) {
                     // Try to find existing group with EXACTLY these members
                     $existingGroupId = $this->find_exact_group($allParticipants);
 
@@ -278,7 +278,7 @@ class MessageController extends Controller
             throw $exception;
         }
 
-        return redirect()->to(url('messages/chat/'.$groupId));
+        return redirect()->to(url('messages/chat/' . $groupId));
     }
 
     public function unsend(Request $request, $mes_id)
@@ -295,7 +295,7 @@ class MessageController extends Controller
         Cache::forget($this->messageImageCacheKey((int) $message->mes_id));
 
         return redirect()
-            ->to(url('messages/chat/'.$message->mesg_group_id))
+            ->to(url('messages/chat/' . $message->mesg_group_id))
             ->with('success', 'Message unsent successfully.');
     }
 
@@ -318,7 +318,7 @@ class MessageController extends Controller
 
         if ($validator->fails()) {
             return redirect()
-                ->to(url('messages/chat/'.$message->mesg_group_id))
+                ->to(url('messages/chat/' . $message->mesg_group_id))
                 ->withErrors($validator, 'editMessage')
                 ->withInput()
                 ->with('editMessageId', $message->mes_id);
@@ -332,7 +332,7 @@ class MessageController extends Controller
             ]);
 
         return redirect()
-            ->to(url('messages/chat/'.$message->mesg_group_id))
+            ->to(url('messages/chat/' . $message->mesg_group_id))
             ->with('success', 'Message edited successfully.');
     }
 
@@ -342,10 +342,10 @@ class MessageController extends Controller
         $token = $request->query('token');
 
         if (
-            ! is_array($access)
-            || ! is_string($token)
-            || ! isset($access['path'], $access['token_hash'])
-            || ! hash_equals((string) $access['token_hash'], hash('sha256', $token))
+            !is_array($access)
+            || !is_string($token)
+            || !isset($access['path'], $access['token_hash'])
+            || !hash_equals((string) $access['token_hash'], hash('sha256', $token))
         ) {
             abort(404);
         }
@@ -360,7 +360,7 @@ class MessageController extends Controller
 
         $storage = Storage::disk($imageDisk);
 
-        if (! $storage->exists($imagePath)) {
+        if (!$storage->exists($imagePath)) {
             abort(404);
         }
 
@@ -381,7 +381,7 @@ class MessageController extends Controller
     {
         if (
             (int) $message->mes_active !== 1
-            || ! $this->isValidMessageImagePath($message->mes_image)
+            || !$this->isValidMessageImagePath($message->mes_image)
         ) {
             return null;
         }
@@ -389,7 +389,7 @@ class MessageController extends Controller
         $expiresAt = Carbon::now()->addMinutes(max(1, (int) config('session.lifetime', 120)));
         $token = hash_hmac(
             'sha256',
-            (int) $message->mes_id.'|'.$message->mes_image,
+            (int) $message->mes_id . '|' . $message->mes_image,
             (string) config('app.key')
         );
         Cache::put(
@@ -409,7 +409,7 @@ class MessageController extends Controller
 
     private function messageImageCacheKey(int $messageId): string
     {
-        return 'message-image:'.$messageId;
+        return 'message-image:' . $messageId;
     }
 
     private function find_direct_group(int $currentUserId, int $recipientId): ?int
@@ -479,7 +479,7 @@ class MessageController extends Controller
             ->where('mes_id', $messageId)
             ->first();
 
-        if (! $message) {
+        if (!$message) {
             abort(404);
         }
 
@@ -497,7 +497,7 @@ class MessageController extends Controller
             ->where('mesg_active', 1)
             ->exists();
 
-        if (! $isMember) {
+        if (!$isMember) {
             abort(403);
         }
 
@@ -517,7 +517,7 @@ class MessageController extends Controller
 
         $content = $this->normalizeMessageContent($validated['mes_content'] ?? null);
 
-        if ($content === '' && ! $request->hasFile('mes_image')) {
+        if ($content === '' && !$request->hasFile('mes_image')) {
             throw ValidationException::withMessages([
                 'mes_content' => 'Write a message or attach an image.',
             ]);
@@ -563,16 +563,16 @@ class MessageController extends Controller
 
     private function storeMessageImage($image): ?string
     {
-        if (! $image) {
+        if (!$image) {
             return null;
         }
 
         $extension = strtolower($image->getClientOriginalExtension());
-        $fileName = generateuuid().'.'.$extension;
-        $imagePath = self::MESSAGE_IMAGE_DIRECTORY.'/'.$fileName;
+        $fileName = generateuuid() . '.' . $extension;
+        $imagePath = self::MESSAGE_IMAGE_DIRECTORY . '/' . $fileName;
         $storage = Storage::disk('public');
 
-        if (! $storage->exists(self::MESSAGE_IMAGE_DIRECTORY) && ! $storage->makeDirectory(self::MESSAGE_IMAGE_DIRECTORY)) {
+        if (!$storage->exists(self::MESSAGE_IMAGE_DIRECTORY) && !$storage->makeDirectory(self::MESSAGE_IMAGE_DIRECTORY)) {
             throw new RuntimeException('Unable to store the message image.');
         }
 
@@ -589,7 +589,7 @@ class MessageController extends Controller
 
         try {
             if ($extension === 'png') {
-                if (! imageistruecolor($source)) {
+                if (!imageistruecolor($source)) {
                     imagepalettetotruecolor($source);
                 }
 
@@ -607,7 +607,7 @@ class MessageController extends Controller
             imagedestroy($source);
         }
 
-        if (! $stored) {
+        if (!$stored) {
             $storage->delete($imagePath);
 
             throw new RuntimeException('Unable to store the message image.');
@@ -632,17 +632,17 @@ class MessageController extends Controller
 
     private function messageImageDisk($imagePath): ?string
     {
-        if (! is_string($imagePath)) {
+        if (!is_string($imagePath)) {
             return null;
         }
 
         $filePattern = '/[a-z0-9]{32}\.(?:jpe?g|png|webp)$';
 
-        if (preg_match('#^'.self::MESSAGE_IMAGE_DIRECTORY.$filePattern.'#', $imagePath) === 1) {
+        if (preg_match('#^' . self::MESSAGE_IMAGE_DIRECTORY . $filePattern . '#', $imagePath) === 1) {
             return 'public';
         }
 
-        if (preg_match('#^'.self::LEGACY_MESSAGE_IMAGE_DIRECTORY.$filePattern.'#', $imagePath) === 1) {
+        if (preg_match('#^' . self::LEGACY_MESSAGE_IMAGE_DIRECTORY . $filePattern . '#', $imagePath) === 1) {
             return 'local';
         }
 
@@ -656,14 +656,14 @@ class MessageController extends Controller
             ->where('mesg_active', 1)
             ->distinct()
             ->pluck('usr_id')
-            ->map(fn ($userId) => (int) $userId);
+            ->map(fn($userId) => (int) $userId);
 
-        if (! $activeMemberIds->contains($currentUserId)) {
+        if (!$activeMemberIds->contains($currentUserId)) {
             abort(403, 'Unauthorized');
         }
 
         if ($activeMemberIds->count() <= 2) {
-            abort(403, 'Only group chats can be '.$action.'.');
+            abort(403, 'Only group chats can be ' . $action . '.');
         }
 
         return $activeMemberIds;
@@ -695,7 +695,7 @@ class MessageController extends Controller
             return;
         }
 
-        $path = public_path('images/messages/group_images/'.basename($fileName));
+        $path = public_path('images/messages/group_images/' . basename($fileName));
 
         if (is_file($path)) {
             unlink($path);
@@ -760,7 +760,7 @@ class MessageController extends Controller
         $items = collect($conversations instanceof \Illuminate\Pagination\LengthAwarePaginator ? $conversations->items() : $conversations->all());
         $groupIds = $items->pluck('mesg_group_id')->filter()->unique()->values();
 
-        if ($activeGroupId && $search === '' && ! $groupIds->contains($activeGroupId)) {
+        if ($activeGroupId && $search === '' && !$groupIds->contains($activeGroupId)) {
             $activeConversation = $this->getConversationByGroupId($currentUserId, $activeGroupId);
 
             if ($activeConversation) {
@@ -835,13 +835,13 @@ class MessageController extends Controller
     private function formatConversationListItem($conversation, $members, int $currentUserId, ?int $activeGroupId = null, string $search = '')
     {
         $otherMembers = $members->where('usr_id', '!=', $currentUserId)->values();
-        $isGroup = $members->count() > 2 || ! empty($conversation->mesg_group_name);
+        $isGroup = $members->count() > 2 || !empty($conversation->mesg_group_name);
 
-        if (! empty($conversation->mesg_group_name)) {
+        if (!empty($conversation->mesg_group_name)) {
             $title = $conversation->mesg_group_name;
         } else {
             $title = $otherMembers
-                ->map(fn ($member) => trim($member->usr_first_name.' '.$member->usr_last_name))
+                ->map(fn($member) => trim($member->usr_first_name . ' ' . $member->usr_last_name))
                 ->filter()
                 ->implode(', ');
         }
@@ -855,17 +855,17 @@ class MessageController extends Controller
             ? self::UNSENT_MESSAGE_PLACEHOLDER
             : ($this->normalizeMessageContent($conversation->mes_content) !== ''
                 ? $conversation->mes_content
-                : (! empty($conversation->mes_image) ? 'Image' : ''));
-        $preview = $isGroup && ! $isSelf
-            ? $conversation->sender_name.': '.$messagePreview
-            : ($isSelf ? 'You: '.$messagePreview : $messagePreview);
+                : (!empty($conversation->mes_image) ? 'Image' : ''));
+        $preview = $isGroup && !$isSelf
+            ? $conversation->sender_name . ': ' . $messagePreview
+            : ($isSelf ? 'You: ' . $messagePreview : $messagePreview);
 
         $avatarUrl = null;
         $avatarIcon = $isGroup ? 'fas fa-users' : 'fas fa-user';
 
-        if ($isGroup && ! empty($conversation->mesg_group_image)) {
-            $avatarUrl = asset('images/messages/group_images/'.$conversation->mesg_group_image);
-        } elseif (! $isGroup) {
+        if ($isGroup && !empty($conversation->mesg_group_image)) {
+            $avatarUrl = asset('images/messages/group_images/' . $conversation->mesg_group_image);
+        } elseif (!$isGroup) {
             $firstOther = $otherMembers->first();
             $avatarUrl = asset(getAvatar($firstOther->usr_id ?? $currentUserId));
         }
@@ -887,20 +887,20 @@ class MessageController extends Controller
             'last_message_label' => Carbon::parse($conversation->last_message_date)->format('M j'),
             'avatar_url' => $avatarUrl,
             'avatar_icon' => $avatarIcon,
-            'link' => url('messages/chat/'.$conversation->mesg_group_id).(! empty($query) ? '?'.http_build_query($query) : ''),
+            'link' => url('messages/chat/' . $conversation->mesg_group_id) . (!empty($query) ? '?' . http_build_query($query) : ''),
         ];
     }
 
     private function buildChatContext($groupInfo, $members, int $currentUserId)
     {
         $otherMembers = $members->where('usr_id', '!=', $currentUserId)->values();
-        $isGroup = $members->count() > 2 || ! empty($groupInfo->mesg_group_name);
+        $isGroup = $members->count() > 2 || !empty($groupInfo->mesg_group_name);
 
-        if (! empty($groupInfo->mesg_group_name)) {
+        if (!empty($groupInfo->mesg_group_name)) {
             $title = $groupInfo->mesg_group_name;
         } else {
             $title = $otherMembers
-                ->map(fn ($member) => trim($member->usr_first_name.' '.$member->usr_last_name))
+                ->map(fn($member) => trim($member->usr_first_name . ' ' . $member->usr_last_name))
                 ->filter()
                 ->implode(', ');
         }
@@ -910,7 +910,7 @@ class MessageController extends Controller
         }
 
         if ($isGroup) {
-            $subtitle = $members->count().' members';
+            $subtitle = $members->count() . ' members';
         } else {
             $subtitle = 'Direct conversation';
         }
@@ -918,9 +918,9 @@ class MessageController extends Controller
         $avatarUrl = null;
         $avatarIcon = $isGroup ? 'fas fa-users' : 'fas fa-user';
 
-        if ($isGroup && ! empty($groupInfo->mesg_group_image)) {
-            $avatarUrl = asset('images/messages/group_images/'.$groupInfo->mesg_group_image);
-        } elseif (! $isGroup) {
+        if ($isGroup && !empty($groupInfo->mesg_group_image)) {
+            $avatarUrl = asset('images/messages/group_images/' . $groupInfo->mesg_group_image);
+        } elseif (!$isGroup) {
             $firstOther = $otherMembers->first();
             $avatarUrl = asset(getAvatar($firstOther->usr_id ?? $currentUserId));
         }
@@ -932,7 +932,7 @@ class MessageController extends Controller
             'is_group' => $isGroup,
             'can_rename' => $members->count() > 2,
             'can_update_avatar' => $members->count() > 2,
-            'has_group_avatar' => $isGroup && ! empty($groupInfo->mesg_group_image),
+            'has_group_avatar' => $isGroup && !empty($groupInfo->mesg_group_image),
             'avatar_url' => $avatarUrl,
             'avatar_icon' => $avatarIcon,
         ];

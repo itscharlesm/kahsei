@@ -38,7 +38,7 @@
 
     <div class="messages-list">
         @forelse ($conversations as $conversation)
-            @include('messages.partials.sidebar_item', ['conversation' => $conversation])
+            @include('admin.messages.partials.sidebar_item', ['conversation' => $conversation])
         @empty
             <div class="messages-empty-state">
                 <i class="fas {{ !empty($search) ? 'fa-search' : 'fa-comments' }} fa-2x mb-3 d-block"></i>
@@ -54,7 +54,7 @@
 
     @if ($conversations instanceof \Illuminate\Pagination\LengthAwarePaginator && $conversations->hasPages())
         <div class="messages-pagination">
-            {{ $conversations->onEachSide(1)->links('messages.partials.pagination') }}
+            {{ $conversations->onEachSide(1)->links('admin.messages.partials.pagination') }}
         </div>
     @endif
 </div>

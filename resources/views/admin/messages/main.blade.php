@@ -1,7 +1,7 @@
-@extends('layouts.themes.main')
+@extends('admin.layouts.themes.main')
 
 @section('page_styles')
-    @include('messages.partials.styles')
+    @include('admin.messages.partials.styles')
 @endsection
 
 @section('content')
@@ -24,13 +24,13 @@
     </div>
 
     <section class="content">
-        @include('layouts.partials.onclick')
-        @include('layouts.partials.alerts')
+        @include('admin.layouts.partials.onclick')
+        @include('admin.layouts.partials.alerts')
 
         <div class="container-fluid">
             <div class="row messages-shell messages-panel">
                 <div class="col-12 col-md-4 col-lg-3 px-0" id="msg-sidebar">
-                    @include('messages.partials.sidebar', [
+                    @include('admin.messages.partials.sidebar', [
                         'conversations' => $conversations,
                         'search' => $search,
                         'searchAction' => url('messages'),
@@ -54,9 +54,9 @@
         </div>
     </section>
 
-    @include('messages.partials.compose_modal', ['users' => $users])
+    @include('admin.messages.partials.compose_modal', ['users' => $users])
 @endsection
 
 @section('page_scripts')
-    @include('messages.partials.scripts')
+    @include('admin.messages.partials.scripts')
 @endsection
