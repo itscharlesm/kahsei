@@ -1,4 +1,4 @@
-@extends('layouts.themes.main')
+@extends('admin.layouts.themes.main')
 
 @section('content')
     {{-- Content Header --}}
@@ -23,9 +23,9 @@
 
     {{-- Main Content --}}
     <section class="content">
-        @include('layouts.partials.onclick')
-        @include('layouts.partials.alerts')
-        @include('layouts.partials.modal_style')
+        @include('admin.layouts.partials.onclick')
+        @include('admin.layouts.partials.alerts')
+        @include('admin.layouts.partials.modal_style')
         <div class="container-fluid">
             <div class="card">
                 <div class="card-body overflow-auto">

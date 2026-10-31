@@ -116,20 +116,6 @@ Route::middleware('role:SUPERADMIN,ADMIN,MANAGER,DATA OFFICER')->group(function 
     Route::post('management/addresses/update/{add_id}', [ManagementController::class, 'addresses_update']);
     Route::post('management/addresses/delete/{add_id}', [ManagementController::class, 'addresses_delete']);
     Route::post('management/addresses/restore/{add_id}', [ManagementController::class, 'addresses_restore']);
-    // - Chemicals
-    Route::get('management/chemicals/active', [ManagementController::class, 'chemicals_active']);
-    Route::get('management/chemicals/deleted', [ManagementController::class, 'chemicals_deleted']);
-    Route::post('management/chemicals/add', [ManagementController::class, 'chemicals_add']);
-    Route::post('management/chemicals/update/{chem_id}', [ManagementController::class, 'chemicals_update']);
-    Route::post('management/chemicals/delete/{chem_id}', [ManagementController::class, 'chemicals_delete']);
-    Route::post('management/chemicals/restore/{chem_id}', [ManagementController::class, 'chemicals_restore']);
-    // - Branches
-    Route::get('management/branches/active', [ManagementController::class, 'branches_active']);
-    Route::get('management/branches/deleted', [ManagementController::class, 'branches_deleted']);
-    Route::post('management/branches/add', [ManagementController::class, 'branches_add']);
-    Route::post('management/branches/update/{branch_id}', [ManagementController::class, 'branches_update']);
-    Route::post('management/branches/delete/{branch_id}', [ManagementController::class, 'branches_delete']);
-    Route::post('management/branches/restore/{branch_id}', [ManagementController::class, 'branches_restore']);
 });
 Route::middleware('role:SUPERADMIN,ADMIN')->group(function () {
     // - Logins

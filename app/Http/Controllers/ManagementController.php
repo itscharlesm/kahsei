@@ -217,7 +217,7 @@ class ManagementController extends Controller
 
         $logs = $query->paginate(1000);
 
-        return view('management.logs.login', compact('logs', 'search'));
+        return view('admin.management.logs.login', compact('logs', 'search'));
     }
 
     public function user_histories(Request $request)
@@ -253,7 +253,7 @@ class ManagementController extends Controller
 
         $logs = $query->paginate(1000);
 
-        return view('management.logs.user', compact('logs', 'search'));
+        return view('admin.management.logs.user', compact('logs', 'search'));
     }
     // END LOGS
 }
