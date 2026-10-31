@@ -47,7 +47,7 @@
                     <span aria-hidden="true">&times;</span>
                 </button>
             </div>
-            <form method="POST" action="{{ action('App\Http\Controllers\ClientController@account_update_password') }}">
+            <form method="POST" action="{{ action('App\Http\Controllers\UserController@account_update_password') }}">
                 {{ csrf_field() }}
                 <div class="modal-body">
                     <div class="form-group">

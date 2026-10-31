@@ -107,6 +107,30 @@ Route::middleware('role:SUPERADMIN,ADMIN,MANAGER,PROFILING OFFICER')->group(func
 // ------------------------------------------------------------------------------------------------------------------------------------ //
 
 // ------------------------------------------------------------------------------------------------------------------------------------ //
+// MANAGEMENT
+Route::middleware('role:SUPERADMIN,ADMIN,MANAGER,DATA OFFICER')->group(function () {
+    // - Addresses
+    Route::get('management/addresses/active', [ManagementController::class, 'addresses_active']);
+    Route::get('management/addresses/deleted', [ManagementController::class, 'addresses_deleted']);
+    Route::post('management/addresses/add', [ManagementController::class, 'addresses_add']);
+    Route::post('management/addresses/update/{add_id}', [ManagementController::class, 'addresses_update']);
+    Route::post('management/addresses/delete/{add_id}', [ManagementController::class, 'addresses_delete']);
+    Route::post('management/addresses/restore/{add_id}', [ManagementController::class, 'addresses_restore']);
+    // - Chemicals
+    Route::get('management/chemicals/active', [ManagementController::class, 'chemicals_active']);
+    Route::get('management/chemicals/deleted', [ManagementController::class, 'chemicals_deleted']);
+    Route::post('management/chemicals/add', [ManagementController::class, 'chemicals_add']);
+    Route::post('management/chemicals/update/{chem_id}', [ManagementController::class, 'chemicals_update']);
+    Route::post('management/chemicals/delete/{chem_id}', [ManagementController::class, 'chemicals_delete']);
+    Route::post('management/chemicals/restore/{chem_id}', [ManagementController::class, 'chemicals_restore']);
+    // - Branches
+    Route::get('management/branches/active', [ManagementController::class, 'branches_active']);
+    Route::get('management/branches/deleted', [ManagementController::class, 'branches_deleted']);
+    Route::post('management/branches/add', [ManagementController::class, 'branches_add']);
+    Route::post('management/branches/update/{branch_id}', [ManagementController::class, 'branches_update']);
+    Route::post('management/branches/delete/{branch_id}', [ManagementController::class, 'branches_delete']);
+    Route::post('management/branches/restore/{branch_id}', [ManagementController::class, 'branches_restore']);
+});
 Route::middleware('role:SUPERADMIN,ADMIN')->group(function () {
     // - Logins
     Route::get('histories/logins', [ManagementController::class, 'login_histories']);
@@ -141,55 +165,3 @@ Route::get('/laravel/clear-all', function () {
 });
 // ------------------------------------------------------------------------------------------------------------------------------------ //
 // -----------------------------------------------------ADMIN SIDE--------------------------------------------------------------------- //
-
-// ----------------------------------------------------CLIENT SIDE--------------------------------------------------------------------- //
-// REGISTRATION
-Route::get('client/registration', [ClientController::class, 'registration']);
-Route::post('client/registration', [ClientController::class, 'registration_store']);
-Route::middleware('client.auth')->group(function () {
-    // HOME
-    Route::get('client/home', [ClientController::class, 'home']);
-    // ACCOUNT
-    Route::get('client/account', [ClientController::class, 'account']);
-    Route::post('client/account/update', [ClientController::class, 'account_update']);
-    Route::post('client/account/address/add', [ClientController::class, 'account_address_add']);
-    Route::post('client/account/address/edit', [ClientController::class, 'account_address_edit']);
-    Route::post('client/account/update/password', [ClientController::class, 'account_update_password']);
-    // BOOK APPOINTMENT
-    Route::get('client/service/order/book', [ClientController::class, 'appointment_book']);
-    Route::post('client/service/order/book/save', [ClientController::class, 'appointment_book_save']);
-    // REQUESTED APPOINTMENT
-    Route::get('client/service/order/appointments/requested', [ClientController::class, 'requested_appointments']);
-    Route::get('client/service/order/appointments/requested/{svc_id}', [ClientController::class, 'requested_appointments_view']);
-    // ASSESSED APPOINTMENT
-    Route::get('client/service/order/appointments/assessed', [ClientController::class, 'assessed_appointments']);
-    Route::get('client/service/order/appointments/assessed/{svc_id}', [ClientController::class, 'assessed_appointments_view']);
-    // SCHEDULED APPOINTMENT
-    Route::get('client/service/order/appointments/scheduled', [ClientController::class, 'scheduled_appointments']);
-    Route::get('client/service/order/appointments/scheduled/{svc_id}', [ClientController::class, 'scheduled_appointments_view']);
-    // ONGOING APPOINTMENT
-    Route::get('client/service/order/appointments/ongoing', [ClientController::class, 'ongoing_appointments']);
-    Route::get('client/service/order/appointments/ongoing/{svc_id}', [ClientController::class, 'ongoing_appointments_view']);
-    Route::get('client/service/order/appointments/ongoing/track/{svc_id}', [AppointmentController::class, 'ongoing_appointments_view_track']);
-    // FINISHED APPOINTMENT
-    Route::get('client/service/order/appointments/finished', [ClientController::class, 'finished_appointments']);
-    Route::get('client/service/order/appointments/finished/{svc_id}', [ClientController::class, 'finished_appointments_view']);
-    // RATE SERVICE
-    Route::post('client/service/order/appointments/rate-service/{svc_id}', [ClientController::class, 'rate_service_appointments']);
-    // COMPLETED APPOINTMENT
-    Route::get('client/service/order/appointments/completed', [ClientController::class, 'completed_appointments']);
-    Route::get('client/service/order/appointments/completed/{svc_id}', [ClientController::class, 'completed_appointments_view']);
-    // SERVICE ORDER PAYMENTS
-    Route::get('client/service/order/payment/view/{svc_id}', [ClientController::class, 'service_order_payment_view']);
-    Route::post('client/service/order/payment/view/add/payment/{svc_id}', [ClientController::class, 'service_order_payment_view_add_payment']);
-    // BALANCE REPORT
-    Route::get('client/reports/balance', [ClientController::class, 'balance_report']);
-    Route::post('client/reports/balance/filter', [ClientController::class, 'filter_balance_report']);
-    // CLIENT REPORT
-    Route::get('client/reports/client', [ClientController::class, 'client_report']);
-    Route::post('client/reports/client/filter', [ClientController::class, 'filter_client_report']);
-    // BALANCE REPORT
-    Route::get('client/reports/balance', [ClientController::class, 'balance_report']);
-    Route::post('client/reports/balance/filter', [ClientController::class, 'filter_balance_report']);
-});
-// ----------------------------------------------------CLIENT SIDE--------------------------------------------------------------------- //
