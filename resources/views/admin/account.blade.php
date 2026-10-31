@@ -1,4 +1,4 @@
-@extends('layouts.themes.main')
+@extends('admin.layouts.themes.main')
 
 @section('content')
     {{-- Content Header --}}
@@ -22,9 +22,9 @@
 
     {{-- Main Content --}}
     <section class="content">
-        @include('layouts.partials.onclick')
-        @include('layouts.partials.alerts')
-        @include('layouts.partials.modal_style')
+        @include('admin.layouts.partials.onclick')
+        @include('admin.layouts.partials.alerts')
+        @include('admin.layouts.partials.modal_style')
         <div class="container-fluid">
             <div class="card">
                 <div class="card-header d-flex justify-content-between align-items-center">
@@ -186,11 +186,6 @@
                                                     {{ $addr->uadd_region }}
                                                 </p>
                                             @endif
-
-                                            <p class="mb-1 small">
-                                                <i class="fas fa-map-marker-alt text-muted mr-1"></i>
-                                                {{ $addr->uadd_latitude }}, {{ $addr->uadd_longitude }}
-                                            </p>
                                         </div>
                                         <div class="card-footer py-2">
                                             <button type="button" class="btn btn-outline-warning btn-sm btn-block"
@@ -317,38 +312,6 @@
                                                             </div>
                                                         </div>
 
-                                                        {{-- LATITUDE / LONGITUDE --}}
-                                                        <div class="col-md-6 mb-3">
-                                                            <label class="font-weight-bold">Latitude <span class="text-danger">*</span></label>
-                                                            <input type="text" class="form-control edit-address-latitude"
-                                                                id="edit_address_latitude_{{ $addr->uadd_id }}" name="latitude"
-                                                                value="{{ $addr->uadd_latitude }}" placeholder="Latitude">
-                                                        </div>
-                                                        <div class="col-md-6 mb-3">
-                                                            <label class="font-weight-bold">Longitude <span class="text-danger">*</span></label>
-                                                            <input type="text" class="form-control edit-address-longitude"
-                                                                id="edit_address_longitude_{{ $addr->uadd_id }}" name="longitude"
-                                                                value="{{ $addr->uadd_longitude }}" placeholder="Longitude">
-                                                        </div>
-
-                                                        <div class="col-md-12 mb-3">
-                                                            <button type="button" class="btn btn-info btn-sm edit-address-pin-map-btn"
-                                                                data-id="{{ $addr->uadd_id }}">
-                                                                <span class="fa fa-map-marker-alt"></span> Pin Map
-                                                            </button>
-                                                            <small class="text-muted ml-2">Click the map to change this address's location</small>
-                                                        </div>
-
-                                                        <div class="col-md-12 mb-3 edit-address-map-container"
-                                                            id="editAddressMapContainer-{{ $addr->uadd_id }}" style="display:none;">
-                                                            <div id="editAddressMap-{{ $addr->uadd_id }}"
-                                                                style="width:100%;height:350px;border:1px solid #ccc;border-radius:4px;"></div>
-                                                            <small class="text-muted">
-                                                                <span class="fa fa-info-circle"></span>
-                                                                Click anywhere on the map to repin the location. You can also drag the marker.
-                                                            </small>
-                                                        </div>
-
                                                     </div>
                                                 </div>
 
@@ -445,33 +408,6 @@
                                     <option value="">-- SELECT BARANGAY --</option>
                                 </select>
                                 <input type="hidden" name="barangay" id="modal_add_hidden_barangay">
-                            </div>
-
-                            {{-- LATITUDE / LONGITUDE --}}
-                            <div class="col-md-6 mb-3">
-                                <label class="font-weight-bold">Latitude <span class="text-danger">*</span></label>
-                                <input type="text" class="form-control" id="add_address_latitude" name="latitude"
-                                    placeholder="Latitude">
-                            </div>
-                            <div class="col-md-6 mb-3">
-                                <label class="font-weight-bold">Longitude <span class="text-danger">*</span></label>
-                                <input type="text" class="form-control" id="add_address_longitude" name="longitude"
-                                    placeholder="Longitude">
-                            </div>
-
-                            <div class="col-md-12 mb-3">
-                                <button type="button" class="btn btn-info btn-sm" id="addAddressPinMapBtn">
-                                    <span class="fa fa-map-marker-alt"></span> Pin Map
-                                </button>
-                                <small class="text-muted ml-2">Click the map to set this address's location</small>
-                            </div>
-
-                            <div class="col-md-12 mb-3" id="addAddressMapContainer" style="display:none;">
-                                <div id="addAddressMap" style="width:100%;height:350px;border:1px solid #ccc;border-radius:4px;"></div>
-                                <small class="text-muted">
-                                    <span class="fa fa-info-circle"></span>
-                                    Click anywhere on the map to pin the location. You can also drag the marker.
-                                </small>
                             </div>
 
                         </div>
@@ -693,205 +629,6 @@
                 })();
             @endforeach
 
-        });
-    </script>
-
-    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
-    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
-
-    {{-- Add Address Map Logic --}}
-    <script>
-        let addAddressMap = null;
-        let addAddressMarker = null;
-        let addAddressMapInitialized = false;
-
-        document.getElementById('addAddressPinMapBtn').addEventListener('click', function() {
-            const container = document.getElementById('addAddressMapContainer');
-
-            if (container.style.display === 'none') {
-                container.style.display = 'block';
-
-                if (!addAddressMapInitialized) {
-                    initAddAddressMap();
-                } else {
-                    setTimeout(() => addAddressMap.invalidateSize(), 100);
-                }
-            } else {
-                container.style.display = 'none';
-            }
-        });
-
-        function initAddAddressMap() {
-            addAddressMapInitialized = true;
-
-            const defaultLat = 7.1907;
-            const defaultLng = 125.4553;
-
-            addAddressMap = L.map('addAddressMap').setView([defaultLat, defaultLng], 13);
-
-            L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-                attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors',
-                maxZoom: 19,
-            }).addTo(addAddressMap);
-
-            if (navigator.geolocation) {
-                navigator.geolocation.getCurrentPosition(
-                    function(position) {
-                        addAddressMap.setView([position.coords.latitude, position.coords.longitude], 15);
-                    },
-                    function() {
-                        // Denied - stay on default
-                    }
-                );
-            }
-
-            // Give Leaflet a moment to size correctly since it was just unhidden
-            setTimeout(() => addAddressMap.invalidateSize(), 100);
-
-            addAddressMap.on('click', function(e) {
-                placeAddAddressMarker(e.latlng);
-            });
-        }
-
-        function placeAddAddressMarker(latlng) {
-            if (addAddressMarker) addAddressMap.removeLayer(addAddressMarker);
-
-            addAddressMarker = L.marker(latlng, { draggable: true }).addTo(addAddressMap);
-            addAddressMarker.bindPopup('📍 Address Location').openPopup();
-
-            updateAddAddressCoordinates(latlng);
-
-            addAddressMarker.on('dragend', function(event) {
-                updateAddAddressCoordinates(event.target.getLatLng());
-            });
-        }
-
-        function updateAddAddressCoordinates(latlng) {
-            document.getElementById('add_address_latitude').value = latlng.lat.toFixed(7);
-            document.getElementById('add_address_longitude').value = latlng.lng.toFixed(7);
-        }
-
-        // Reset when modal closes
-        $('#addAddressModal').on('hidden.bs.modal', function() {
-            document.getElementById('add_address_latitude').value = '';
-            document.getElementById('add_address_longitude').value = '';
-            document.getElementById('addAddressMapContainer').style.display = 'none';
-
-            if (addAddressMarker && addAddressMap) {
-                addAddressMap.removeLayer(addAddressMarker);
-                addAddressMarker = null;
-            }
-            if (addAddressMap) {
-                addAddressMap.remove();
-                addAddressMap = null;
-            }
-            addAddressMapInitialized = false;
-        });
-
-        // Manual validation on submit - required doesn't work on fields
-        // hidden inside display:none containers, so we check manually
-        document.querySelector('#addAddressModal form').addEventListener('submit', function(e) {
-            const lat = document.getElementById('add_address_latitude').value;
-            const lng = document.getElementById('add_address_longitude').value;
-
-            if (!lat || !lng) {
-                e.preventDefault();
-
-                // Open the map so the user can immediately pin their location
-                const container = document.getElementById('addAddressMapContainer');
-                container.style.display = 'block';
-
-                if (!addAddressMapInitialized) {
-                    initAddAddressMap();
-                } else {
-                    setTimeout(() => addAddressMap.invalidateSize(), 100);
-                }
-
-                alert('Please pin your address location on the map before saving.');
-            }
-        });
-    </script>
-
-    {{-- Edit Address Map Logic --}}
-    <script>
-        const editAddressMapInstances = {};
-
-        document.querySelectorAll('.edit-address-pin-map-btn').forEach(function(btn) {
-            btn.addEventListener('click', function() {
-                const id = this.dataset.id;
-                const container = document.getElementById('editAddressMapContainer-' + id);
-
-                if (container.style.display === 'none') {
-                    container.style.display = 'block';
-
-                    if (!editAddressMapInstances[id]) {
-                        initEditAddressMap(id);
-                    } else {
-                        setTimeout(() => editAddressMapInstances[id].map.invalidateSize(), 100);
-                    }
-                } else {
-                    container.style.display = 'none';
-                }
-            });
-        });
-
-        function initEditAddressMap(id) {
-            const latInput = document.getElementById('edit_address_latitude_' + id);
-            const lngInput = document.getElementById('edit_address_longitude_' + id);
-
-            const existingLat = parseFloat(latInput.value) || 7.1907;
-            const existingLng = parseFloat(lngInput.value) || 125.4553;
-
-            const map = L.map('editAddressMap-' + id).setView([existingLat, existingLng], 15);
-
-            L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-                attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors',
-                maxZoom: 19,
-            }).addTo(map);
-
-            let marker = null;
-
-            // Only auto-pin if this address already has coordinates
-            if (latInput.value && lngInput.value) {
-                marker = L.marker([existingLat, existingLng], { draggable: true }).addTo(map);
-                marker.bindPopup('📍 Address Location').openPopup();
-                marker.on('dragend', function(event) {
-                    updateEditAddressCoordinates(id, event.target.getLatLng());
-                });
-            }
-
-            map.on('click', function(e) {
-                if (marker) map.removeLayer(marker);
-
-                marker = L.marker(e.latlng, { draggable: true }).addTo(map);
-                marker.bindPopup('📍 Address Location').openPopup();
-                updateEditAddressCoordinates(id, e.latlng);
-
-                marker.on('dragend', function(event) {
-                    updateEditAddressCoordinates(id, event.target.getLatLng());
-                });
-            });
-
-            editAddressMapInstances[id] = { map, marker };
-        }
-
-        function updateEditAddressCoordinates(id, latlng) {
-            document.getElementById('edit_address_latitude_' + id).value = latlng.lat.toFixed(7);
-            document.getElementById('edit_address_longitude_' + id).value = latlng.lng.toFixed(7);
-        }
-
-        document.querySelectorAll('[id^="editAddressModal-"]').forEach(function(modal) {
-            $(modal).on('hidden.bs.modal', function() {
-                const id = this.id.replace('editAddressModal-', '');
-                const container = document.getElementById('editAddressMapContainer-' + id);
-
-                if (container) container.style.display = 'none';
-
-                if (editAddressMapInstances[id]) {
-                    editAddressMapInstances[id].map.remove();
-                    delete editAddressMapInstances[id];
-                }
-            });
         });
     </script>
 @endsection

@@ -8,6 +8,7 @@ use DB;
 
 class UserController extends Controller
 {
+    // ACCOUNT START
     public function account(Request $request)
     {
         $user = DB::table('users')
@@ -29,7 +30,7 @@ class UserController extends Controller
             ->orderBy('add_name')
             ->get(['add_id', 'add_name']);
 
-        return view('account', compact('user', 'regions', 'addresses', 'address_labels'));
+        return view('admin.account', compact('user', 'regions', 'addresses', 'address_labels'));
     }
 
     public function account_update(Request $request)
@@ -95,8 +96,6 @@ class UserController extends Controller
             'province' => 'nullable|string|max:100',
             'municipality' => 'nullable|string|max:100',
             'barangay' => 'nullable|string|max:100',
-            'latitude' => 'nullable|string|max:255',
-            'longitude' => 'nullable|string|max:255',
         ]);
 
         DB::table('user_addresses')->insert([
@@ -108,8 +107,6 @@ class UserController extends Controller
             'uadd_city' => strtoupper($request->municipality),
             'uadd_province' => strtoupper($request->province),
             'uadd_region' => strtoupper($request->region),
-            'uadd_latitude' => $request->latitude,
-            'uadd_longitude' => $request->longitude,
             'uadd_active' => 1,
         ]);
 
@@ -121,8 +118,6 @@ class UserController extends Controller
         $request->validate([
             'uadd_id' => 'required|integer',
             'street' => 'nullable|string|max:255',
-            'latitude' => 'nullable|string|max:255',
-            'longitude' => 'nullable|string|max:255',
         ]);
 
         $updateData = [
@@ -138,12 +133,6 @@ class UserController extends Controller
             $updateData['uadd_city'] = strtoupper($request->municipality);
         if ($request->barangay)
             $updateData['uadd_barangay'] = strtoupper($request->barangay);
-
-        // Only overwrite coordinates if the user actually repinned
-        if ($request->filled('latitude'))
-            $updateData['uadd_latitude'] = $request->latitude;
-        if ($request->filled('longitude'))
-            $updateData['uadd_longitude'] = $request->longitude;
 
         DB::table('user_addresses')
             ->where('uadd_id', $request->uadd_id)
@@ -181,4 +170,5 @@ class UserController extends Controller
         }
         return redirect()->action([AdminController::class, 'home']);
     }
+    // ACCOUNT END
 }
