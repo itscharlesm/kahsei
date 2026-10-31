@@ -36,7 +36,7 @@
                 @if (session('utyp_id') == 1)
                     {{-- Home --}}
                     <li class="nav-item">
-                        <a href="{{ url('admin/home') }}"
+                        <a href="{{ url('home') }}"
                             class="nav-link {{ request()->is('home') ? 'active' : '' }}">
                             <i class="nav-icon fas fa-home"></i>
                             <p>HOME</p>
