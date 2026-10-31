@@ -1,11 +1,11 @@
 <div class="card card-primary card-outline h-100 mb-0 messages-sidebar-card">
     <div class="messages-sidebar-header d-flex align-items-center justify-content-between">
         <div>
-            <div class="font-weight-bold">Chats</div>
+            <div class="fw-bold">Chats</div>
             <small class="text-muted">Find a conversation or start a new one.</small>
         </div>
 
-        <a href="#" data-toggle="modal" data-target="#composeModal"
+        <a href="#" data-bs-toggle="modal" data-bs-target="#composeModal"
             class="btn btn-primary btn-sm messages-compose-trigger" title="New Message">
             <span class="messages-compose-trigger-icon" aria-hidden="true">
                 <i class="fas fa-edit"></i>
@@ -22,16 +22,12 @@
             @endif
 
             <div class="input-group input-group-sm">
-                <div class="input-group-prepend">
-                    <span class="input-group-text bg-white">
-                        <i class="fas fa-search text-muted"></i>
-                    </span>
-                </div>
-                <input type="text" name="search" class="form-control border-left-0"
+                <span class="input-group-text bg-white">
+                    <i class="fas fa-search text-muted"></i>
+                </span>
+                <input type="text" name="search" class="form-control border-start-0"
                     placeholder="Search messages or people..." value="{{ $search }}">
-                <div class="input-group-append">
-                    <button type="submit" class="btn btn-primary">Search</button>
-                </div>
+                <button type="submit" class="btn btn-primary">Search</button>
             </div>
         </form>
     </div>
@@ -42,7 +38,7 @@
         @empty
             <div class="messages-empty-state">
                 <i class="fas {{ !empty($search) ? 'fa-search' : 'fa-comments' }} fa-2x mb-3 d-block"></i>
-                <div class="font-weight-bold mb-1">
+                <div class="fw-bold mb-1">
                     {{ !empty($search) ? 'No matching conversations' : 'No conversations yet' }}
                 </div>
                 <div>

@@ -1,8 +1,6 @@
 <script>
-    $(function() {
+    $(function () {
         var $composeModal = $('#composeModal');
-        var $groupAvatarModal = $('#groupAvatarModal');
-        var $renameGroupModal = $('#renameGroupModal');
         var $editMessageModal = $('#editMessageModal');
         var $editMessageForm = $('#editMessageForm');
         var $editMessageContent = $('#editMessageContent');
@@ -11,11 +9,18 @@
         var $messageImageInputs = $('.js-message-image-input');
         var $chatMessages = $('#chatMessages');
         var $messagesShell = $('.messages-shell');
-        var contentWrapper = document.querySelector('.content-wrapper');
-        var contentHeader = document.querySelector('.content-header');
-        var mainFooter = document.querySelector('.main-footer');
+        var contentWrapper = document.querySelector('.app-main');
+        var contentHeader = document.querySelector('.app-content-header');
+        var mainFooter = document.querySelector('.app-footer');
         var viewportFrame = null;
         var hasTopAnchor = window.location.search.indexOf('anchor=top') !== -1;
+
+        function showModal(selector) {
+            var el = document.querySelector(selector);
+            if (el) {
+                bootstrap.Modal.getOrCreateInstance(el).show();
+            }
+        }
 
         if ($recipientSelect.length) {
             $recipientSelect.select2({
@@ -76,12 +81,17 @@
                 return;
             }
 
+            var modalEl = $editMessageModal[0];
+
             $editMessageForm.attr('action', $trigger.attr('data-message-url'));
             $editMessageContent.val(typeof content === 'string' ? content : $trigger.attr('data-message-content'));
-            autoResize($editMessageContent);
-            $editMessageModal.one('shown.bs.modal', function() {
+
+            modalEl.addEventListener('shown.bs.modal', function () {
+                autoResize($editMessageContent);
                 $editMessageContent.trigger('focus');
-            }).modal('show');
+            }, { once: true });
+
+            bootstrap.Modal.getOrCreateInstance(modalEl).show();
         }
 
         function setMessageImageState($image, hasError) {
@@ -124,7 +134,7 @@
                 viewportBottom = window.visualViewport.offsetTop + window.visualViewport.height;
             }
 
-            $messagesShell.each(function() {
+            $messagesShell.each(function () {
                 var shellTop = this.getBoundingClientRect().top;
                 var visibleHeight = Math.max(0, viewportBottom - shellTop - 8);
 
@@ -137,7 +147,7 @@
                 window.cancelAnimationFrame(viewportFrame);
             }
 
-            viewportFrame = window.requestAnimationFrame(function() {
+            viewportFrame = window.requestAnimationFrame(function () {
                 viewportFrame = null;
                 updateMessageWorkspaceHeight();
             });
@@ -165,7 +175,7 @@
 
         if ($messageInput.length) {
             autoResize($messageInput);
-            $messageInput.on('input', function() {
+            $messageInput.on('input', function () {
                 autoResize($(this));
                 scheduleMessageWorkspaceUpdate();
             });
@@ -173,16 +183,16 @@
         }
 
         if ($editMessageContent.length) {
-            $editMessageContent.on('input', function() {
+            $editMessageContent.on('input', function () {
                 autoResize($(this));
             });
         }
 
-        $messageImageInputs.on('change', function() {
+        $messageImageInputs.on('change', function () {
             updateImagePreview($(this));
         });
 
-        $('.js-message-image-remove').on('click', function() {
+        $('.js-message-image-remove').on('click', function () {
             var $preview = $(this).closest('.messages-image-preview');
             var $input = $($preview.attr('data-input'));
 
@@ -193,18 +203,18 @@
             clearImagePreview($preview);
         });
 
-        $('.js-message-edit-trigger').on('click', function() {
+        $('.js-message-edit-trigger').on('click', function () {
             openEditMessageModal($(this));
         });
 
         $('.js-message-image')
-            .on('load', function() {
+            .on('load', function () {
                 setMessageImageState($(this), false);
             })
-            .on('error', function() {
+            .on('error', function () {
                 setMessageImageState($(this), true);
             })
-            .each(function() {
+            .each(function () {
                 // A deferred lazy image can be "complete" with no decoded width
                 // before the browser starts fetching it. Only restore already-loaded
                 // images here; the error event remains the source of truth for failures.
@@ -213,7 +223,7 @@
                 }
             });
 
-        $('.js-message-image-retry').on('click', function() {
+        $('.js-message-image-retry').on('click', function () {
             retryMessageImage($(this).closest('.js-message-image-container'));
         });
 
@@ -237,7 +247,7 @@
                 cancelButtonText: 'Cancel',
                 confirmButtonColor: options.confirmButtonColor || '#dc3545',
                 reverseButtons: true
-            }).then(function(result) {
+            }).then(function (result) {
                 if (result.isConfirmed) {
                     $form.data('confirmed', true);
                     $form.trigger('submit');
@@ -250,44 +260,44 @@
             return false;
         }
 
-        $('.js-message-unsend-form').on('submit', function(event) {
+        $('.js-message-unsend-form').on('submit', function (event) {
             if (!confirmMessageAction($(this), {
-                    title: 'Unsend message?',
-                    text: 'Everyone will see a placeholder instead.',
-                    confirmButtonText: 'Unsend'
-                })) {
+                title: 'Unsend message?',
+                text: 'Everyone will see a placeholder instead.',
+                confirmButtonText: 'Unsend'
+            })) {
                 event.preventDefault();
             }
         });
 
-        $('#removeGroupAvatarForm').on('submit', function(event) {
+        $('#removeGroupAvatarForm').on('submit', function (event) {
             if (!confirmMessageAction($(this), {
-                    title: 'Remove group avatar?',
-                    text: 'The default group icon will be shown.',
-                    confirmButtonText: 'Remove'
-                })) {
+                title: 'Remove group avatar?',
+                text: 'The default group icon will be shown.',
+                confirmButtonText: 'Remove'
+            })) {
                 event.preventDefault();
             }
         });
 
         @if ($errors->has('group_avatar'))
-            $groupAvatarModal.modal('show');
+            showModal('#groupAvatarModal');
         @endif
 
         @if ($errors->has('mesg_group_name'))
-            $renameGroupModal.modal('show');
+            showModal('#renameGroupModal');
         @endif
 
-        @if (session('editMessageId'))
-            var $failedEditTrigger = $('.js-message-edit-trigger').filter(function() {
-                return String($(this).attr('data-message-id')) === String({{ (int) session('editMessageId') }});
-            }).first();
-            var failedEditContent = @json(old('mes_content'));
+            @if (session('editMessageId'))
+                var $failedEditTrigger = $('.js-message-edit-trigger').filter(function () {
+                    return String($(this).attr('data-message-id')) === String({{ (int) session('editMessageId') }});
+                }).first();
+                var failedEditContent = @json(old('mes_content'));
 
-            if ($failedEditTrigger.length) {
-                openEditMessageModal($failedEditTrigger, failedEditContent);
-            }
-        @endif
+                if ($failedEditTrigger.length) {
+                    openEditMessageModal($failedEditTrigger, failedEditContent);
+                }
+            @endif
 
         if ($chatMessages.length && !hasTopAnchor) {
             $chatMessages.scrollTop($chatMessages[0].scrollHeight);

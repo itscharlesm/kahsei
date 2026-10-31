@@ -2,14 +2,14 @@
 
 @section('content')
     {{-- Content Header --}}
-    <div class="content-header">
+    <div class="app-content-header">
         <div class="container-fluid">
-            <div class="row mb-2">
+            <div class="row">
                 <div class="col-sm-6">
-                    <h1 class="m-0">Addresses</h1>
+                    <h3 class="mb-0">Addresses</h3>
                 </div>
                 <div class="col-sm-6">
-                    <ol class="breadcrumb float-sm-right">
+                    <ol class="breadcrumb float-sm-end">
                         <li class="breadcrumb-item">
                             <a href="{{ url('home') }}">Home</a>
                         </li>
@@ -22,7 +22,7 @@
     </div>
 
     {{-- Main Content --}}
-    <section class="content">
+    <div class="app-content">
         @include('layouts.partials.onclick')
         @include('layouts.partials.alerts')
         @include('layouts.partials.modal_style')
@@ -32,8 +32,8 @@
                     <div class="row">
                         <div class="col-md-12">
                             @if (session('SUPERADMIN') == '1' || session('ADMIN') == '1' || session('MANAGER') == '1' || session('DATA OFFICER') == '1')
-                                <a class="btn btn-success btn-md mb-3" href="{{ url('management/addresses/active') }}">
-                                    <span class="fa fa-location"></span> Addresses
+                                <a class="btn btn-success mb-3" href="{{ url('management/addresses/active') }}">
+                                    <span class="fa fa-location-dot"></span> Addresses
                                 </a>
                             @endif
                         </div>
@@ -46,37 +46,34 @@
                                 <div class="input-group">
                                     <input type="text" name="search" id="searchInput" class="form-control"
                                         placeholder="Search deleted address identifiers..." value="{{ request('search') }}">
-                                    <div class="input-group-append">
-                                        <button type="submit" class="btn btn-primary">
-                                            <span class="fa fa-search"></span> Search
-                                        </button>
-                                    </div>
+                                    <button type="submit" class="btn btn-primary">
+                                        <span class="fa fa-search"></span> Search
+                                    </button>
                                 </div>
                             </form>
 
-                            <table id="profilingTable" class="table table-hover table-bordered table-sm responsive">
+                            <table id="profilingTable" class="table table-hover table-bordered table-sm">
                                 <thead>
                                     <tr>
-                                        <th style="vertical-align: middle; text-align: center">No</th>
-                                        <th style="vertical-align: middle; text-align: center">Address Identifier</th>
-                                        <th style="vertical-align: middle; text-align: center">Created By</th>
-                                        <th style="vertical-align: middle; text-align: center">Modified By</th>
+                                        <th class="align-middle text-center">No</th>
+                                        <th class="align-middle text-center">Address Identifier</th>
+                                        <th class="align-middle text-center">Created By</th>
+                                        <th class="align-middle text-center">Modified By</th>
                                         @if (session('SUPERADMIN') == '1' || session('ADMIN') == '1' || session('MANAGER') == '1')
-                                            <th style="vertical-align: middle; text-align: center" width="110px">Action
-                                            </th>
+                                            <th class="align-middle text-center" width="110px">Action</th>
                                         @endif
                                     </tr>
                                 </thead>
                                 <tbody>
                                     @foreach ($addresses as $address)
                                         <tr>
-                                            <td style="vertical-align: middle; text-align: center">
+                                            <td class="align-middle text-center">
                                                 {{ $loop->iteration }}
                                             </td>
-                                            <td style="vertical-align: middle; text-align: center">
+                                            <td class="align-middle text-center">
                                                 {{ $address->add_name }}
                                             </td>
-                                            <td style="vertical-align: middle; text-align: center">
+                                            <td class="align-middle text-center">
                                                 @if (!empty($address->created_first_name))
                                                     {{ $address->created_first_name }} {{ $address->created_last_name }} -
                                                     {{ \Carbon\Carbon::parse($address->add_date_created)->format('m/d/Y | h:i A') }}
@@ -84,7 +81,7 @@
                                                     -
                                                 @endif
                                             </td>
-                                            <td style="vertical-align: middle; text-align: center">
+                                            <td class="align-middle text-center">
                                                 @if (!empty($address->modified_first_name))
                                                     {{ $address->modified_first_name }}
                                                     {{ $address->modified_last_name }} -
@@ -94,10 +91,10 @@
                                                 @endif
                                             </td>
                                             @if (session('SUPERADMIN') == '1' || session('ADMIN') == '1' || session('MANAGER') == '1')
-                                                <td style="vertical-align: middle; text-align: center">
+                                                <td class="align-middle text-center">
                                                     <a class="btn btn-success btn-sm mb-1" href="javascript:void(0)"
-                                                        data-toggle="modal"
-                                                        data-target="#restoreModal-{{ $address->add_id }}">
+                                                        data-bs-toggle="modal"
+                                                        data-bs-target="#restoreModal-{{ $address->add_id }}">
                                                         <span class="fa fa-refresh"></span>
                                                     </a>
                                                 </td>
@@ -111,24 +108,23 @@
                 </div>
             </div>
         </div>
-    </section>
+    </div>
 
     @foreach ($addresses as $address)
         {{-- Restore Modal --}}
-        <div class="modal fade" id="restoreModal-{{ $address->add_id }}" tabindex="-1" role="dialog"
-            aria-labelledby="exampleModalLabel" aria-hidden="true">
-            <div class="modal-dialog" role="document">
+        <div class="modal fade" id="restoreModal-{{ $address->add_id }}" tabindex="-1"
+            aria-labelledby="restoreModalLabel-{{ $address->add_id }}" aria-hidden="true">
+            <div class="modal-dialog">
                 <div class="modal-content">
                     <form method="POST"
                         action="{{ action('App\Http\Controllers\ManagementController@addresses_restore', [$address->add_id]) }}">
                         @csrf
                         <div class="modal-header bg-success text-white">
-                            <h5 class="modal-title text-white" id="exampleModalLabel">
+                            <h5 class="modal-title text-white" id="restoreModalLabel-{{ $address->add_id }}">
                                 Please Confirm
                             </h5>
-                            <button type="button" class="close" data-dismiss="modal" aria-label="Close">
-                                <span aria-hidden="true">&times;</span>
-                            </button>
+                            <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"
+                                aria-label="Close"></button>
                         </div>
                         <div class="modal-body">
                             <p>Are you sure you want to <strong>RESTORE</strong> address
@@ -137,7 +133,7 @@
                             </p>
                         </div>
                         <div class="modal-footer">
-                            <button type="button" class="btn btn-secondary" data-dismiss="modal">
+                            <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">
                                 <span class="fa fa-close"></span> Close
                             </button>
                             <button type="submit" class="btn btn-success">
@@ -149,19 +145,21 @@
             </div>
         </div>
     @endforeach
+@endsection
 
+@section('page_scripts')
     {{-- Dynamic Search While Typing --}}
     <script>
-        document.getElementById("searchInput").addEventListener("keyup", function() {
+        document.getElementById("searchInput").addEventListener("keyup", function () {
             let value = this.value.toLowerCase();
 
             // Select all tables with ID containing "Table"
             let tables = document.querySelectorAll('table[id*="Table"]');
 
-            tables.forEach(function(table) {
+            tables.forEach(function (table) {
                 let rows = table.querySelectorAll("tbody tr");
 
-                rows.forEach(function(row) {
+                rows.forEach(function (row) {
                     let text = row.innerText.toLowerCase();
                     row.style.display = text.includes(value) ? "" : "none";
                 });

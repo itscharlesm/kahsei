@@ -23,13 +23,14 @@
                 {{-- <ul class="list-unstyled">
                     <li>
                         @if(!session('usr_id'))
-                            <a title="Employee Login" href="javascript:void(0)" data-toggle="modal" data-target="#employeeLoginModal" target="_BLANK" rel="noopener noreferrer">
-                                Login
-                            </a>
+                        <a title="Employee Login" href="javascript:void(0)" data-toggle="modal"
+                            data-target="#employeeLoginModal" target="_BLANK" rel="noopener noreferrer">
+                            Login
+                        </a>
                         @else
-                            <a title="Employee Logout" href="{{ action('App\Http\Controllers\LoginController@logout') }}">
-                                Logout
-                            </a>
+                        <a title="Employee Logout" href="{{ action('App\Http\Controllers\LoginController@logout') }}">
+                            Logout
+                        </a>
                         @endif
                     </li>
                 </ul> --}}
@@ -55,7 +56,8 @@
                                 <div class="info-box">
                                     <div class="info-box-content">
                                         <p class="info-box-title">Call Us</p>
-                                        <a title="Infinit contact number" class="info-box-subtitle" href="callto:+639109005555">+63 9109005555</a>
+                                        <a title="Infinit contact number" class="info-box-subtitle"
+                                            href="callto:+639109005555">+63 9109005555</a>
                                     </div>
                                 </div>
                             </li>
@@ -63,21 +65,28 @@
                                 <div class="info-box">
                                     <div class="info-box-content">
                                         <p class="info-box-title">Email Us</p>
-                                        <a title="email us" class="info-box-subtitle" href="mailto:support@infinitwebsolutions.com" rel="noreferrer">support@infinitwebsolutions.com</a>
+                                        <a title="email us" class="info-box-subtitle"
+                                            href="mailto:support@infinitwebsolutions.com"
+                                            rel="noreferrer">support@infinitwebsolutions.com</a>
                                     </div>
                                 </div>
                             </li>
                             <li class="header-get-a-quote">
-                            @if(!session('usr_id'))
-                                <a class="btn btn-primary" title="Employee Login" href="javascript:void(0)" data-toggle="modal" data-target="#employeeLoginModal" target="_BLANK" rel="noopener noreferrer">
-                                    Login
-                                </a>
-                            @else
-                                <a class="btn btn-primary" title="Employee Logout" href="{{ action('App\Http\Controllers\LoginController@logout') }}">
-                                    Logout
-                                </a>
-                            @endif
-                                {{-- <a title="Pricing" class="btn btn-primary" href="javascript:void(0)" data-toggle="modal" data-target="#" target="_BLANK" rel="noopener noreferrer">Login</a> --}}
+                                @if(!session('usr_id'))
+                                    <a class="btn btn-primary" title="Employee Login" href="javascript:void(0)"
+                                        data-toggle="modal" data-target="#employeeLoginModal" target="_BLANK"
+                                        rel="noopener noreferrer">
+                                        Login
+                                    </a>
+                                @else
+                                    <a class="btn btn-primary" title="Employee Logout"
+                                        href="{{ action('App\Http\Controllers\LoginController@logout') }}">
+                                        Logout
+                                    </a>
+                                @endif
+                                {{-- <a title="Pricing" class="btn btn-primary" href="javascript:void(0)"
+                                    data-toggle="modal" data-target="#" target="_BLANK"
+                                    rel="noopener noreferrer">Login</a> --}}
                             </li>
                         </ul>
                     </div>
@@ -91,7 +100,9 @@
             <div class="row">
                 <div class="col-lg-12">
                     <nav class="navbar navbar-expand-lg navbar-dark p-0">
-                        <button class="navbar-toggler" type="button" data-toggle="collapse" data-target=".navbar-collapse" aria-controls="navbar-collapse" aria-expanded="false" aria-label="Toggle navigation">
+                        <button class="navbar-toggler" type="button" data-toggle="collapse"
+                            data-target=".navbar-collapse" aria-controls="navbar-collapse" aria-expanded="false"
+                            aria-label="Toggle navigation">
                             <span class="navbar-toggler-icon"></span>
                         </button>
 

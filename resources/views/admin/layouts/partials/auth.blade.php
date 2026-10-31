@@ -1,5 +1,3 @@
-@if(session('usr_id')==null)
+@if(session('usr_id') == null)
     {{ unauthorize() }}
 @endif
-
-

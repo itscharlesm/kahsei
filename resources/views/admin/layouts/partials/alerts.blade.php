@@ -1,69 +1,27 @@
 <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
 
-@if (session('errorMessage'))
-    <script>
-        $(function() {
-            var Toast = Swal.mixin({
-                toast: true,
-                position: 'top-end',
-                showConfirmButton: false,
-                timer: 10000
-            });
-            Toast.fire({
-                icon: 'error',
-                title: '{{ session('errorMessage') }}'
-            });
-        });
-    </script>
-@endif
+@php
+    $toasts = [
+        'errorMessage' => ['icon' => 'error', 'timer' => 10000],
+        'successMessage' => ['icon' => 'success', 'timer' => 5000],
+        'infoMessage' => ['icon' => 'info', 'timer' => 3000],
+        'warningMessage' => ['icon' => 'warning', 'timer' => 10000],
+    ];
+@endphp
 
-@if (session('successMessage'))
-    <script>
-        $(function() {
-            var Toast = Swal.mixin({
-                toast: true,
-                position: 'top-end',
-                showConfirmButton: false,
-                timer: 5000
-            });
-            Toast.fire({
-                icon: 'success',
-                title: '{{ session('successMessage') }}'
-            });
-        });
-    </script>
-@endif
-
-@if (session('infoMessage'))
-    <script>
-        $(function() {
-            var Toast = Swal.mixin({
-                toast: true,
-                position: 'top-end',
-                showConfirmButton: false,
-                timer: 3000
-            });
-            Toast.fire({
-                icon: 'info',
-                title: '{{ session('infoMessage') }}'
-            });
-        });
-    </script>
-@endif
-
-@if (session('warningMessage'))
-    <script>
-        $(function() {
-            var Toast = Swal.mixin({
-                toast: true,
-                position: 'top-end',
-                showConfirmButton: false,
-                timer: 10000
-            });
-            Toast.fire({
-                icon: 'warning',
-                title: '{{ session('warningMessage') }}'
-            });
-        });
-    </script>
-@endif
+<script>
+    document.addEventListener('DOMContentLoaded', function () {
+        @foreach ($toasts as $key => $config)
+            @if (session($key))
+                Swal.fire({
+                    toast: true,
+                    position: 'top-end',
+                    showConfirmButton: false,
+                    timer: {{ $config['timer'] }},
+                    icon: '{{ $config['icon'] }}',
+                    title: @json(session($key))
+                });
+            @endif
+        @endforeach
+    });
+</script>

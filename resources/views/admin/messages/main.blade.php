@@ -5,14 +5,14 @@
 @endsection
 
 @section('content')
-    <div class="content-header">
+    <div class="app-content-header">
         <div class="container-fluid">
-            <div class="row mb-2">
+            <div class="row">
                 <div class="col-sm-6">
-                    <h1 class="m-0">Messages</h1>
+                    <h3 class="mb-0">Messages</h3>
                 </div>
                 <div class="col-sm-6">
-                    <ol class="breadcrumb float-sm-right">
+                    <ol class="breadcrumb float-sm-end">
                         <li class="breadcrumb-item">
                             <a href="{{ url('home') }}">Home</a>
                         </li>
@@ -23,7 +23,7 @@
         </div>
     </div>
 
-    <section class="content">
+    <div class="app-content">
         @include('admin.layouts.partials.onclick')
         @include('admin.layouts.partials.alerts')
 
@@ -44,15 +44,15 @@
                             <i class="fas fa-comments fa-4x mb-3 d-block"></i>
                             <h5 class="mb-2 text-dark">Your Messages</h5>
                             <p class="mb-3">Select a conversation on the left or start a new one.</p>
-                            <a href="#" data-toggle="modal" data-target="#composeModal" class="btn btn-primary">
-                                <i class="fas fa-edit mr-1"></i> New Message
+                            <a href="#" data-bs-toggle="modal" data-bs-target="#composeModal" class="btn btn-primary">
+                                <i class="fas fa-edit me-1"></i> New Message
                             </a>
                         </div>
                     </div>
                 </div>
             </div>
         </div>
-    </section>
+    </div>
 
     @include('admin.messages.partials.compose_modal', ['users' => $users])
 @endsection

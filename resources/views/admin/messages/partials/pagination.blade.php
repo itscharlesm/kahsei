@@ -11,7 +11,8 @@
                 </li>
             @else
                 <li class="page-item">
-                    <a class="page-link" href="{{ $paginator->previousPageUrl() }}" rel="prev" aria-label="Previous page">&laquo;</a>
+                    <a class="page-link" href="{{ $paginator->previousPageUrl() }}" rel="prev"
+                        aria-label="Previous page">&laquo;</a>
                 </li>
             @endif
 

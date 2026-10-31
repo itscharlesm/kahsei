@@ -2,14 +2,14 @@
 
 @section('content')
     {{-- Content Header --}}
-    <div class="content-header">
+    <div class="app-content-header">
         <div class="container-fluid">
-            <div class="row mb-2">
+            <div class="row">
                 <div class="col-sm-6">
-                    <h1 class="m-0">User History</h1>
+                    <h3 class="mb-0">User History</h3>
                 </div>
                 <div class="col-sm-6">
-                    <ol class="breadcrumb float-sm-right">
+                    <ol class="breadcrumb float-sm-end">
                         <li class="breadcrumb-item">
                             <a href="{{ url('home') }}">Home</a>
                         </li>
@@ -22,7 +22,7 @@
     </div>
 
     {{-- Main Content --}}
-    <section class="content">
+    <div class="app-content">
         @include('admin.layouts.partials.onclick')
         @include('admin.layouts.partials.alerts')
         @include('admin.layouts.partials.modal_style')
@@ -36,15 +36,13 @@
                                 <div class="input-group">
                                     <input type="text" name="search" id="searchInput" class="form-control"
                                         placeholder="Search users..." value="{{ request('search') }}">
-                                    <div class="input-group-append">
-                                        <button type="submit" class="btn btn-primary">
-                                            <span class="fa fa-search"></span> Search
-                                        </button>
-                                    </div>
+                                    <button type="submit" class="btn btn-primary">
+                                        <span class="fa fa-search"></span> Search
+                                    </button>
                                 </div>
                             </form>
 
-                            <table id="logsTable" class="table table-hover table-bordered table-sm responsive">
+                            <table id="logsTable" class="table table-hover table-bordered table-sm">
                                 <thead>
                                     <tr>
                                         <th class="text-center">No</th>
@@ -57,19 +55,19 @@
                                 <tbody>
                                     @foreach ($logs as $index => $log)
                                         <tr>
-                                            <td style="vertical-align: middle; text-align: center">
+                                            <td class="align-middle text-center">
                                                 {{ $logs->firstItem() + $index }}
                                             </td>
-                                            <td style="vertical-align: middle; text-align: center">
+                                            <td class="align-middle text-center">
                                                 {{ \Carbon\Carbon::parse($log->log_date)->format('m/d/Y | h:i A') }}
                                             </td>
-                                            <td style="vertical-align: middle; text-align: center">
+                                            <td class="align-middle text-center">
                                                 {{ $log->usr_last_name }}, {{ $log->usr_first_name }}
                                             </td>
-                                            <td style="vertical-align: middle; text-align: center">
+                                            <td class="align-middle text-center">
                                                 {{ $log->log_title ?? '-' }}
                                             </td>
-                                            <td style="vertical-align: middle; text-align: center">
+                                            <td class="align-middle text-center">
                                                 {{ $log->log_details ?? '-' }}
                                             </td>
                                         </tr>
@@ -81,20 +79,22 @@
                 </div>
             </div>
         </div>
-    </section>
+    </div>
+@endsection
 
+@section('page_scripts')
     {{-- Dynamic Search While Typing --}}
     <script>
-        document.getElementById("searchInput").addEventListener("keyup", function() {
+        document.getElementById("searchInput").addEventListener("keyup", function () {
             let value = this.value.toLowerCase();
 
             // Select all tables with ID containing "Table"
             let tables = document.querySelectorAll('table[id*="Table"]');
 
-            tables.forEach(function(table) {
+            tables.forEach(function (table) {
                 let rows = table.querySelectorAll("tbody tr");
 
-                rows.forEach(function(row) {
+                rows.forEach(function (row) {
                     let text = row.innerText.toLowerCase();
                     row.style.display = text.includes(value) ? "" : "none";
                 });

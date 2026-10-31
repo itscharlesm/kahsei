@@ -1,4 +1,38 @@
 <style>
+    .app-main {
+        --messages-workspace-height: calc(100vh - (3.5rem + 1px) - (3.5rem + 1px));
+        display: flex;
+        flex-direction: column;
+        height: var(--messages-workspace-height);
+        min-height: 0 !important;
+        overflow: hidden;
+        padding-bottom: 0;
+    }
+
+    @supports (height: 100dvh) {
+        .app-main {
+            --messages-workspace-height: calc(100dvh - (3.5rem + 1px) - (3.5rem + 1px));
+        }
+    }
+
+    .app-main>.app-content-header {
+        flex: 0 0 auto;
+    }
+
+    .app-main>.app-content {
+        display: flex;
+        flex: 1 1 auto;
+        flex-direction: column;
+        min-height: 0;
+    }
+
+    .app-main>.app-content>.container-fluid {
+        display: flex;
+        flex: 1 1 auto;
+        flex-direction: column;
+        min-height: 0;
+    }
+
     .wrapper .content-wrapper {
         --messages-workspace-height: calc(100vh - (3.5rem + 1px) - (3.5rem + 1px));
         display: flex;
@@ -15,18 +49,18 @@
         }
     }
 
-    .content-wrapper > .content-header {
+    .content-wrapper>.content-header {
         flex: 0 0 auto;
     }
 
-    .content-wrapper > .content {
+    .content-wrapper>.content {
         display: flex;
         flex: 1 1 auto;
         flex-direction: column;
         min-height: 0;
     }
 
-    .content-wrapper > .content > .container-fluid {
+    .content-wrapper>.content>.container-fluid {
         display: flex;
         flex: 1 1 auto;
         flex-direction: column;
@@ -41,7 +75,7 @@
         overflow: hidden;
     }
 
-    .messages-panel > [class*="col-"] {
+    .messages-panel>[class*="col-"] {
         height: 100%;
         min-height: 0;
         overflow: hidden;
@@ -77,16 +111,16 @@
         overflow: hidden;
     }
 
-    .messages-active-chat-card > .messages-thread-header {
+    .messages-active-chat-card>.messages-thread-header {
         grid-row: 1;
         min-width: 0;
     }
 
-    .messages-active-chat-card > .messages-thread-list {
+    .messages-active-chat-card>.messages-thread-list {
         grid-row: 2;
     }
 
-    .messages-active-chat-card > .messages-composer {
+    .messages-active-chat-card>.messages-composer {
         grid-row: 3;
         min-width: 0;
         width: 100%;
@@ -178,7 +212,7 @@
         scrollbar-gutter: stable;
     }
 
-    .messages-active-chat-card > .messages-thread-list {
+    .messages-active-chat-card>.messages-thread-list {
         min-height: 0;
         min-width: 0;
         overflow-y: auto;
@@ -943,6 +977,7 @@
     }
 
     @media (max-width: 767.98px) {
+
         .messages-sidebar-card,
         .messages-thread-card {
             min-height: 0;
@@ -957,7 +992,7 @@
             padding: 1rem 0.75rem;
         }
 
-        .messages-active-chat-card > .messages-thread-list {
+        .messages-active-chat-card>.messages-thread-list {
             min-height: 0;
         }
 

@@ -3,16 +3,16 @@
 @section('title', 'Home')
 
 @section('content')
-    <div class="content-header">
+    {{-- Content Header --}}
+    <div class="app-content-header">
         <div class="container-fluid">
-            <div class="row mb-2">
+            <div class="row">
                 <div class="col-sm-6">
-                    <h1 class="m-0">Home</h1>
+                    <h3 class="mb-0">Home</h3>
                 </div>
                 <div class="col-sm-6">
-                    <ol class="breadcrumb float-sm-right">
-                        <li class="breadcrumb-item"><a
-                                href="{{ url('home') }}">Home</a></li>
+                    <ol class="breadcrumb float-sm-end">
+                        <li class="breadcrumb-item active"><a href="{{ url('home') }}">Home</a></li>
                     </ol>
                 </div>
             </div>
@@ -20,232 +20,215 @@
     </div>
 
     {{-- Main Content --}}
-    <section class="content">
+    <div class="app-content">
+        <div class="container-fluid">
 
-        @include('admin.layouts.partials.onclick')
+            @include('admin.layouts.partials.onclick')
 
-        @php
-            // Roles that can see announcements (EASY TO UPDATE)
-            $announcementRoles = [
-                'SUPERADMIN',
-                'ADMIN',
-            ];
+            @php
+                // Roles that can see announcements (EASY TO UPDATE)
+                $announcementRoles = ['SUPERADMIN', 'ADMIN'];
 
-            // Check access
-            $canViewAnnouncements = false;
-            foreach ($announcementRoles as $role) {
-                if (session($role) == '1') {
-                    $canViewAnnouncements = true;
-                    break;
+                // Check access
+                $canViewAnnouncements = false;
+                foreach ($announcementRoles as $role) {
+                    if (session($role) == '1') {
+                        $canViewAnnouncements = true;
+                        break;
+                    }
                 }
-            }
-        @endphp
+            @endphp
 
-        <ul class="nav nav-tabs" role="tablist">
-            @if ($canViewAnnouncements)
-                <li class="nav-item">
-                    <a class="nav-link active" id="announcements-tab" data-toggle="tab"
-                        href="#announcements-content" role="tab">
-                        Announcements
-                    </a>
-                </li>
-            @endif
-        </ul>
+            <ul class="nav nav-tabs" role="tablist">
+                @if ($canViewAnnouncements)
+                    <li class="nav-item" role="presentation">
+                        <a class="nav-link active" id="announcements-tab" data-bs-toggle="tab" href="#announcements-content"
+                            role="tab">
+                            Announcements
+                        </a>
+                    </li>
+                @endif
+            </ul>
 
-        <div class="tab-content">
+            <div class="tab-content">
 
-            <!-- Announcements -->
-            @if ($canViewAnnouncements)
-                <div class="tab-pane fade show active" id="announcements-content" role="tabpanel">
-                    <section class="content">
-                        <div class="container-fluid">
-                            <div class="row mt-3">
-                                <div class="col-md-8">
-                                    <div class="timeline">
-                                        <div class="time-label">
-                                            <span class="bg-info"><i class="fa fa-bullhorn"></i> Announcements</span>
+                {{-- Announcements --}}
+                @if ($canViewAnnouncements)
+                    <div class="tab-pane fade show active" id="announcements-content" role="tabpanel">
+                        <div class="row mt-3">
+
+                            {{-- Announcements list --}}
+                            <div class="col-md-8">
+                                <div class="d-flex justify-content-between align-items-center mb-3">
+                                    <h5 class="mb-0">
+                                        <span class="badge text-bg-info">
+                                            <i class="fa fa-bullhorn"></i> Announcements
+                                        </span>
+                                    </h5>
+                                    @if (session('SUPERADMIN') == '1' || session('ADMIN') == '1')
+                                        <a class="btn btn-primary" href="javascript:void(0)" data-bs-toggle="modal"
+                                            data-bs-target="#newAnnouncementModal">
+                                            <i class="fa fa-comment"></i> Compose
+                                        </a>
+                                    @endif
+                                </div>
+
+                                @if ($announcements->count() == 0)
+                                    <div class="card">
+                                        <div class="card-header">
+                                            <h5 class="card-title mb-0">
+                                                <i class="fas fa-newspaper text-primary me-1"></i> Announcement
+                                            </h5>
+                                        </div>
+                                        <div class="card-body">
+                                            <p class="mb-0">No announcement yet!</p>
+                                        </div>
+                                    </div>
+                                @else
+                                    @foreach ($announcements as $announcement)
+                                        <div class="card mb-3">
+                                            <div class="card-header d-flex justify-content-between align-items-center">
+                                                <h5 class="card-title mb-0">
+                                                    <i class="fas fa-newspaper text-primary me-1"></i>
+                                                    {{ $announcement->ann_title }}
+                                                </h5>
+                                                <small class="text-muted">
+                                                    <i class="fas fa-clock"></i>
+                                                    {{ \Carbon\Carbon::parse($announcement->ann_date_created)->diffForHumans() }}
+                                                </small>
+                                            </div>
+                                            <div class="card-body">
+                                                @if ($announcement->ann_image != '')
+                                                    <a href="{{ asset('images/announcements/' . $announcement->ann_image) }}">
+                                                        <img src="{{ asset('images/announcements/' . $announcement->ann_image) }}" alt=""
+                                                            class="img-fluid rounded mb-2">
+                                                    </a>
+                                                @endif
+                                                <p class="mb-0">{{ $announcement->ann_content }}</p>
+                                            </div>
                                             @if (session('SUPERADMIN') == '1' || session('ADMIN') == '1')
-                                                <a class="btn btn-primary float-right" href="javascript:void(0)" data-toggle="modal"
-                                                    data-target="#newAnnouncementModal"><i class="fa fa-comment"></i> Compose</a>
+                                                <div class="card-footer">
+                                                    <a class="btn btn-danger btn-sm" href="javascript:void(0)" data-bs-toggle="modal"
+                                                        data-bs-target="#deleteModal-{{ $announcement->ann_uuid }}">
+                                                        <i class="fa fa-trash"></i> Delete
+                                                    </a>
+                                                </div>
                                             @endif
                                         </div>
-                                        @if ($announcements->count() == 0)
-                                            <div>
-                                                <i class="fas fa-newspaper bg-blue"></i>
-                                                <div class="timeline-item">
-                                                    <h3 class="timeline-header">Announcement</h3>
-                                                    <div class="timeline-body">
-                                                        <p>No announcement yet!</p>
-                                                    </div>
-                                                </div>
-                                            </div>
-                                        @else
-                                            @foreach ($announcements as $announcement)
+                                    @endforeach
+                                @endif
+                            </div>
+
+                            {{-- Recent users --}}
+                            <div class="col-md-4">
+                                <div class="card">
+                                    <div class="card-header text-bg-success">
+                                        <h5 class="card-title mb-0">
+                                            <i class="fas fa-history"></i> Recent Users
+                                        </h5>
+                                    </div>
+                                    <ul class="list-group list-group-flush">
+                                        @foreach ($logins as $login)
+                                            <li class="list-group-item d-flex align-items-center">
+                                                <img class="rounded-circle me-3" src="{{ asset(getAvatar($login->usr_id)) }}"
+                                                    alt="user image" style="width:50px; height:50px; object-fit:cover;">
                                                 <div>
-                                                    <i class="fas fa-newspaper bg-blue"></i>
-                                                    <div class="timeline-item">
-                                                        <span class="time"><i class="fas fa-clock"></i>
-                                                            {{ \Carbon\Carbon::parse($announcement->ann_date_created)->diffForHumans() }}</span>
-                                                        <h3 class="timeline-header">{{ $announcement->ann_title }}</h3>
-                                                        <div class="timeline-body">
-                                                            @if ($announcement->ann_image != '')
-                                                                <div class="thumbnail">
-                                                                    <a
-                                                                        href="{{ asset('images/announcements/' . $announcement->ann_image) }}">
-                                                                        <img src="{{ asset('images/announcements/' . $announcement->ann_image) }}"
-                                                                            alt="" style="width:100%">
-                                                                    </a>
-                                                                    <div class="caption">
-                                                                        <p>{{ $announcement->ann_content }}</p>
-                                                                    </div>
-                                                                </div>
-                                                            @else
-                                                                <p>{{ $announcement->ann_content }}</p>
-                                                            @endif
-                                                        </div>
-                                                        <div class="timeline-footer">
-                                                            @if (session('SUPERADMIN') == '1' || session('ADMIN') == '1')
-                                                                <a class="btn btn-danger btn-sm" href="javascript:void(0)"
-                                                                    data-toggle="modal"
-                                                                    data-target="#deleteModal-{{ $announcement->ann_uuid }}">
-                                                                    <i class="fa fa-trash"></i> Delete
-                                                                </a>
-                                                            @endif
-                                                        </div>
-
-                                                        <!-- Delete Confirmation Modal -->
-                                                        <div class="modal fade" id="deleteModal-{{ $announcement->ann_uuid }}"
-                                                            tabindex="-1" role="dialog"
-                                                            aria-labelledby="deleteModalLabel-{{ $announcement->ann_uuid }}"
-                                                            aria-hidden="true">
-                                                            <div class="modal-dialog modal-dialog-centered" role="document">
-                                                                <div class="modal-content">
-                                                                    <div class="modal-header bg-danger text-white">
-                                                                        <h5 class="modal-title"
-                                                                            id="deleteModalLabel-{{ $announcement->ann_uuid }}">
-                                                                            <i class="fa fa-exclamation-triangle"></i>
-                                                                            Confirm Delete
-                                                                        </h5>
-                                                                        <button type="button" class="close text-white"
-                                                                            data-dismiss="modal" aria-label="Close">
-                                                                            <span aria-hidden="true">&times;</span>
-                                                                        </button>
-                                                                    </div>
-                                                                    <div class="modal-body">
-                                                                        Are you sure you want to delete the announcement:
-                                                                        <strong>{{ $announcement->ann_title }}</strong>?
-                                                                    </div>
-                                                                    <div class="modal-footer">
-                                                                        <button type="button" class="btn btn-secondary"
-                                                                            data-dismiss="modal">Cancel</button>
-
-                                                                        <!-- Proper form for deletion -->
-                                                                        <form
-                                                                            action="{{ action('App\Http\Controllers\AnnouncementController@delete', [$announcement->ann_uuid]) }}"
-                                                                            method="POST" style="display:inline;">
-                                                                            @csrf
-                                                                            <button type="submit" class="btn btn-danger">
-                                                                                <span class="fa fa-trash"></span> Yes,
-                                                                                Delete
-                                                                            </button>
-                                                                        </form>
-                                                                    </div>
-                                                                </div>
-                                                            </div>
-                                                        </div>
+                                                    <div class="fw-semibold">
+                                                        {{ $login->usr_last_name }}, {{ $login->usr_first_name }}
                                                     </div>
+                                                    <small class="text-muted">
+                                                        {{ \Carbon\Carbon::parse($login->log_date_max)->diffForHumans() }}
+                                                    </small>
                                                 </div>
-                                            @endforeach
-                                        @endif
-                                    </div>
-                                </div>
-                                <div class="col-md-4">
-                                    <div class="card card-info">
-                                        <div class="card-header border-bottom-0 bg-navy">
-                                            <h3 class="card-title" style="color:white"><i class="fas fa-history"></i> Recent
-                                                Users</h3>
-                                        </div>
-                                        <div class="card-body pt-0">
-                                            <ul class="products-list product-list-in-card pl-2 pr-2">
-                                                @foreach ($logins as $login)
-                                                    <li class="item">
-                                                        <div class="product-img">
-                                                            <img class="img-size-50 img-circle"
-                                                                src="{{ asset(getAvatar($login->usr_id)) }}" alt="user image">
-                                                        </div>
-                                                        <div class="product-info">
-                                                            <a href="#" class="product-title">
-                                                                {{ $login->usr_last_name }}, {{ $login->usr_first_name }}
-                                                                <span class="badge badge-info float-right"></span>
-                                                            </a>
-                                                            <span class="product-description">
-                                                                {{ \Carbon\Carbon::parse($login->log_date_max)->diffForHumans() }}
-                                                            </span>
-                                                        </div>
-                                                    </li>
-                                                @endforeach
-                                            </ul>
-                                        </div>
-                                    </div>
+                                            </li>
+                                        @endforeach
+                                    </ul>
                                 </div>
                             </div>
+
                         </div>
-                    </section>
-                </div>
-            @endif
+                    </div>
+                @endif
 
+            </div>
         </div>
-    </section>
+    </div>
 
-    <!-- New Announcement Modal -->
-    <div class="modal fade" id="newAnnouncementModal" tabindex="-1" role="dialog" aria-labelledby="exampleModalLabel"
+    {{-- Delete Confirmation Modals (kept outside the cards so they stack correctly) --}}
+    @if ($canViewAnnouncements)
+        @foreach ($announcements as $announcement)
+            <div class="modal fade" id="deleteModal-{{ $announcement->ann_uuid }}" tabindex="-1"
+                aria-labelledby="deleteModalLabel-{{ $announcement->ann_uuid }}" aria-hidden="true">
+                <div class="modal-dialog modal-dialog-centered">
+                    <div class="modal-content">
+                        <div class="modal-header bg-danger text-white">
+                            <h5 class="modal-title text-white" id="deleteModalLabel-{{ $announcement->ann_uuid }}">
+                                <i class="fa fa-exclamation-triangle"></i> Confirm Delete
+                            </h5>
+                            <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"
+                                aria-label="Close"></button>
+                        </div>
+                        <div class="modal-body">
+                            Are you sure you want to delete the announcement:
+                            <strong>{{ $announcement->ann_title }}</strong>?
+                        </div>
+                        <div class="modal-footer">
+                            <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                            <form
+                                action="{{ action('App\Http\Controllers\AnnouncementController@delete', [$announcement->ann_uuid]) }}"
+                                method="POST" class="d-inline">
+                                @csrf
+                                <button type="submit" class="btn btn-danger">
+                                    <span class="fa fa-trash"></span> Yes, Delete
+                                </button>
+                            </form>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        @endforeach
+    @endif
+
+    {{-- New Announcement Modal --}}
+    <div class="modal fade" id="newAnnouncementModal" tabindex="-1" aria-labelledby="newAnnouncementModalLabel"
         aria-hidden="true">
-        <div class="modal-dialog" role="document">
+        <div class="modal-dialog">
             <div class="modal-content">
-                <div class="modal-header">
-                    <h5 class="modal-title" id="exampleModalLabel">Create New Annoucement</h5>
-                    <button type="button" class="close" data-dismiss="modal" aria-label="Close">
-                        <span aria-hidden="true">&times;</span>
-                    </button>
+                <div class="modal-header bg-primary text-white">
+                    <h5 class="modal-title" id="newAnnouncementModalLabel">Create New Announcement</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
                 </div>
                 <form action="{{ action('App\Http\Controllers\AnnouncementController@save') }}" method="POST"
                     enctype="multipart/form-data">
-                    {{ csrf_field() }}
+                    @csrf
                     <div class="modal-body">
-                        <div class="form-group">
-                            <label for="ann_title">Title <span style="color:red;">*</span></label>
+                        <div class="mb-3">
+                            <label for="ann_title">Title <span class="text-danger">*</span></label>
                             <input type="text" class="form-control" id="ann_title" name="ann_title" placeholder="Title"
                                 required />
                         </div>
-                        <div class="form-group">
-                            <label for="ann_content">Message Content <span style="color:red;">*</span></label>
+                        <div class="mb-3">
+                            <label for="ann_content">Message Content <span class="text-danger">*</span></label>
                             <textarea class="form-control" id="ann_content" name="ann_content" rows="4" required></textarea>
                         </div>
-                        <div class="form-group">
-                            <div class="custom-file">
-                                <label for="ann_image">Image</label>
-                                <input type="file" class="custom-file-input" id="customFile" name="ann_image"
-                                    accept=".jpeg, .jpg, .png" />
-                                <label class="custom-file-label" for="customFile">Choose file</label>
-                            </div>
-                            <small id="fileHelp" class="form-text text-muted">Please upload a valid image file in jpg or
-                                png
-                                format. Size of image should not be more than 3MB.</small>
+                        <div class="mb-3">
+                            <label for="ann_image">Image</label>
+                            <input type="file" class="form-control" id="ann_image" name="ann_image"
+                                accept=".jpeg, .jpg, .png" />
+                            <small class="form-text text-muted">
+                                Please upload a valid image file in jpg or png format. Size of image should not be more
+                                than 3MB.
+                            </small>
                         </div>
                     </div>
                     <div class="modal-footer">
-                        <button type="button" class="btn btn-secondary" data-dismiss="modal">Close</button>
-                        <button type="submit" class="btn btn-primary"><span class="fa fa-save"></span> Save</button>
+                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+                        <button type="submit" class="btn btn-primary">
+                            <span class="fa fa-save"></span> Save
+                        </button>
                     </div>
                 </form>
             </div>
         </div>
     </div>
-
-    <script>
-        $(".custom-file-input").on("change", function () {
-            var fileName = $(this).val().split("\\").pop();
-            $(this).siblings(".custom-file-label").addClass("selected").html(fileName);
-        });
-    </script>
 @endsection

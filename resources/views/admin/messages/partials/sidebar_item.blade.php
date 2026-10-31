@@ -1,6 +1,5 @@
-<a href="{{ $conversation->link }}"
-    class="messages-list-item {{ $conversation->is_active ? 'is-active' : '' }}">
-    <div class="messages-avatar elevation-1">
+<a href="{{ $conversation->link }}" class="messages-list-item {{ $conversation->is_active ? 'is-active' : '' }}">
+    <div class="messages-avatar shadow-sm">
         @if (!empty($conversation->avatar_url))
             <img src="{{ $conversation->avatar_url }}" alt="{{ $conversation->title }}">
         @else

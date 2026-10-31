@@ -130,6 +130,7 @@ class MessageController extends Controller
         $payload = $this->validateMessagePayload($request);
         $this->createMessage((int) $request->mesg_group_id, (int) $currentUserId, $payload);
 
+        session()->flash('successMessage', 'Message sent successfully.');
         return redirect()->to(url('messages/chat/' . $request->mesg_group_id));
     }
 
@@ -153,6 +154,7 @@ class MessageController extends Controller
                 'mesg_group_name' => $validated['mesg_group_name'],
             ]);
 
+        session()->flash('successMessage', 'Group chat renamed successfully.');
         return redirect()
             ->to(url('messages/chat/' . $mesg_group_id))
             ->with('successMessage', 'Group chat renamed successfully.');
@@ -188,6 +190,7 @@ class MessageController extends Controller
 
         $this->deleteUnusedGroupAvatar($oldAvatar, $groupId);
 
+        session()->flash('successMessage', 'Group chat avatar updated successfully.');
         return redirect()
             ->to(url('messages/chat/' . $groupId))
             ->with('successMessage', 'Group chat avatar updated successfully.');
@@ -209,6 +212,7 @@ class MessageController extends Controller
 
         $this->deleteUnusedGroupAvatar($oldAvatar, $groupId);
 
+        session()->flash('successMessage', 'Group chat avatar removed successfully.');
         return redirect()
             ->to(url('messages/chat/' . $groupId))
             ->with('successMessage', 'Group chat avatar removed successfully.');
@@ -278,6 +282,7 @@ class MessageController extends Controller
             throw $exception;
         }
 
+        session()->flash('successMessage', 'Message sent successfully.');
         return redirect()->to(url('messages/chat/' . $groupId));
     }
 
@@ -294,9 +299,10 @@ class MessageController extends Controller
 
         Cache::forget($this->messageImageCacheKey((int) $message->mes_id));
 
+        session()->flash('successMessage', 'Message unsent successfully.');
+
         return redirect()
-            ->to(url('messages/chat/' . $message->mesg_group_id))
-            ->with('success', 'Message unsent successfully.');
+            ->to(url('messages/chat/' . $message->mesg_group_id));
     }
 
     public function update(Request $request, $mes_id)
@@ -330,6 +336,8 @@ class MessageController extends Controller
                 'mes_content' => $this->normalizeMessageContent($request->input('mes_content')),
                 'mes_date_modified' => Carbon::now(),
             ]);
+
+        session()->flash('successMessage', 'Message edited successfully.');
 
         return redirect()
             ->to(url('messages/chat/' . $message->mesg_group_id))

@@ -5,14 +5,14 @@
 @endsection
 
 @section('content')
-    <div class="content-header">
+    <div class="app-content-header">
         <div class="container-fluid">
-            <div class="row mb-2">
+            <div class="row">
                 <div class="col-sm-6">
-                    <h1 class="m-0">Messages</h1>
+                    <h3 class="mb-0">Messages</h3>
                 </div>
                 <div class="col-sm-6">
-                    <ol class="breadcrumb float-sm-right">
+                    <ol class="breadcrumb float-sm-end">
                         <li class="breadcrumb-item">
                             <a href="{{ url('home') }}">Home</a>
                         </li>
@@ -26,7 +26,7 @@
         </div>
     </div>
 
-    <section class="content">
+    <div class="app-content">
         @include('admin.layouts.partials.onclick')
         @include('admin.layouts.partials.alerts')
 
@@ -49,7 +49,7 @@
                             @if ($messages->hasPages() && $messages->currentPage() > 1)
                                 <div class="messages-thread-load">
                                     <a href="{{ $messages->previousPageUrl() }}&anchor=top" class="btn btn-sm btn-outline-secondary">
-                                        <i class="fas fa-chevron-up mr-1"></i> Load older messages
+                                        <i class="fas fa-chevron-up me-1"></i> Load older messages
                                     </a>
                                 </div>
                             @endif
@@ -140,7 +140,7 @@
                             @empty
                                 <div class="messages-empty-state py-5">
                                     <i class="fas fa-comment-slash fa-2x mb-3 d-block"></i>
-                                    <div class="font-weight-bold mb-1">No messages yet</div>
+                                    <div class="fw-bold mb-1">No messages yet</div>
                                     <div>Say hello to start the conversation.</div>
                                 </div>
                             @endforelse
@@ -173,7 +173,7 @@
                                     data-preview="#messageImagePreview" accept="image/jpeg,image/png,image/webp,.jpg,.jpeg,.png,.webp">
                                 <label for="messageImageInput" class="btn btn-link messages-attachment-button flex-shrink-0" title="Attach image">
                                     <i class="fas fa-image"></i>
-                                    <span class="sr-only">Attach image</span>
+                                    <span class="visually-hidden">Attach image</span>
                                 </label>
 
                                 <textarea name="mes_content" id="messageInput" class="form-control messages-composer-input"
@@ -181,7 +181,7 @@
 
                                 <button type="submit" class="btn btn-primary messages-send-button flex-shrink-0" aria-label="Send message">
                                     <i class="fas fa-paper-plane"></i>
-                                    <span class="sr-only">Send</span>
+                                    <span class="visually-hidden">Send</span>
                                 </button>
                             </form>
                         </div>
@@ -189,23 +189,21 @@
                 </div>
             </div>
         </div>
-    </section>
+    </div>
 
     @include('admin.messages.partials.compose_modal', ['users' => $users])
 
-    <div class="modal fade" id="editMessageModal" tabindex="-1" role="dialog" aria-labelledby="editMessageModalLabel">
-        <div class="modal-dialog" role="document">
+    <div class="modal fade" id="editMessageModal" tabindex="-1" aria-labelledby="editMessageModalLabel" aria-hidden="true">
+        <div class="modal-dialog">
             <div class="modal-content">
                 <form method="POST" action="{{ url('messages/0') }}" id="editMessageForm">
                     @csrf
                     @method('PATCH')
                     <div class="modal-header">
                         <h5 class="modal-title" id="editMessageModalLabel">
-                            <i class="fas fa-pen mr-1"></i> Edit Message
+                            <i class="fas fa-pen me-1"></i> Edit Message
                         </h5>
-                        <button type="button" class="close" data-dismiss="modal" aria-label="Close">
-                            <span aria-hidden="true">&times;</span>
-                        </button>
+                        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
                     </div>
 
                     <div class="modal-body">
@@ -224,9 +222,9 @@
                     </div>
 
                     <div class="modal-footer">
-                        <button type="button" class="btn btn-secondary" data-dismiss="modal">Cancel</button>
+                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
                         <button type="submit" class="btn btn-primary">
-                            <i class="fas fa-save mr-1"></i> Save Changes
+                            <i class="fas fa-save me-1"></i> Save Changes
                         </button>
                     </div>
                 </form>
