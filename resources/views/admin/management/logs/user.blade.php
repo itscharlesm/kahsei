@@ -11,7 +11,7 @@
                 <div class="col-sm-6">
                     <ol class="breadcrumb float-sm-right">
                         <li class="breadcrumb-item">
-                            <a href="{{ action('App\Http\Controllers\AdminController@home') }}">Home</a>
+                            <a href="{{ url('admin/home') }}">Home</a>
                         </li>
                         <li class="breadcrumb-item">Logs</li>
                         <li class="breadcrumb-item active">User History</li>
@@ -32,7 +32,7 @@
                     <div class="row">
                         <!-- Table Column -->
                         <div class="col-lg-12 col-md-7">
-                            <form method="GET" action="{{ url('histories/users') }}" class="mb-3">
+                            <form method="GET" action="{{ url('admin/histories/users') }}" class="mb-3">
                                 <div class="input-group">
                                     <input type="text" name="search" id="searchInput" class="form-control"
                                         placeholder="Search users..." value="{{ request('search') }}">

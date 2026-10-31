@@ -36,7 +36,7 @@
                 @if (session('utyp_id') == 1)
                     {{-- Home --}}
                     <li class="nav-item">
-                        <a href="{{ action('App\Http\Controllers\AdminController@home') }}"
+                        <a href="{{ url('admin/home') }}"
                             class="nav-link {{ request()->is('home') ? 'active' : '' }}">
                             <i class="nav-icon fas fa-home"></i>
                             <p>HOME</p>
@@ -104,8 +104,8 @@
                         @endif
 
                         @if (session('SUPERADMIN') == '1' || session('ADMIN') == '1')
-                            <li class="nav-item {{ request()->is('histories/*') ? 'menu-open' : '' }}">
-                                <a href="#" class="nav-link {{ request()->is('histories/*') ? 'active' : '' }}">
+                            <li class="nav-item {{ request()->is('admin/histories/*') ? 'menu-open' : '' }}">
+                                <a href="#" class="nav-link {{ request()->is('admin/histories/*') ? 'active' : '' }}">
                                     <i class="nav-icon fas fa-history"></i>
                                     <p>
                                         LOGS
@@ -117,7 +117,7 @@
 
                                     <li class="nav-item">
                                         <a href="{{ action('App\Http\Controllers\ManagementController@login_histories') }}"
-                                            class="nav-link {{ request()->is('histories/logins*') ? 'active' : '' }}">
+                                            class="nav-link {{ request()->is('admin/histories/logins*') ? 'active' : '' }}">
                                             <i class="far fa-circle nav-icon"></i>
                                             <p>LOGINS</p>
                                         </a>
@@ -125,7 +125,7 @@
 
                                     <li class="nav-item">
                                         <a href="{{ action('App\Http\Controllers\ManagementController@user_histories') }}"
-                                            class="nav-link {{ request()->is('histories/users*') ? 'active' : '' }}">
+                                            class="nav-link {{ request()->is('admin/histories/users*') ? 'active' : '' }}">
                                             <i class="far fa-circle nav-icon"></i>
                                             <p>USERS</p>
                                         </a>

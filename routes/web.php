@@ -38,9 +38,7 @@ Route::get('logout', [LoginController::class, 'logout']);
 // -----------------------------------------------------ADMIN SIDE--------------------------------------------------------------------- //
 // ------------------------------------------------------------------------------------------------------------------------------------ //
 // HOME
-Route::get('home', [AdminController::class, 'home']);
-Route::get('home/dashboard-data', [AdminController::class, 'dashboard_data']);
-Route::get('setup', [AdminController::class, 'setup']);
+Route::get('admin/home', [AdminController::class, 'home']);
 // ------------------------------------------------------------------------------------------------------------------------------------ //
 
 // ------------------------------------------------------------------------------------------------------------------------------------ //
@@ -119,9 +117,9 @@ Route::middleware('role:SUPERADMIN,ADMIN,MANAGER,DATA OFFICER')->group(function 
 });
 Route::middleware('role:SUPERADMIN,ADMIN')->group(function () {
     // - Logins
-    Route::get('histories/logins', [ManagementController::class, 'login_histories']);
+    Route::get('admin/histories/logins', [ManagementController::class, 'login_histories']);
     // - Users
-    Route::get('histories/users', [ManagementController::class, 'user_histories']);
+    Route::get('admin/histories/users', [ManagementController::class, 'user_histories']);
 });
 // ------------------------------------------------------------------------------------------------------------------------------------ //
 
