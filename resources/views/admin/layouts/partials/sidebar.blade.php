@@ -67,6 +67,16 @@
 
                             <ul class="nav nav-treeview">
                                 <li class="nav-item">
+                                    <a href="{{ url('profiling/board-of-members/active') }}"
+                                        class="nav-link {{ request()->is('profiling/board-of-members*') ? 'active bg-success' : '' }}">
+                                        <i class="far fa-circle nav-icon"></i>
+                                        <p>BOARD OF MEMBERS</p>
+                                    </a>
+                                </li>
+                            </ul>
+
+                            <ul class="nav nav-treeview">
+                                <li class="nav-item">
                                     <a href="{{ url('profiling/users/active') }}"
                                         class="nav-link {{ request()->is('profiling/users*') ? 'active bg-success' : '' }}">
                                         <i class="far fa-circle nav-icon"></i>

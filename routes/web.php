@@ -81,6 +81,14 @@ Route::middleware('role:SUPERADMIN,ADMIN,MANAGER,PROFILING OFFICER')->group(func
     Route::post('profiling/users/reset/password/{usr_id}', [ProfilingController::class, 'users_reset_password']);
     Route::post('profiling/users/delete/{usr_id}', [ProfilingController::class, 'users_delete']);
     Route::post('profiling/users/restore/{usr_id}', [ProfilingController::class, 'users_restore']);
+    // - Board of Members
+    Route::get('profiling/board-of-members/active', [ProfilingController::class, 'boards_active']);
+    Route::get('profiling/board-of-members/deleted', [ProfilingController::class, 'boards_deleted']);
+    Route::post('profiling/board-of-members/add', [ProfilingController::class, 'boards_add']);
+    Route::post('profiling/board-of-members/update/user/{usr_id}', [ProfilingController::class, 'boards_update_user']);
+    Route::post('profiling/board-of-members/reset/password/{usr_id}', [ProfilingController::class, 'boards_reset_password']);
+    Route::post('profiling/board-of-members/delete/{usr_id}', [ProfilingController::class, 'boards_delete']);
+    Route::post('profiling/board-of-members/restore/{usr_id}', [ProfilingController::class, 'boards_restore']);
 });
 // ------------------------------------------------------------------------------------------------------------------------------------ //
 
