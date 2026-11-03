@@ -185,6 +185,165 @@ class ManagementController extends Controller
     }
     // END ADDRESSES
 
+    // START POSITIONS
+    public function positions_active(Request $request)
+    {
+        $search = $request->search ?? '';
+
+        $query = DB::table('positions')
+            ->where('positions.pos_active', '=', '1');
+
+        $query->select(
+            'positions.pos_id',
+            'positions.pos_name',
+            'positions.pos_description',
+            'positions.pos_active',
+        );
+
+        if (!empty($search)) {
+            $query->where(function ($q) use ($search) {
+                $q->where('positions.pos_name', 'LIKE', "%$search%")
+                    ->orWhere('creator.usr_first_name', 'LIKE', "%$search%")
+                    ->orWhere('creator.usr_last_name', 'LIKE', "%$search%")
+                    ->orWhere('modifier.usr_first_name', 'LIKE', "%$search%")
+                    ->orWhere('modifier.usr_last_name', 'LIKE', "%$search%");
+            });
+        }
+
+        $query->orderBy('positions.pos_name', 'asc');
+
+        $positions = $query->paginate(500);
+
+        return view('admin.management.positions.active', compact('positions', 'search'));
+    }
+
+    public function positions_deleted(Request $request)
+    {
+        $search = $request->search ?? '';
+
+        $query = DB::table('positions')
+            ->where('positions.pos_active', '=', '0');
+
+        $query->select(
+            'positions.pos_id',
+            'positions.pos_name',
+            'positions.pos_description',
+            'positions.pos_active',
+        );
+
+        if (!empty($search)) {
+            $query->where(function ($q) use ($search) {
+                $q->where('positions.pos_name', 'LIKE', "%$search%")
+                    ->orWhere('creator.usr_first_name', 'LIKE', "%$search%")
+                    ->orWhere('creator.usr_last_name', 'LIKE', "%$search%")
+                    ->orWhere('modifier.usr_first_name', 'LIKE', "%$search%")
+                    ->orWhere('modifier.usr_last_name', 'LIKE', "%$search%");
+            });
+        }
+
+        $query->orderBy('positions.pos_name', 'asc');
+
+        $positions = $query->paginate(500);
+
+        return view('admin.management.positions.deleted', compact('positions', 'search'));
+    }
+
+    public function positions_add(Request $request)
+    {
+        $request->validate([
+            'pos_name' => 'required|string|max:255|unique:positions,pos_name',
+            'pos_description' => 'nullable|string|max:255',
+        ]);
+
+        DB::table('positions')->insert([
+            'pos_uuid' => generateuuid(),
+            'pos_name' => strtoupper($request->pos_name),
+            'pos_description' => strtoupper($request->pos_description),
+            'pos_date_created' => Carbon::now(),
+            'pos_created_by' => session('usr_id'),
+            'pos_active' => 1,
+        ]);
+
+        logUserActivity('Manage Positions', 'Added new position ' . $request->pos_name);
+
+        session()->flash('successMessage', 'Position has been added.');
+        return redirect()->back();
+    }
+
+    public function positions_update(Request $request, $pos_id)
+    {
+        // Validate request
+        $request->validate([
+            'pos_name' => 'required|string|max:255',
+            'pos_description' => 'nullable|string|max:255',
+        ]);
+
+        DB::table('positions')
+            ->where('pos_id', $pos_id)
+            ->update([
+                'pos_name' => strtoupper($request->pos_name),
+                'pos_description' => strtoupper($request->pos_description),
+                'pos_date_modified' => Carbon::now(),
+                'pos_modified_by' => session('usr_id'),
+            ]);
+
+        logUserActivity('Manage Positions', 'Updated position ' . $request->pos_name);
+
+        session()->flash('successMessage', 'Position has been updated.');
+        return redirect()->back();
+    }
+
+    public function positions_delete(Request $request, $pos_id)
+    {
+        $position = DB::table('positions')
+            ->where('pos_id', '=', $pos_id)
+            ->first();
+
+        if (!$position) {
+            alert()->error('Position not found.');
+            return redirect()->back();
+        }
+
+        DB::table('positions')
+            ->where('pos_id', '=', $pos_id)
+            ->update([
+                'pos_date_modified' => Carbon::now(),
+                'pos_modified_by' => session('usr_id'),
+                'pos_active' => 0,
+            ]);
+
+        logUserActivity('Manage Positions', 'Deleted position ' . $position->pos_name);
+
+        session()->flash('successMessage', 'Position has been Deleted.');
+        return redirect()->back();
+    }
+
+    public function positions_restore(Request $request, $pos_id)
+    {
+        $position = DB::table('positions')
+            ->where('pos_id', '=', $pos_id)
+            ->first();
+
+        if (!$position) {
+            alert()->error('Position not found.');
+            return redirect()->back();
+        }
+
+        DB::table('positions')
+            ->where('pos_id', '=', $pos_id)
+            ->update([
+                'pos_date_modified' => Carbon::now(),
+                'pos_modified_by' => session('usr_id'),
+                'pos_active' => 1,
+            ]);
+
+        logUserActivity('Manage Positions', 'Restored position ' . $position->pos_name);
+
+        session()->flash('successMessage', 'Position has been Restored.');
+        return redirect()->back();
+    }
+    // END POSITIONS
+
     // START LOGS
     public function login_histories(Request $request)
     {

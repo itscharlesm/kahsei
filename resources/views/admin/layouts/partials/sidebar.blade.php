@@ -78,16 +78,21 @@
                     @endif
 
                     {{-- MANAGEMENT --}}
-                    @if (session('SUPERADMIN') == '1' || session('ADMIN') == '1' || session('MANAGER') == '1' || session('DATA OFFICER') == '1' || session('ACCOUNTING OFFICER') == '1')
+                    @if (session('SUPERADMIN') == '1' || session('ADMIN') == '1')
                         <li class="nav-header">MANAGEMENT</li>
 
-                        @if (session('SUPERADMIN') == '1' || session('ADMIN') == '1' || session('MANAGER') == '1' || session('DATA OFFICER') == '1')
+                        @if (session('SUPERADMIN') == '1' || session('ADMIN') == '1')
                             {{-- Addresses --}}
                             <li class="nav-item">
                                 <a href="{{ url('admin/management/addresses/active') }}"
                                     class="nav-link {{ request()->is('admin/management/addresses*') ? 'active bg-success' : '' }}">
                                     <i class="nav-icon fas fa-map-marker-alt"></i>
                                     <p>ADDRESSES</p>
+                                </a>
+                                <a href="{{ url('admin/management/positions/active') }}"
+                                    class="nav-link {{ request()->is('admin/management/positions*') ? 'active bg-success' : '' }}">
+                                    <i class="nav-icon fas fa-user-alt"></i>
+                                    <p>POSITIONS</p>
                                 </a>
                             </li>
                         @endif

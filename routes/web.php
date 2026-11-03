@@ -94,6 +94,13 @@ Route::middleware('role:SUPERADMIN,ADMIN,MANAGER,DATA OFFICER')->group(function 
     Route::post('admin/management/addresses/update/{add_id}', [ManagementController::class, 'addresses_update']);
     Route::post('admin/management/addresses/delete/{add_id}', [ManagementController::class, 'addresses_delete']);
     Route::post('admin/management/addresses/restore/{add_id}', [ManagementController::class, 'addresses_restore']);
+    // - Positions
+    Route::get('admin/management/positions/active', [ManagementController::class, 'positions_active']);
+    Route::get('admin/management/positions/deleted', [ManagementController::class, 'positions_deleted']);
+    Route::post('admin/management/positions/add', [ManagementController::class, 'positions_add']);
+    Route::post('admin/management/positions/update/{pos_id}', [ManagementController::class, 'positions_update']);
+    Route::post('admin/management/positions/delete/{pos_id}', [ManagementController::class, 'positions_delete']);
+    Route::post('admin/management/positions/restore/{pos_id}', [ManagementController::class, 'positions_restore']);
 });
 Route::middleware('role:SUPERADMIN,ADMIN')->group(function () {
     // - Logins
