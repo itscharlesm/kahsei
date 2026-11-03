@@ -36,7 +36,7 @@
 
                     {{-- Messages --}}
                     <li class="nav-item">
-                        <a href="{{ action('App\Http\Controllers\MessageController@main') }}"
+                        <a href="{{ url('messages') }}"
                             class="nav-link {{ request()->is('messages*') ? 'active bg-success' : '' }}">
                             <i class="nav-icon fas fa-comments"></i>
                             <p>MESSAGES</p>
@@ -45,7 +45,7 @@
 
                     {{-- Account --}}
                     <li class="nav-item">
-                        <a href="{{ action('App\Http\Controllers\UserController@account') }}"
+                        <a href="{{ url('account') }}"
                             class="nav-link {{ request()->is('account') ? 'active bg-success' : '' }}">
                             <i class="nav-icon fas fa-cog"></i>
                             <p>ACCOUNT</p>
@@ -67,7 +67,7 @@
 
                             <ul class="nav nav-treeview">
                                 <li class="nav-item">
-                                    <a href="{{ action('App\Http\Controllers\ProfilingController@users_active') }}"
+                                    <a href="{{ url('profiling/users/active') }}"
                                         class="nav-link {{ request()->is('profiling/users*') ? 'active bg-success' : '' }}">
                                         <i class="far fa-circle nav-icon"></i>
                                         <p>USERS</p>
@@ -84,7 +84,7 @@
                         @if (session('SUPERADMIN') == '1' || session('ADMIN') == '1' || session('MANAGER') == '1' || session('DATA OFFICER') == '1')
                             {{-- Addresses --}}
                             <li class="nav-item">
-                                <a href="{{ action('App\Http\Controllers\ManagementController@addresses_active') }}"
+                                <a href="{{ url('admin/management/addresses/active') }}"
                                     class="nav-link {{ request()->is('admin/management/addresses*') ? 'active bg-success' : '' }}">
                                     <i class="nav-icon fas fa-map-marker-alt"></i>
                                     <p>ADDRESSES</p>
@@ -105,7 +105,7 @@
 
                                 <ul class="nav nav-treeview">
                                     <li class="nav-item">
-                                        <a href="{{ action('App\Http\Controllers\ManagementController@login_histories') }}"
+                                        <a href="{{ url('admin/histories/logins') }}"
                                             class="nav-link {{ request()->is('admin/histories/logins*') ? 'active bg-success' : '' }}">
                                             <i class="far fa-circle nav-icon"></i>
                                             <p>LOGINS</p>
@@ -113,7 +113,7 @@
                                     </li>
 
                                     <li class="nav-item">
-                                        <a href="{{ action('App\Http\Controllers\ManagementController@user_histories') }}"
+                                        <a href="{{ url('admin/histories/users') }}"
                                             class="nav-link {{ request()->is('admin/histories/users*') ? 'active bg-success' : '' }}">
                                             <i class="far fa-circle nav-icon"></i>
                                             <p>USERS</p>
@@ -127,7 +127,7 @@
 
                 {{-- Signout --}}
                 <li class="nav-item">
-                    <a href="{{ action('App\Http\Controllers\LoginController@logout') }}" class="nav-link">
+                    <a href="{{ url('logout') }}" class="nav-link">
                         <i class="nav-icon fas fa-sign-out"></i>
                         <p>SIGN OUT</p>
                     </a>
