@@ -466,7 +466,7 @@
             </div>
         @endif
 
-        <form method="POST" action="{{ action('App\Http\Controllers\LoginController@validate_user') }}">
+        <form method="POST" action="{{ url('validate') }}">
             {{ csrf_field() }}
 
             <div class="kx-field">
@@ -509,7 +509,7 @@
         aria-labelledby="forgotPasswordModalLabel" aria-hidden="true">
         <div class="modal-dialog modal-dialog-centered" role="document">
             <div class="modal-content">
-                <form method="POST" action="{{ action('App\Http\Controllers\LoginController@forgot_password') }}">
+                <form method="POST" action="{{ url('forgot/password') }}">
                     {{ csrf_field() }}
                     <div class="modal-header">
                         <h5 class="modal-title" id="forgotPasswordModalLabel">Forgot Password</h5>

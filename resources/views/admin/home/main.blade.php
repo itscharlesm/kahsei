@@ -175,7 +175,7 @@
                         <div class="modal-footer">
                             <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
                             <form
-                                action="{{ action('App\Http\Controllers\AnnouncementController@delete', [$announcement->ann_uuid]) }}"
+                                action="{{ url('admin/announcement/delete', [$announcement->ann_uuid]) }}"
                                 method="POST" class="d-inline">
                                 @csrf
                                 <button type="submit" class="btn btn-danger">
@@ -198,7 +198,7 @@
                     <h5 class="modal-title" id="newAnnouncementModalLabel">Create New Announcement</h5>
                     <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
                 </div>
-                <form action="{{ action('App\Http\Controllers\AnnouncementController@save') }}" method="POST"
+                <form action="{{ url('announcement/save') }}" method="POST"
                     enctype="multipart/form-data">
                     @csrf
                     <div class="modal-body">

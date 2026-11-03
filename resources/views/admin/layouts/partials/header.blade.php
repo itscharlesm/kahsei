@@ -80,7 +80,7 @@
                                     </a>
                                 @else
                                     <a class="btn btn-primary" title="Employee Logout"
-                                        href="{{ action('App\Http\Controllers\LoginController@logout') }}">
+                                        href="{{ url('logout') }}">
                                         Logout
                                     </a>
                                 @endif

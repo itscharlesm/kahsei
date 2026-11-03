@@ -43,8 +43,8 @@ Route::get('home', [AdminController::class, 'home']);
 
 // ------------------------------------------------------------------------------------------------------------------------------------ //
 // ANNOUNCEMENTS
-Route::post('announcement/save', [AnnouncementController::class, 'save']);
-Route::post('announcement/delete/{ann_uuid}', [AnnouncementController::class, 'delete']);
+Route::post('admin/announcement/save', [AnnouncementController::class, 'save']);
+Route::post('admin/announcement/delete/{ann_uuid}', [AnnouncementController::class, 'delete']);
 // ------------------------------------------------------------------------------------------------------------------------------------ //
 
 // ------------------------------------------------------------------------------------------------------------------------------------ //

@@ -43,7 +43,7 @@
                     @endif
 
                     <div class="dropdown-divider"></div>
-                    <a href="{{ action('App\Http\Controllers\LoginController@logout') }}" class="dropdown-item">
+                    <a href="{{ url('logout') }}" class="dropdown-item">
                         <i class="fas fa-sign-out me-2"></i> Sign out
                     </a>
                 </div>
