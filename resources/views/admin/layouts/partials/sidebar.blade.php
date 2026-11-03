@@ -85,7 +85,7 @@
                             {{-- Addresses --}}
                             <li class="nav-item">
                                 <a href="{{ action('App\Http\Controllers\ManagementController@addresses_active') }}"
-                                    class="nav-link {{ request()->is('management/addresses*') ? 'active bg-success' : '' }}">
+                                    class="nav-link {{ request()->is('admin/management/addresses*') ? 'active bg-success' : '' }}">
                                     <i class="nav-icon fas fa-map-marker-alt"></i>
                                     <p>ADDRESSES</p>
                                 </a>

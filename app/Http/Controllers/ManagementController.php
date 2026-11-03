@@ -48,7 +48,7 @@ class ManagementController extends Controller
 
         $addresses = $query->paginate(500);
 
-        return view('management.addresses.active', compact('addresses', 'search'));
+        return view('admin.management.addresses.active', compact('addresses', 'search'));
     }
 
     public function addresses_deleted(Request $request)
@@ -90,7 +90,7 @@ class ManagementController extends Controller
 
         $addresses = $query->paginate(500);
 
-        return view('management.addresses.deleted', compact('addresses', 'search'));
+        return view('admin.management.addresses.deleted', compact('addresses', 'search'));
     }
 
     public function addresses_add(Request $request)

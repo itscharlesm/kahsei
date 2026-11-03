@@ -1,4 +1,4 @@
-@extends('layouts.themes.main')
+@extends('admin.layouts.themes.main')
 
 @section('content')
     {{-- Content Header --}}
@@ -23,16 +23,16 @@
 
     {{-- Main Content --}}
     <div class="app-content">
-        @include('layouts.partials.onclick')
-        @include('layouts.partials.alerts')
-        @include('layouts.partials.modal_style')
+        @include('admin.layouts.partials.onclick')
+        @include('admin.layouts.partials.alerts')
+        @include('admin.layouts.partials.modal_style')
         <div class="container-fluid">
             <div class="card">
                 <div class="card-body overflow-auto">
                     <div class="row">
                         <div class="col-md-12">
                             @if (session('SUPERADMIN') == '1' || session('ADMIN') == '1' || session('MANAGER') == '1' || session('DATA OFFICER') == '1')
-                                <a class="btn btn-danger mb-3" href="{{ url('management/addresses/deleted') }}">
+                                <a class="btn btn-danger mb-3" href="{{ url('admin/management/addresses/deleted') }}">
                                     <span class="fa fa-archive"></span> Deleted Addresses
                                 </a>
 
@@ -47,7 +47,7 @@
                     <div class="row">
                         <!-- Table Column -->
                         <div class="col-lg-12 col-md-7">
-                            <form method="GET" action="{{ url('management/addresses/active') }}" class="mb-3">
+                            <form method="GET" action="{{ url('admin/management/addresses/active') }}" class="mb-3">
                                 <div class="input-group">
                                     <input type="text" name="search" id="searchInput" class="form-control"
                                         placeholder="Search addresses..." value="{{ request('search') }}">
@@ -121,7 +121,7 @@
     <div class="modal fade" id="addAddressModal" tabindex="-1" aria-labelledby="addAddressModalLabel" aria-hidden="true">
         <div class="modal-dialog">
             <div class="modal-content">
-                <form action="{{ url('management/addresses/add') }}" method="POST">
+                <form action="{{ url('admin/management/addresses/add') }}" method="POST">
                     @csrf
 
                     <div class="modal-header bg-success text-white">
@@ -162,7 +162,7 @@
             aria-labelledby="updateAddressModalLabel-{{ $address->add_id }}" aria-hidden="true">
             <div class="modal-dialog">
                 <div class="modal-content">
-                    <form action="{{ url('management/addresses/update/' . $address->add_id) }}" method="POST">
+                    <form action="{{ url('admin/management/addresses/update/' . $address->add_id) }}" method="POST">
                         @csrf
 
                         <div class="modal-header bg-warning">
@@ -199,8 +199,7 @@
             aria-labelledby="deleteModalLabel-{{ $address->add_id }}" aria-hidden="true">
             <div class="modal-dialog">
                 <div class="modal-content">
-                    <form method="POST"
-                        action="{{ action('App\Http\Controllers\ManagementController@addresses_delete', [$address->add_id]) }}">
+                    <form method="POST" action="{{ url('admin/management/addresses/delete', [$address->add_id]) }}">
                         @csrf
                         <div class="modal-header bg-danger text-white">
                             <h5 class="modal-title text-white" id="deleteModalLabel-{{ $address->add_id }}">

@@ -108,12 +108,12 @@ Route::middleware('role:SUPERADMIN,ADMIN,MANAGER,PROFILING OFFICER')->group(func
 // MANAGEMENT
 Route::middleware('role:SUPERADMIN,ADMIN,MANAGER,DATA OFFICER')->group(function () {
     // - Addresses
-    Route::get('management/addresses/active', [ManagementController::class, 'addresses_active']);
-    Route::get('management/addresses/deleted', [ManagementController::class, 'addresses_deleted']);
-    Route::post('management/addresses/add', [ManagementController::class, 'addresses_add']);
-    Route::post('management/addresses/update/{add_id}', [ManagementController::class, 'addresses_update']);
-    Route::post('management/addresses/delete/{add_id}', [ManagementController::class, 'addresses_delete']);
-    Route::post('management/addresses/restore/{add_id}', [ManagementController::class, 'addresses_restore']);
+    Route::get('admin/management/addresses/active', [ManagementController::class, 'addresses_active']);
+    Route::get('admin/management/addresses/deleted', [ManagementController::class, 'addresses_deleted']);
+    Route::post('admin/management/addresses/add', [ManagementController::class, 'addresses_add']);
+    Route::post('admin/management/addresses/update/{add_id}', [ManagementController::class, 'addresses_update']);
+    Route::post('admin/management/addresses/delete/{add_id}', [ManagementController::class, 'addresses_delete']);
+    Route::post('admin/management/addresses/restore/{add_id}', [ManagementController::class, 'addresses_restore']);
 });
 Route::middleware('role:SUPERADMIN,ADMIN')->group(function () {
     // - Logins
