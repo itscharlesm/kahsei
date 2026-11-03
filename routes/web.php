@@ -81,26 +81,6 @@ Route::middleware('role:SUPERADMIN,ADMIN,MANAGER,PROFILING OFFICER')->group(func
     Route::post('profiling/users/reset/password/{usr_id}', [ProfilingController::class, 'users_reset_password']);
     Route::post('profiling/users/delete/{usr_id}', [ProfilingController::class, 'users_delete']);
     Route::post('profiling/users/restore/{usr_id}', [ProfilingController::class, 'users_restore']);
-    // - Technicians
-    Route::get('profiling/technicians/active', [ProfilingController::class, 'technicians_active']);
-    Route::get('profiling/technicians/deleted', [ProfilingController::class, 'technicians_deleted']);
-    Route::post('profiling/technicians/add', [ProfilingController::class, 'technicians_add']);
-    Route::post('profiling/technicians/update/technician/{usr_id}', [ProfilingController::class, 'technicians_update_technician']);
-    Route::post('profiling/technicians/reset/password/{usr_id}', [ProfilingController::class, 'technicians_reset_password']);
-    Route::post('profiling/technicians/delete/{usr_id}', [ProfilingController::class, 'technicians_delete']);
-    Route::post('profiling/technicians/restore/{usr_id}', [ProfilingController::class, 'technicians_restore']);
-    // - Clients
-    Route::get('profiling/clients/active', [ProfilingController::class, 'clients_active']);
-    Route::get('profiling/clients/deleted', [ProfilingController::class, 'clients_deleted']);
-    Route::get('profiling/clients/contracts/{usr_id}', [ProfilingController::class, 'clients_contracts']);
-    Route::post('profiling/clients/add', [ProfilingController::class, 'clients_add']);
-    Route::post('profiling/clients/import', [ProfilingController::class, 'clients_import']);
-    Route::post('profiling/clients/update/branch/{usr_id}', [ProfilingController::class, 'clients_update_branch']);
-    Route::post('profiling/clients/address/add/{usr_id}', [ProfilingController::class, 'clients_address_add']);
-    Route::post('profiling/clients/address/edit/{usr_id}', [ProfilingController::class, 'clients_address_edit']);
-    Route::post('profiling/clients/reset/password/{usr_id}', [ProfilingController::class, 'clients_reset_password']);
-    Route::post('profiling/clients/delete/{usr_id}', [ProfilingController::class, 'clients_delete']);
-    Route::post('profiling/clients/restore/{usr_id}', [ProfilingController::class, 'clients_restore']);
 });
 // ------------------------------------------------------------------------------------------------------------------------------------ //
 

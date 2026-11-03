@@ -1,3 +1,451 @@
+<?php
+
+namespace App\Http\Controllers;
+
+use App\Http\Controllers\Controller;
+use Illuminate\Http\Request;
+use Carbon\Carbon;
+use DB;
+
+class ProfilingController extends Controller
+{
+    // START USERS
+    public function users_active(Request $request)
+    {
+        $search = $request->search ?? '';
+
+        $sessionBranchId = session('branch_id');
+
+        // Base query
+        $query = DB::table('users')
+            ->leftJoin('user_roles', 'users.usr_id', '=', 'user_roles.usr_id')
+            ->leftJoin('roles', 'user_roles.rol_id', '=', 'roles.rol_id')
+            ->leftJoin('branches', 'users.branch_id', '=', 'branches.branch_id')
+            ->where('users.usr_id', '!=', '1')
+            ->where('users.utyp_id', '=', '1')
+            ->where('users.usr_active', '=', '1');
+
+        // Branch filter (unless super admin)
+        if ($sessionBranchId != 1) {
+            $query->where('users.branch_id', $sessionBranchId);
+        }
+
+        $query->select(
+            'users.usr_id',
+            'users.usr_uuid',
+            'users.branch_id',
+            'branches.branch_name',
+            'users.usr_last_name',
+            'users.usr_first_name',
+            'users.usr_middle_name',
+            'users.usr_email',
+            'users.usr_mobile',
+            'users.usr_active',
+            DB::raw('GROUP_CONCAT(CASE WHEN user_roles.url_active = 1 THEN roles.rol_name END ORDER BY roles.rol_name SEPARATOR ", ") as roles')
+        )
+            ->groupBy(
+                'users.usr_id',
+                'users.usr_uuid',
+                'users.branch_id',
+                'branches.branch_name',
+                'users.usr_last_name',
+                'users.usr_first_name',
+                'users.usr_middle_name',
+                'users.usr_email',
+                'users.usr_mobile',
+                'users.usr_active'
+            )
+            ->orderBy('users.usr_last_name')
+            ->orderBy('users.usr_first_name');
+
+        // Search filter
+        if (!empty($search)) {
+            $terms = preg_split('/[\s,]+/', trim($search), -1, PREG_SPLIT_NO_EMPTY);
+
+            $query->where(function ($outer) use ($terms) {
+                foreach ($terms as $term) {
+                    $outer->where(function ($q) use ($term) {
+                        $q->where('users.usr_last_name', 'LIKE', "%$term%")
+                            ->orWhere('users.usr_first_name', 'LIKE', "%$term%")
+                            ->orWhere('users.usr_middle_name', 'LIKE', "%$term%")
+                            ->orWhere('users.usr_email', 'LIKE', "%$term%")
+                            ->orWhere('users.usr_mobile', 'LIKE', "%$term%")
+                            ->orWhere('branches.branch_name', 'LIKE', "%$term%");
+                    });
+                }
+            });
+        }
+
+        $users = $query->paginate(500);
+
+        $roles = DB::table('roles')
+            ->select('rol_id', 'rol_name', 'rol_description')
+            ->where('rol_id', '!=', 1)
+            ->where('rol_active', 1);
+
+        if (session('SUPERADMIN') == '1') {
+            // Super Admin can see all roles
+            // No additional role restriction
+
+        } elseif (session('ADMIN') == '1') {
+            // Admin can see all roles except Super Admin
+            $roles->where('rol_id', '!=', 1);
+
+        } elseif (session('MANAGER') == '1') {
+            // Manager can see Manager and lower roles
+            $roles->whereNotIn('rol_id', [1, 2]);
+
+        } else {
+            // Other users can only see roles lower than Manager
+            $roles->whereNotIn('rol_id', [1, 2, 3]);
+        }
+
+        $roles = $roles->get();
+
+        $regions = DB::table('location_regions')
+            ->where('reg_active', 1)
+            ->orderBy('reg_name')
+            ->get(['reg_id', 'reg_name']);
+
+        // Branch dropdown: branch_id = 1 ("ALL") can see every branch;
+        // everyone else only sees their own branch
+        if ($sessionBranchId == 1) {
+            $branches = DB::table('branches')
+                ->select('branch_id', 'branch_name')
+                ->where('branch_active', 1)
+                ->get();
+        } else {
+            $branches = DB::table('branches')
+                ->select('branch_id', 'branch_name')
+                ->where('branch_active', 1)
+                ->where('branch_id', $sessionBranchId)
+                ->get();
+        }
+
+        return view('admin.profiling.users.active', compact('users', 'search', 'roles', 'regions', 'branches'));
+    }
+
+    public function users_deleted(Request $request)
+    {
+        $search = $request->search ?? '';
+
+        $sessionBranchId = session('branch_id');
+
+        // Base query
+        $query = DB::table('users')
+            ->leftJoin('user_roles', 'users.usr_id', '=', 'user_roles.usr_id')
+            ->leftJoin('roles', 'user_roles.rol_id', '=', 'roles.rol_id')
+            ->leftJoin('branches', 'users.branch_id', '=', 'branches.branch_id')
+            ->where('users.usr_id', '!=', '1')
+            ->where('users.utyp_id', '=', '1')
+            ->where('users.usr_active', '=', '0');
+
+        // Branch filter (unless super admin)
+        if ($sessionBranchId && $sessionBranchId != 1) {
+            $query->where('users.branch_id', $sessionBranchId);
+        }
+
+        $query->select(
+            'users.usr_id',
+            'users.usr_uuid',
+            'users.branch_id',
+            'branches.branch_name',
+            'users.usr_last_name',
+            'users.usr_first_name',
+            'users.usr_middle_name',
+            'users.usr_email',
+            'users.usr_mobile',
+            'users.usr_active',
+            DB::raw('GROUP_CONCAT(CASE WHEN user_roles.url_active = 1 THEN roles.rol_name END ORDER BY roles.rol_name SEPARATOR ", ") as roles')
+        )
+            ->groupBy(
+                'users.usr_id',
+                'users.usr_uuid',
+                'users.branch_id',
+                'branches.branch_name',
+                'users.usr_last_name',
+                'users.usr_first_name',
+                'users.usr_middle_name',
+                'users.usr_email',
+                'users.usr_mobile',
+                'users.usr_active'
+            )
+            ->orderBy('users.usr_last_name')
+            ->orderBy('users.usr_first_name');
+
+        // Search filter
+        if (!empty($search)) {
+            $terms = preg_split('/[\s,]+/', trim($search), -1, PREG_SPLIT_NO_EMPTY);
+
+            $query->where(function ($outer) use ($terms) {
+                foreach ($terms as $term) {
+                    $outer->where(function ($q) use ($term) {
+                        $q->where('users.usr_last_name', 'LIKE', "%$term%")
+                            ->orWhere('users.usr_first_name', 'LIKE', "%$term%")
+                            ->orWhere('users.usr_middle_name', 'LIKE', "%$term%")
+                            ->orWhere('users.usr_email', 'LIKE', "%$term%")
+                            ->orWhere('users.usr_mobile', 'LIKE', "%$term%")
+                            ->orWhere('branches.branch_name', 'LIKE', "%$term%");
+                    });
+                }
+            });
+        }
+
+        $users = $query->paginate(500);
+
+        $roles = DB::table('roles')
+            ->select('rol_id', 'rol_name', 'rol_description')
+            ->where('rol_active', 1)
+            ->where('rol_id', '!=', 1)
+            ->get();
+
+        $regions = DB::table('location_regions')
+            ->where('reg_active', 1)
+            ->orderBy('reg_name')
+            ->get(['reg_id', 'reg_name']);
+
+        $branches = DB::table('branches')
+            ->select('branch_id', 'branch_name')
+            ->where('branch_active', 1)
+            ->get();
+
+        return view('admin.profiling.users.deleted', compact('users', 'search', 'roles', 'regions', 'branches'));
+    }
+
+    public function users_add(Request $request)
+    {
+        $request->validate([
+            'usr_first_name' => 'required|string|max:255',
+            'usr_middle_name' => 'nullable|string|max:255',
+            'usr_last_name' => 'required|string|max:255',
+            'usr_email' => 'required|email|max:255|unique:users,usr_email',
+            'usr_mobile' => 'nullable|string|max:20',
+            'branch_id' => 'required|string|max:255',
+
+            // address validation
+            'street' => 'nullable|string|max:255',
+            'region' => 'nullable|string|max:100',
+            'province' => 'nullable|string|max:100',
+            'municipality' => 'nullable|string|max:100',
+            'barangay' => 'nullable|string|max:100',
+        ]);
+
+        $code = '123456';
+
+        DB::beginTransaction();
+
+        // Insert user
+        $usr_id = DB::table('users')->insertGetId([
+            'usr_uuid' => generateuuid(),
+            'utyp_id' => 1,
+            'usr_first_name' => strtoupper($request->usr_first_name),
+            'usr_middle_name' => $request->usr_middle_name ? strtoupper($request->usr_middle_name) : null,
+            'usr_last_name' => strtoupper($request->usr_last_name),
+            'usr_email' => $request->usr_email,
+            'usr_mobile' => $request->usr_mobile ?: null,
+            'branch_id' => $request->branch_id,
+            'usr_password' => md5($code),
+            'usr_code' => $code,
+            'usr_date_created' => Carbon::now(),
+            'usr_created_by' => session('usr_id'),
+            'usr_active' => 1
+        ]);
+
+        // Insert address (if any field is filled)
+        if ($request->street || $request->barangay || $request->municipality || $request->province || $request->region) {
+            DB::table('user_addresses')->insert([
+                'uadd_uuid' => generateuuid(),
+                'usr_id' => $usr_id,
+                'add_id' => 1,
+                'uadd_street' => normalizeAddressStreet($request->street),
+                'uadd_barangay' => strtoupper($request->barangay),
+                'uadd_city' => strtoupper($request->municipality),
+                'uadd_province' => strtoupper($request->province),
+                'uadd_region' => strtoupper($request->region),
+                'uadd_active' => 1,
+            ]);
+        }
+
+        DB::commit();
+
+        return back()->with('successMessage', 'The user has been created and the password has been set to 123456.');
+    }
+
+    public function users_update_user(Request $request, $usr_id)
+    {
+        $request->validate([
+            'roles' => 'array',
+            'roles.*' => 'exists:roles,rol_id',
+            'branch_id' => 'required|exists:branches,branch_id',
+        ]);
+
+        $selectedRoles = $request->roles ?? [];
+        $sessionBranchId = session('branch_id');
+
+        // Get the user's first and last name, and current branch
+        $user = DB::table('users')
+            ->where('usr_id', $usr_id)
+            ->select('usr_first_name', 'usr_last_name', 'branch_id')
+            ->first();
+
+        if (!$user) {
+            alert()->error('Error', 'User not found.');
+            return redirect()->back();
+        }
+
+        // Enforce branch visibility: non branch-1 sessions can only assign their own branch
+        $newBranchId = $request->branch_id;
+        if ($sessionBranchId != 1 && $newBranchId != $sessionBranchId) {
+            alert()->error('Error', 'You are not allowed to assign that branch.');
+            return redirect()->back();
+        }
+
+        // Get all current roles of the user
+        $existingRoles = DB::table('user_roles')
+            ->where('usr_id', $usr_id)
+            ->pluck('rol_id')
+            ->toArray();
+
+        // Fetch old active roles (before update)
+        $oldRoles = DB::table('roles')
+            ->whereIn('rol_id', DB::table('user_roles')
+                ->where('usr_id', $usr_id)
+                ->where('url_active', 1)
+                ->pluck('rol_id'))
+            ->pluck('rol_name')
+            ->toArray();
+
+        // Step 1: Update or deactivate existing roles
+        foreach ($existingRoles as $rol_id) {
+            $isActive = in_array($rol_id, $selectedRoles) ? 1 : 0;
+
+            DB::table('user_roles')
+                ->where('usr_id', $usr_id)
+                ->where('rol_id', $rol_id)
+                ->update(['url_active' => $isActive]);
+        }
+
+        // Step 2: Insert new roles (those in selectedRoles but not in existingRoles)
+        $newRolesToInsert = array_diff($selectedRoles, $existingRoles);
+        foreach ($newRolesToInsert as $rol_id) {
+            DB::table('user_roles')->insert([
+                'usr_id' => $usr_id,
+                'rol_id' => $rol_id,
+                'url_active' => 1,
+            ]);
+        }
+
+        // Fetch new active roles (after update)
+        $newRoles = DB::table('roles')
+            ->whereIn('rol_id', DB::table('user_roles')
+                ->where('usr_id', $usr_id)
+                ->where('url_active', 1)
+                ->pluck('rol_id'))
+            ->pluck('rol_name')
+            ->toArray();
+
+        // Step 3: Update branch
+        $oldBranchId = $user->branch_id;
+        if ($newBranchId != $oldBranchId) {
+            DB::table('users')
+                ->where('usr_id', $usr_id)
+                ->update(['branch_id' => $newBranchId]);
+        }
+
+        // Convert roles array to comma-separated string
+        $oldRolesString = implode(', ', $oldRoles);
+        $newRolesString = implode(', ', $newRoles);
+
+        // Log user activity
+        logUserActivity(
+            'Manage Users',
+            'Updated user ' . $user->usr_last_name . ', ' . $user->usr_first_name .
+            ' - Roles FROM [' . $oldRolesString . '] TO [' . $newRolesString . ']' .
+            ($newBranchId != $oldBranchId ? ' - Branch FROM [' . $oldBranchId . '] TO [' . $newBranchId . ']' : '')
+        );
+
+        alert()->success('Success', 'User updated successfully.');
+        return redirect()->back();
+    }
+
+    public function users_reset_password(Request $request, $usr_id)
+    {
+        $user = DB::table('users')
+            ->where('usr_id', '=', $usr_id)
+            ->first();
+
+        if (!$user) {
+            alert()->error('User not found.');
+            return redirect()->back();
+        }
+
+        DB::table('users')
+            ->where('usr_id', '=', $usr_id)
+            ->update([
+                'usr_password' => md5('123456'),
+                'usr_code' => '123456',
+                'usr_date_modified' => Carbon::now(),
+                'usr_modified_by' => session('usr_id')
+            ]);
+
+        logUserActivity('Manage Users', 'Reset password for user ' . $user->usr_last_name . ', ' . $user->usr_first_name);
+
+        session()->flash('successMessage', 'Password has been reset to 123456.');
+        return redirect()->back();
+    }
+
+    public function users_delete(Request $request, $usr_id)
+    {
+        $user = DB::table('users')
+            ->where('usr_id', '=', $usr_id)
+            ->first();
+
+        if (!$user) {
+            alert()->error('User not found.');
+            return redirect()->back();
+        }
+
+        DB::table('users')
+            ->where('usr_id', '=', $usr_id)
+            ->update([
+                'usr_date_modified' => Carbon::now(),
+                'usr_modified_by' => session('usr_id'),
+                'usr_active' => 0
+            ]);
+
+        logUserActivity('Manage Users', 'Deleted user ' . $user->usr_last_name . ', ' . $user->usr_first_name);
+
+        session()->flash('successMessage', 'User has been deleted.');
+        return redirect()->back();
+    }
+
+    public function users_restore(Request $request, $usr_id)
+    {
+        $user = DB::table('users')
+            ->where('usr_id', '=', $usr_id)
+            ->first();
+
+        if (!$user) {
+            alert()->error('User not found.');
+            return redirect()->back();
+        }
+
+        DB::table('users')
+            ->where('usr_id', '=', $usr_id)
+            ->update([
+                'usr_date_modified' => Carbon::now(),
+                'usr_modified_by' => session('usr_id'),
+                'usr_active' => 1
+            ]);
+
+        logUserActivity('Manage Users', 'Restored user ' . $user->usr_last_name . ', ' . $user->usr_first_name);
+
+        session()->flash('successMessage', 'User has been restored.');
+        return redirect()->back();
+    }
+    // END USERS
+}
+
 active:
 @extends('layouts.themes.main')
 
@@ -7,15 +455,15 @@ active:
         <div class="container-fluid">
             <div class="row mb-2">
                 <div class="col-sm-6">
-                    <h1 class="m-0">Addresses</h1>
+                    <h1 class="m-0">Users</h1>
                 </div>
                 <div class="col-sm-6">
                     <ol class="breadcrumb float-sm-right">
                         <li class="breadcrumb-item">
-                            <a href="{{ url('home') }}">Home</a>
+                            <a href="{{ action('App\Http\Controllers\AdminController@home') }}">Home</a>
                         </li>
-                        <li class="breadcrumb-item">Management</li>
-                        <li class="breadcrumb-item active">Addresses</li>
+                        <li class="breadcrumb-item">Profiling</li>
+                        <li class="breadcrumb-item active">Users</li>
                     </ol>
                 </div>
             </div>
@@ -32,14 +480,14 @@ active:
                 <div class="card-body overflow-auto">
                     <div class="row">
                         <div class="col-md-12">
-                            @if (session('SUPERADMIN') == '1' || session('ADMIN') == '1' || session('MANAGER') == '1' || session('DATA OFFICER') == '1')
-                                <a class="btn btn-danger btn-md mb-3" href="{{ url('management/addresses/deleted') }}">
-                                    <span class="fa fa-archive"></span> Deleted Addresses
+                            @if (session('SUPERADMIN') == '1' || session('ADMIN') == '1' || session('MANAGER') == '1' || session('PROFILING OFFICER') == '1')
+                                <a class="btn btn-danger btn-md mb-3" href="{{ url('profiling/users/deleted') }}">
+                                    <span class="fa fa-archive"></span> Deleted Users
                                 </a>
                             
                                 <button type="button" class="btn btn-success mb-3" data-toggle="modal"
-                                    data-target="#addAddressModal">
-                                    <span class="fa fa-plus"></span> Add Address
+                                    data-target="#addUserModal">
+                                    <span class="fa fa-plus"></span> Add User
                                 </button>
                             @endif
                         </div>
@@ -47,11 +495,11 @@ active:
 
                     <div class="row">
                         <!-- Table Column -->
-                        <div class="col-lg-12 col-md-7">
-                            <form method="GET" action="{{ url('management/addresses/active') }}" class="mb-3">
+                        <div class="col-lg-9 col-md-7">
+                            <form method="GET" action="{{ url('profiling/users/active') }}" class="mb-3">
                                 <div class="input-group">
                                     <input type="text" name="search" id="searchInput" class="form-control"
-                                        placeholder="Search addresses..." value="{{ request('search') }}">
+                                        placeholder="Search users..." value="{{ request('search') }}">
                                     <div class="input-group-append">
                                         <button type="submit" class="btn btn-primary">
                                             <span class="fa fa-search"></span> Search
@@ -63,49 +511,48 @@ active:
                             <table id="profilingTable" class="table table-hover table-bordered table-sm responsive">
                                 <thead>
                                     <tr>
-                                        <th style="vertical-align: middle; text-align: center">No</th>
-                                        <th style="vertical-align: middle; text-align: center">Address Identifier</th>
-                                        <th style="vertical-align: middle; text-align: center">Created By</th>
-                                        <th style="vertical-align: middle; text-align: center">Modified By</th>
+                                        <th style="vertical-align: middle; text-align: center">Name</th>
+                                        <th style="vertical-align: middle; text-align: center">Branch</th>
+                                        <th style="vertical-align: middle; text-align: center" width="130px">Role(s)</th>
                                         <th style="vertical-align: middle; text-align: center" width="110px">Action</th>
                                     </tr>
                                 </thead>
                                 <tbody>
-                                    @foreach ($addresses as $address)
+                                    @foreach ($users as $user)
                                         <tr>
-                                            <td style="vertical-align: middle; text-align: center">
-                                                {{ $loop->iteration }}
+                                            <td style="vertical-align: middle; text-align: left">
+                                                {{ $user->usr_last_name }}, {{ $user->usr_first_name }}
+                                                {{ $user->usr_middle_name }}
+                                                <br />
+                                                <small>{{ $user->usr_email }}</small>
+                                                <br />
+                                                <em><small>Last login: {{ getLastLogin($user->usr_id) }}</small></em>
                                             </td>
                                             <td style="vertical-align: middle; text-align: center">
-                                                {{ $address->add_name }}
+                                                {{ $user->branch_name }}
                                             </td>
                                             <td style="vertical-align: middle; text-align: center">
-                                                @if (!empty($address->created_first_name))
-                                                    {{ $address->created_first_name }} {{ $address->created_last_name }} -
-                                                    {{ \Carbon\Carbon::parse($address->add_date_created)->format('m/d/Y | h:i A') }}
+                                                @if (!empty($user->roles))
+                                                    @foreach (explode(', ', $user->roles) as $role)
+                                                        <span class="badge bg-success">{{ $role }}</span>
+                                                    @endforeach
                                                 @else
-                                                    -
-                                                @endif
-                                            </td>
-                                            <td style="vertical-align: middle; text-align: center">
-                                                @if (!empty($address->modified_first_name))
-                                                    {{ $address->modified_first_name }}
-                                                    {{ $address->modified_last_name }} -
-                                                    {{ \Carbon\Carbon::parse($address->add_date_modified)->format('m/d/Y | h:i A') }}
-                                                @else
-                                                    -
+                                                    <span class="badge bg-danger">No Role Assigned</span>
                                                 @endif
                                             </td>
                                             <td style="vertical-align: middle; text-align: center">
                                                 <a class="btn btn-warning btn-sm mb-1" href="javascript:void(0)"
                                                     data-toggle="modal"
-                                                    data-target="#updateAddressModal-{{ $address->add_id }}">
+                                                    data-target="#updateRoleModal-{{ $user->usr_id }}">
                                                     <span class="fa fa-edit"></span>
+                                                </a>
+                                                <a class="btn btn-info btn-sm mb-1" href="javascript:void(0)"
+                                                    data-toggle="modal" data-target="#resetModal-{{ $user->usr_id }}">
+                                                    <span class="fa fa-key"></span>
                                                 </a>
                                                 @if (session('SUPERADMIN') == '1' || session('ADMIN') == '1' || session('MANAGER') == '1')
                                                     <a class="btn btn-danger btn-sm mb-1" href="javascript:void(0)"
-                                                        data-toggle="modal"
-                                                        data-target="#deleteModal-{{ $address->add_id }}">
+                                                        data-toggle="modal" data-target="#deleteModal-{{ $user->usr_id }}">
                                                         <span class="fa fa-trash"></span>
                                                     </a>
                                                 @endif
@@ -115,23 +562,52 @@ active:
                                 </tbody>
                             </table>
                         </div>
+
+                        <!-- Role Info Column -->
+                        <div class="col-lg-3 col-md-5">
+                            <div class="card">
+                                <div class="card-header bg-light">
+                                    <strong><i class="fa fa-info-circle"></i> Role Information</strong>
+                                </div>
+                                <div class="card-body" style="overflow-y: auto;">
+                                    @foreach ($roles as $role)
+                                        <div class="mb-3">
+                                            <h6 class="text-dark mb-1">
+                                                <i class="fa fa-user-tag"></i> {{ $role->rol_name }}
+                                            </h6>
+                                            <p class="text-muted small mb-0">
+                                                {{ $role->rol_description ?? 'No description available' }}
+                                            </p>
+                                            <hr>
+                                        </div>
+                                    @endforeach
+                                </div>
+                            </div>
+                        </div>
                     </div>
                 </div>
             </div>
         </div>
     </section>
 
-    {{-- Add Address Modal --}}
-    <div class="modal fade" id="addAddressModal" tabindex="-1" role="dialog" aria-labelledby="addAddressModalLabel"
+    {{-- Add User Modal --}}
+    <div class="modal fade" id="addUserModal" tabindex="-1" role="dialog" aria-labelledby="addUserModalLabel"
         aria-hidden="true">
-        <div class="modal-dialog modal-xs" role="document">
-            <form action="{{ url('management/addresses/add') }}" method="POST">
+        <div class="modal-dialog modal-lg" role="document">
+            <form action="{{ url('profiling/users/add') }}" method="POST">
                 @csrf
+                {{-- Hidden fields --}}
+                <input type="hidden" name="usr_password" value="{{ md5('123456') }}">
+                <input type="hidden" name="usr_code" value="123456">
+                <input type="hidden" name="region" id="add_hidden_region" value="">
+                <input type="hidden" name="province" id="add_hidden_province" value="">
+                <input type="hidden" name="municipality" id="add_hidden_municipality" value="">
+                <input type="hidden" name="barangay" id="add_hidden_barangay" value="">
 
                 <div class="modal-content">
                     <div class="modal-header bg-success text-white">
-                        <h5 class="modal-title text-white" id="addAddressModalLabel">
-                            <span class="fa fa-plus text-white"></span> Add Address
+                        <h5 class="modal-title text-white" id="addUserModalLabel">
+                            <span class="fa fa-plus text-white"></span> Add User
                         </h5>
                         <button type="button" class="close text-white" data-dismiss="modal" aria-label="Close">
                             <span aria-hidden="true">&times;</span>
@@ -140,11 +616,98 @@ active:
 
                     <div class="modal-body">
                         <div class="row">
-                            {{-- Address Name --}}
+                            {{-- First Name --}}
+                            <div class="col-md-4 mb-3">
+                                <label for="add_first_name">First Name <span class="text-danger">*</span></label>
+                                <input type="text" class="form-control" id="add_first_name" name="usr_first_name"
+                                    placeholder="First Name" required>
+                            </div>
+
+                            {{-- Middle Name --}}
+                            <div class="col-md-4 mb-3">
+                                <label for="add_middle_name">Middle Name</label>
+                                <input type="text" class="form-control" id="add_middle_name" name="usr_middle_name"
+                                    placeholder="Middle Name">
+                            </div>
+
+                            {{-- Last Name --}}
+                            <div class="col-md-4 mb-3">
+                                <label for="add_last_name">Last Name <span class="text-danger">*</span></label>
+                                <input type="text" class="form-control" id="add_last_name" name="usr_last_name"
+                                    placeholder="Last Name" required>
+                            </div>
+
+                            {{-- Email --}}
+                            <div class="col-md-6 mb-3">
+                                <label for="add_email">Email <span class="text-danger">*</span></label>
+                                <input type="email" class="form-control" id="add_email" name="usr_email"
+                                    placeholder="Email" required>
+                            </div>
+
+                            {{-- Mobile --}}
+                            <div class="col-md-6 mb-3">
+                                <label for="add_mobile">
+                                    Mobile Number
+                                    <small class="text-muted">(9123456789)</small>
+                                </label>
+                                <input type="number" class="form-control" id="add_mobile" name="usr_mobile"
+                                    placeholder="Mobile Number" oninput="this.value=this.value.slice(0,10)">
+                            </div>
+
+                            {{-- Branch --}}
                             <div class="col-md-12 mb-3">
-                                <label for="add_name">Address Name <span class="text-danger">*</span></label>
-                                <input type="text" class="form-control" id="add_address_name" name="add_name"
-                                    placeholder="Address Identifier" required>
+                                <label for="branch_id">Branch <span class="text-danger">*</span></label>
+                                <select class="form-control" id="branch_id" name="branch_id" required>
+                                    @foreach ($branches as $branch)
+                                        <option value="{{ $branch->branch_id }}">
+                                            {{ $branch->branch_name }}
+                                        </option>
+                                    @endforeach
+                                </select>
+                            </div>
+
+                            {{-- Street --}}
+                            <div class="col-md-12 mb-3">
+                                <label for="add_street">Street</label>
+                                <input type="text" class="form-control" id="add_street" name="street"
+                                    placeholder="Street / House No. / Bldg.">
+                            </div>
+
+                            {{-- Region --}}
+                            <div class="col-md-3 mb-3">
+                                <label for="add_region">Region</label>
+                                <select id="add_region" class="form-control">
+                                    <option value="">-- SELECT REGION --</option>
+                                    @foreach ($regions as $r)
+                                        <option value="{{ $r->reg_id }}" data-name="{{ $r->reg_name }}">
+                                            {{ $r->reg_name }}
+                                        </option>
+                                    @endforeach
+                                </select>
+                            </div>
+
+                            {{-- Province --}}
+                            <div class="col-md-3 mb-3">
+                                <label for="add_province">Province</label>
+                                <select id="add_province" class="form-control" disabled>
+                                    <option value="">-- SELECT PROVINCE --</option>
+                                </select>
+                            </div>
+
+                            {{-- Municipality --}}
+                            <div class="col-md-3 mb-3">
+                                <label for="add_municipality">City/Municipality</label>
+                                <select id="add_municipality" class="form-control" disabled>
+                                    <option value="">-- SELECT MUNICIPALITY --</option>
+                                </select>
+                            </div>
+
+                            {{-- Barangay --}}
+                            <div class="col-md-3 mb-3">
+                                <label for="add_barangay">Barangay</label>
+                                <select id="add_barangay" class="form-control" disabled>
+                                    <option value="">-- SELECT BARANGAY --</option>
+                                </select>
                             </div>
                         </div>
                     </div>
@@ -154,7 +717,7 @@ active:
                             <span class="fa fa-close"></span> Close
                         </button>
                         <button type="submit" class="btn btn-success">
-                            <span class="fa fa-save"></span> Save Address Identifier
+                            <span class="fa fa-save"></span> Save User
                         </button>
                     </div>
                 </div>
@@ -162,38 +725,57 @@ active:
         </div>
     </div>
 
-    @foreach ($addresses as $address)
-        {{-- Update Address Modal --}}
-        <div class="modal fade" id="updateAddressModal-{{ $address->add_id }}" tabindex="-1" role="dialog"
-            aria-labelledby="updateAddressModalLabel" aria-hidden="true">
-            <div class="modal-dialog modal-xs" role="document">
-                <form action="{{ url('management/addresses/update/' . $address->add_id) }}" method="POST">
+    @foreach ($users as $user)
+        {{-- Update User Modal --}}
+        <div class="modal fade" id="updateRoleModal-{{ $user->usr_id }}" tabindex="-1" role="dialog"
+            aria-labelledby="updateRoleModalLabel" aria-hidden="true">
+            <div class="modal-dialog" role="document">
+                <form action="{{ url('profiling/users/update/user', $user->usr_id) }}" method="POST">
                     @csrf
                     <div class="modal-content">
-                        <div class="modal-header bg-warning text-black">
-                            <h5 class="modal-title text-black" id="updateAddressModalLabel-{{ $address->add_id }}">
-                                <span class="fa fa-edit"></span> Update Address Identifier
+                        <div class="modal-header bg-warning text-white">
+                            <h5 class="modal-title text-black" id="updateRoleModalLabel">
+                                Update User
                             </h5>
-
-                            <button type="button" class="close text-black" data-dismiss="modal">
+                            <button type="button" class="close" data-dismiss="modal" aria-label="Close">
                                 <span aria-hidden="true">&times;</span>
                             </button>
                         </div>
-
                         <div class="modal-body">
-                            {{-- Address Identifier --}}
                             <div class="form-group">
-                                <label>Address Identifier <span class="text-danger">*</span></label>
-                                <input type="text" class="form-control" name="add_name"
-                                    value="{{ $address->add_name }}" required>
+                                <label for="rol_id">Name: <span style="color:black;">{{ $user->usr_first_name }}
+                                        {{ $user->usr_last_name }}</span></label>
+                            </div>
+
+                            <div class="form-group">
+                                <label for="branch_id-{{ $user->usr_id }}">Branch <span class="text-danger">*</span></label>
+                                <select class="form-control" id="branch_id-{{ $user->usr_id }}" name="branch_id" required>
+                                    @foreach ($branches as $branch)
+                                        <option value="{{ $branch->branch_id }}"
+                                            @if ($branch->branch_id == $user->branch_id) selected @endif>
+                                            {{ $branch->branch_name }}
+                                        </option>
+                                    @endforeach
+                                </select>
+                            </div>
+
+                            <div class="form-group">
+                                <label for="rol_id">Roles: <span style="color:red;">*</span></label>
+                                <select class="select2" multiple="multiple" data-placeholder="Select Role(s)"
+                                    style="width:100%;" name="roles[]">
+                                    @foreach ($roles as $role)
+                                        <option value="{{ $role->rol_id }}"
+                                            @if (isset($user->roles) && in_array($role->rol_name, explode(', ', $user->roles))) selected @endif>
+                                            {{ $role->rol_name }}
+                                        </option>
+                                    @endforeach
+                                </select>
                             </div>
                         </div>
-
                         <div class="modal-footer">
                             <button type="button" class="btn btn-secondary" data-dismiss="modal">
                                 <span class="fa fa-close"></span> Close
                             </button>
-
                             <button type="submit" class="btn btn-warning">
                                 <span class="fa fa-save"></span> Update
                             </button>
@@ -203,16 +785,16 @@ active:
             </div>
         </div>
 
-        {{-- Delete Modal --}}
-        <div class="modal fade" id="deleteModal-{{ $address->add_id }}" tabindex="-1" role="dialog"
-            aria-labelledby="deleteModalLabel" aria-hidden="true">
+        {{-- Reset Password Modal --}}
+        <div class="modal fade" id="resetModal-{{ $user->usr_id }}" tabindex="-1" role="dialog"
+            aria-labelledby="exampleModalLabel" aria-hidden="true">
             <div class="modal-dialog" role="document">
                 <div class="modal-content">
                     <form method="POST"
-                        action="{{ action('App\Http\Controllers\ManagementController@addresses_delete', [$address->add_id]) }}">
+                        action="{{ action('App\Http\Controllers\ProfilingController@users_reset_password', [$user->usr_id]) }}">
                         @csrf
-                        <div class="modal-header bg-danger text-white">
-                            <h5 class="modal-title text-white" id="deleteModalLabel">
+                        <div class="modal-header bg-info text-white">
+                            <h5 class="modal-title text-black" id="exampleModalLabel">
                                 Please Confirm
                             </h5>
                             <button type="button" class="close" data-dismiss="modal" aria-label="Close">
@@ -220,9 +802,45 @@ active:
                             </button>
                         </div>
                         <div class="modal-body">
-                            <p>Are you sure you want to <strong>DELETE</strong> address
-                                identifier -
-                                <strong>{{ $address->add_name }}</strong>?
+                            <p>Are you sure you want to RESET this user's password to
+                                <strong>123456</strong>?
+                            </p>
+                            <small>{{ $user->usr_first_name }}
+                                {{ $user->usr_last_name }}<br>{{ $user->usr_email }}</small>
+                        </div>
+                        <div class="modal-footer">
+                            <button type="button" class="btn btn-secondary" data-dismiss="modal">
+                                <span class="fa fa-close"></span> Close
+                            </button>
+                            <button type="submit" class="btn btn-info">
+                                <span class="fa fa-refresh"></span> Confirm Reset
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+
+        {{-- Delete Modal --}}
+        <div class="modal fade" id="deleteModal-{{ $user->usr_id }}" tabindex="-1" role="dialog"
+            aria-labelledby="exampleModalLabel" aria-hidden="true">
+            <div class="modal-dialog" role="document">
+                <div class="modal-content">
+                    <form method="POST"
+                        action="{{ action('App\Http\Controllers\ProfilingController@users_delete', [$user->usr_id]) }}">
+                        @csrf
+                        <div class="modal-header bg-danger text-white">
+                            <h5 class="modal-title text-white" id="exampleModalLabel">
+                                Please Confirm
+                            </h5>
+                            <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                                <span aria-hidden="true">&times;</span>
+                            </button>
+                        </div>
+                        <div class="modal-body">
+                            <p>Are you sure you want to <strong>DELETE</strong> user
+                                <strong>{{ $user->usr_first_name }}
+                                    {{ $user->usr_last_name }}</strong>?
                             </p>
                         </div>
                         <div class="modal-footer">
@@ -238,6 +856,15 @@ active:
             </div>
         </div>
     @endforeach
+
+    <script>
+        $(function() {
+            // Initialize Select2 Elements with classic theme
+            $('.select2').select2({
+                theme: "classic"
+            });
+        });
+    </script>
 
     {{-- Dynamic Search While Typing --}}
     <script>
@@ -257,6 +884,123 @@ active:
             });
         });
     </script>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            const addRegionSel = document.getElementById('add_region');
+            const addProvSel = document.getElementById('add_province');
+            const addMuniSel = document.getElementById('add_municipality');
+            const addBrgySel = document.getElementById('add_barangay');
+
+            const addHiddenRegion = document.getElementById('add_hidden_region');
+            const addHiddenProv = document.getElementById('add_hidden_province');
+            const addHiddenMuni = document.getElementById('add_hidden_municipality');
+            const addHiddenBrgy = document.getElementById('add_hidden_barangay');
+
+            const csrfToken = document.querySelector('meta[name="csrf-token"]')?.getAttribute('content') || '';
+            const baseUrl = window.location.origin;
+
+            function addResetSelect(el, placeholder) {
+                el.innerHTML = `<option value="">${placeholder}</option>`;
+                el.disabled = true;
+            }
+
+            async function addLoadOptions(el, endpoint, textKey, valueKey, placeholder) {
+                el.innerHTML = '<option value="">Loading...</option>';
+                try {
+                    const response = await fetch(`${baseUrl}${endpoint}`, {
+                        method: 'GET',
+                        credentials: 'same-origin',
+                        headers: {
+                            'X-CSRF-TOKEN': csrfToken,
+                            'Accept': 'application/json',
+                            'X-Requested-With': 'XMLHttpRequest'
+                        }
+                    });
+                    if (!response.ok) throw new Error(`HTTP ${response.status}`);
+                    const data = await response.json();
+                    el.innerHTML = `<option value="">${placeholder}</option>`;
+                    if (data && data.length > 0) {
+                        data.forEach(item => {
+                            el.insertAdjacentHTML('beforeend',
+                                `<option value="${item[valueKey]}" data-name="${item[textKey]}">${item[textKey]}</option>`
+                            );
+                        });
+                        el.disabled = false;
+                    } else {
+                        el.innerHTML = `<option value="">No options available</option>`;
+                    }
+                } catch (err) {
+                    console.error(`Error loading ${el.id}:`, err);
+                    el.innerHTML = `<option value="">Error loading data</option>`;
+                }
+            }
+
+            addRegionSel.addEventListener('change', function() {
+                const regionId = this.value;
+                const regionName = this.options[this.selectedIndex]?.getAttribute('data-name') || '';
+                addHiddenRegion.value = regionName;
+
+                addResetSelect(addProvSel, '-- SELECT PROVINCE --');
+                addResetSelect(addMuniSel, '-- SELECT MUNICIPALITY --');
+                addResetSelect(addBrgySel, '-- SELECT BARANGAY --');
+                addHiddenProv.value = '';
+                addHiddenMuni.value = '';
+                addHiddenBrgy.value = '';
+
+                if (regionId) {
+                    addLoadOptions(addProvSel, `/locations/${regionId}/provinces`, 'prov_name', 'prov_id',
+                        '-- SELECT PROVINCE --');
+                }
+            });
+
+            addProvSel.addEventListener('change', function() {
+                const provId = this.value;
+                const provName = this.options[this.selectedIndex]?.getAttribute('data-name') || '';
+                addHiddenProv.value = provName;
+
+                addResetSelect(addMuniSel, '-- SELECT MUNICIPALITY --');
+                addResetSelect(addBrgySel, '-- SELECT BARANGAY --');
+                addHiddenMuni.value = '';
+                addHiddenBrgy.value = '';
+
+                if (provId) {
+                    addLoadOptions(addMuniSel, `/locations/${provId}/municipalities`, 'mun_name', 'mun_id',
+                        '-- SELECT MUNICIPALITY --');
+                }
+            });
+
+            addMuniSel.addEventListener('change', function() {
+                const muniId = this.value;
+                const muniName = this.options[this.selectedIndex]?.getAttribute('data-name') || '';
+                addHiddenMuni.value = muniName;
+
+                addResetSelect(addBrgySel, '-- SELECT BARANGAY --');
+                addHiddenBrgy.value = '';
+
+                if (muniId) {
+                    addLoadOptions(addBrgySel, `/locations/${muniId}/barangays`, 'brg_name', 'brg_id',
+                        '-- SELECT BARANGAY --');
+                }
+            });
+
+            addBrgySel.addEventListener('change', function() {
+                addHiddenBrgy.value = this.options[this.selectedIndex]?.getAttribute('data-name') || '';
+            });
+
+            // Reset modal fields on close
+            document.getElementById('addUserModal').addEventListener('hidden.bs.modal', function() {
+                this.querySelector('form').reset();
+                addResetSelect(addProvSel, '-- SELECT PROVINCE --');
+                addResetSelect(addMuniSel, '-- SELECT MUNICIPALITY --');
+                addResetSelect(addBrgySel, '-- SELECT BARANGAY --');
+                addHiddenRegion.value = '';
+                addHiddenProv.value = '';
+                addHiddenMuni.value = '';
+                addHiddenBrgy.value = '';
+            });
+        });
+    </script>
 @endsection
 
 deleted:
@@ -268,15 +1012,16 @@ deleted:
         <div class="container-fluid">
             <div class="row mb-2">
                 <div class="col-sm-6">
-                    <h1 class="m-0">Addresses</h1>
+                    <h1 class="m-0">Users</h1>
                 </div>
                 <div class="col-sm-6">
                     <ol class="breadcrumb float-sm-right">
                         <li class="breadcrumb-item">
-                            <a href="{{ url('home') }}">Home</a>
+                            <a href="{{ action('App\Http\Controllers\AdminController@home') }}">Home</a>
                         </li>
-                        <li class="breadcrumb-item">Management</li>
-                        <li class="breadcrumb-item active">Addresses</li>
+                        <li class="breadcrumb-item">Profiling</li>
+                        <li class="breadcrumb-item">Users</li>
+                        <li class="breadcrumb-item active">Deleted</li>
                     </ol>
                 </div>
             </div>
@@ -293,9 +1038,9 @@ deleted:
                 <div class="card-body overflow-auto">
                     <div class="row">
                         <div class="col-md-12">
-                            @if (session('SUPERADMIN') == '1' || session('ADMIN') == '1' || session('MANAGER') == '1' || session('DATA OFFICER') == '1')
-                                <a class="btn btn-success btn-md mb-3" href="{{ url('management/addresses/active') }}">
-                                    <span class="fa fa-location"></span> Addresses
+                            @if (session('SUPERADMIN') == '1' || session('ADMIN') == '1' || session('MANAGER') == '1' || session('PROFILING OFFICER') == '1')
+                                <a class="btn btn-success btn-md mb-3" href="{{ url('profiling/users/active') }}">
+                                    <span class="fa fa-users"></span> Users
                                 </a>
                             @endif
                         </div>
@@ -303,11 +1048,11 @@ deleted:
 
                     <div class="row">
                         <!-- Table Column -->
-                        <div class="col-lg-12 col-md-7">
-                            <form method="GET" action="{{ url('management/addresses/deleted') }}" class="mb-3">
+                        <div class="col-lg-9 col-md-7">
+                            <form method="GET" action="{{ url('profiling/users/deleted') }}" class="mb-3">
                                 <div class="input-group">
                                     <input type="text" name="search" id="searchInput" class="form-control"
-                                        placeholder="Search deleted address identifiers..." value="{{ request('search') }}">
+                                        placeholder="Search deleted users..." value="{{ request('search') }}">
                                     <div class="input-group-append">
                                         <button type="submit" class="btn btn-primary">
                                             <span class="fa fa-search"></span> Search
@@ -319,47 +1064,42 @@ deleted:
                             <table id="profilingTable" class="table table-hover table-bordered table-sm responsive">
                                 <thead>
                                     <tr>
-                                        <th style="vertical-align: middle; text-align: center">No</th>
-                                        <th style="vertical-align: middle; text-align: center">Address Identifier</th>
-                                        <th style="vertical-align: middle; text-align: center">Created By</th>
-                                        <th style="vertical-align: middle; text-align: center">Modified By</th>
-                                        @if (session('SUPERADMIN') == '1' || session('ADMIN') == '1' || session('MANAGER') == '1')
-                                            <th style="vertical-align: middle; text-align: center" width="110px">Action
-                                            </th>
+                                        <th style="vertical-align: middle; text-align: center">Name</th>
+                                        <th style="vertical-align: middle; text-align: center">Branch</th>
+                                        <th style="vertical-align: middle; text-align: center" width="130px">Role(s)</th>
+                                        @if (session('SUPERADMIN') == '1' || session('ADMIN') == '1' || session('MANAGER') == '1' || session('PROFILING OFFICER') == '1')
+                                            <th style="vertical-align: middle; text-align: center" width="110px">Action</th>
                                         @endif
                                     </tr>
                                 </thead>
                                 <tbody>
-                                    @foreach ($addresses as $address)
+                                    @foreach ($users as $user)
                                         <tr>
-                                            <td style="vertical-align: middle; text-align: center">
-                                                {{ $loop->iteration }}
+                                            <td style="vertical-align: middle; text-align: left">
+                                                {{ $user->usr_last_name }}, {{ $user->usr_first_name }}
+                                                {{ $user->usr_middle_name }}
+                                                <br />
+                                                <small>{{ $user->usr_email }}</small>
+                                                <br />
+                                                <em><small>Last login: {{ getLastLogin($user->usr_id) }}</small></em>
                                             </td>
                                             <td style="vertical-align: middle; text-align: center">
-                                                {{ $address->add_name }}
+                                                {{ $user->branch_name }}
                                             </td>
                                             <td style="vertical-align: middle; text-align: center">
-                                                @if (!empty($address->created_first_name))
-                                                    {{ $address->created_first_name }} {{ $address->created_last_name }} -
-                                                    {{ \Carbon\Carbon::parse($address->add_date_created)->format('m/d/Y | h:i A') }}
+                                                @if (!empty($user->roles))
+                                                    @foreach (explode(', ', $user->roles) as $role)
+                                                        <span class="badge bg-success">{{ $role }}</span>
+                                                    @endforeach
                                                 @else
-                                                    -
-                                                @endif
-                                            </td>
-                                            <td style="vertical-align: middle; text-align: center">
-                                                @if (!empty($address->modified_first_name))
-                                                    {{ $address->modified_first_name }}
-                                                    {{ $address->modified_last_name }} -
-                                                    {{ \Carbon\Carbon::parse($address->add_date_modified)->format('m/d/Y | h:i A') }}
-                                                @else
-                                                    -
+                                                    <span class="badge bg-danger">No Role Assigned</span>
                                                 @endif
                                             </td>
                                             @if (session('SUPERADMIN') == '1' || session('ADMIN') == '1' || session('MANAGER') == '1')
                                                 <td style="vertical-align: middle; text-align: center">
-                                                    <a class="btn btn-success btn-sm mb-1" href="javascript:void(0)"
+                                                    <a class="btn btn-success btn-sm" href="javascript:void(0)"
                                                         data-toggle="modal"
-                                                        data-target="#restoreModal-{{ $address->add_id }}">
+                                                        data-target="#restoreModal-{{ $user->usr_id }}">
                                                         <span class="fa fa-refresh"></span>
                                                     </a>
                                                 </td>
@@ -369,20 +1109,42 @@ deleted:
                                 </tbody>
                             </table>
                         </div>
+
+                        <!-- Role Info Column -->
+                        <div class="col-lg-3 col-md-5">
+                            <div class="card">
+                                <div class="card-header bg-light">
+                                    <strong><i class="fa fa-info-circle"></i> Role Information</strong>
+                                </div>
+                                <div class="card-body" style="overflow-y: auto;">
+                                    @foreach ($roles as $role)
+                                        <div class="mb-3">
+                                            <h6 class="text-dark mb-1">
+                                                <i class="fa fa-user-tag"></i> {{ $role->rol_name }}
+                                            </h6>
+                                            <p class="text-muted small mb-0">
+                                                {{ $role->rol_description ?? 'No description available' }}
+                                            </p>
+                                            <hr>
+                                        </div>
+                                    @endforeach
+                                </div>
+                            </div>
+                        </div>
                     </div>
                 </div>
             </div>
         </div>
     </section>
 
-    @foreach ($addresses as $address)
+    @foreach ($users as $user)
         {{-- Restore Modal --}}
-        <div class="modal fade" id="restoreModal-{{ $address->add_id }}" tabindex="-1" role="dialog"
+        <div class="modal fade" id="restoreModal-{{ $user->usr_id }}" tabindex="-1" role="dialog"
             aria-labelledby="exampleModalLabel" aria-hidden="true">
             <div class="modal-dialog" role="document">
                 <div class="modal-content">
                     <form method="POST"
-                        action="{{ action('App\Http\Controllers\ManagementController@addresses_restore', [$address->add_id]) }}">
+                        action="{{ action('App\Http\Controllers\ProfilingController@users_restore', [$user->usr_id]) }}">
                         @csrf
                         <div class="modal-header bg-success text-white">
                             <h5 class="modal-title text-white" id="exampleModalLabel">
@@ -393,9 +1155,9 @@ deleted:
                             </button>
                         </div>
                         <div class="modal-body">
-                            <p>Are you sure you want to <strong>RESTORE</strong> address
-                                identifier -
-                                <strong>{{ $address->add_name }}</strong>?
+                            <p>Are you sure you want to <strong>RESTORE</strong> user
+                                <strong>{{ $user->usr_first_name }}
+                                    {{ $user->usr_last_name }}</strong>?
                             </p>
                         </div>
                         <div class="modal-footer">
@@ -411,6 +1173,15 @@ deleted:
             </div>
         </div>
     @endforeach
+
+    <script>
+        $(function() {
+            // Initialize Select2 Elements with classic theme
+            $('.select2').select2({
+                theme: "classic"
+            });
+        });
+    </script>
 
     {{-- Dynamic Search While Typing --}}
     <script>
