@@ -6,7 +6,7 @@
         <div class="container-fluid">
             <div class="row">
                 <div class="col-sm-6">
-                    <h3 class="mb-0">Users</h3>
+                    <h3 class="mb-0">Board of Members</h3>
                 </div>
                 <div class="col-sm-6">
                     <ol class="breadcrumb float-sm-end">
@@ -14,7 +14,7 @@
                             <a href="{{ url('home') }}">Home</a>
                         </li>
                         <li class="breadcrumb-item">Profiling</li>
-                        <li class="breadcrumb-item">Users</li>
+                        <li class="breadcrumb-item">Board of Members</li>
                         <li class="breadcrumb-item active">Deleted</li>
                     </ol>
                 </div>
