@@ -4,7 +4,7 @@
     </div>
     <strong>
         Copyright &copy; 2026 - {{ date('Y') }}
-        <a href="https://www.facebook.com/profile.php?id=61579426943592" target="_blank">Go Forward Pest Control
+        <a href="https://www.facebook.com/profile.php?id=61579426943592" target="_blank">KAHSEI
             System</a>.
     </strong>
     All rights reserved. Developed by

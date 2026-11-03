@@ -366,4 +366,8 @@ class ProfilingController extends Controller
         return redirect()->back();
     }
     // END USERS
+
+    // START BOARD OF MEMBERS
+
+    // END BOARD OF MEMBERS
 }
