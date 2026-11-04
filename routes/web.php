@@ -71,28 +71,6 @@ Route::post('messages/{mes_id}/unsend', [MessageController::class, 'unsend']);
 // ------------------------------------------------------------------------------------------------------------------------------------ //
 
 // ------------------------------------------------------------------------------------------------------------------------------------ //
-// PROFILING
-Route::middleware('role:SUPERADMIN,ADMIN,MANAGER,PROFILING OFFICER')->group(function () {
-    // - Users
-    Route::get('admin/profiling/users/active', [ProfilingController::class, 'users_active']);
-    Route::get('admin/profiling/users/deleted', [ProfilingController::class, 'users_deleted']);
-    Route::post('admin/profiling/users/add', [ProfilingController::class, 'users_add']);
-    Route::post('admin/profiling/users/update/user/{usr_id}', [ProfilingController::class, 'users_update_user']);
-    Route::post('admin/profiling/users/reset/password/{usr_id}', [ProfilingController::class, 'users_reset_password']);
-    Route::post('admin/profiling/users/delete/{usr_id}', [ProfilingController::class, 'users_delete']);
-    Route::post('admin/profiling/users/restore/{usr_id}', [ProfilingController::class, 'users_restore']);
-    // - Board of Members
-    Route::get('admin/profiling/board-of-members/active', [ProfilingController::class, 'boards_active']);
-    Route::get('admin/profiling/board-of-members/deleted', [ProfilingController::class, 'boards_deleted']);
-    Route::post('admin/profiling/board-of-members/add', [ProfilingController::class, 'boards_add']);
-    Route::post('admin/profiling/board-of-members/update/user/{usr_id}', [ProfilingController::class, 'boards_update_user']);
-    Route::post('admin/profiling/board-of-members/reset/password/{usr_id}', [ProfilingController::class, 'boards_reset_password']);
-    Route::post('admin/profiling/board-of-members/delete/{usr_id}', [ProfilingController::class, 'boards_delete']);
-    Route::post('admin/profiling/board-of-members/restore/{usr_id}', [ProfilingController::class, 'boards_restore']);
-});
-// ------------------------------------------------------------------------------------------------------------------------------------ //
-
-// ------------------------------------------------------------------------------------------------------------------------------------ //
 // MANAGEMENT
 Route::middleware('role:SUPERADMIN,ADMIN,MANAGER,DATA OFFICER')->group(function () {
     // - Addresses
@@ -115,6 +93,28 @@ Route::middleware('role:SUPERADMIN,ADMIN')->group(function () {
     Route::get('admin/histories/logins', [ManagementController::class, 'login_histories']);
     // - Users
     Route::get('admin/histories/users', [ManagementController::class, 'user_histories']);
+});
+// ------------------------------------------------------------------------------------------------------------------------------------ //
+
+// ------------------------------------------------------------------------------------------------------------------------------------ //
+// PROFILING
+Route::middleware('role:SUPERADMIN,ADMIN,MANAGER,PROFILING OFFICER')->group(function () {
+    // - Users
+    Route::get('admin/profiling/users/active', [ProfilingController::class, 'users_active']);
+    Route::get('admin/profiling/users/deleted', [ProfilingController::class, 'users_deleted']);
+    Route::post('admin/profiling/users/add', [ProfilingController::class, 'users_add']);
+    Route::post('admin/profiling/users/update/user/{usr_id}', [ProfilingController::class, 'users_update_user']);
+    Route::post('admin/profiling/users/reset/password/{usr_id}', [ProfilingController::class, 'users_reset_password']);
+    Route::post('admin/profiling/users/delete/{usr_id}', [ProfilingController::class, 'users_delete']);
+    Route::post('admin/profiling/users/restore/{usr_id}', [ProfilingController::class, 'users_restore']);
+    // - Board of Members
+    Route::get('admin/profiling/board-of-members/active', [ProfilingController::class, 'boards_active']);
+    Route::get('admin/profiling/board-of-members/deleted', [ProfilingController::class, 'boards_deleted']);
+    Route::post('admin/profiling/board-of-members/add', [ProfilingController::class, 'boards_add']);
+    Route::post('admin/profiling/board-of-members/update/user/{usr_id}', [ProfilingController::class, 'boards_update_user']);
+    Route::post('admin/profiling/board-of-members/reset/password/{usr_id}', [ProfilingController::class, 'boards_reset_password']);
+    Route::post('admin/profiling/board-of-members/delete/{usr_id}', [ProfilingController::class, 'boards_delete']);
+    Route::post('admin/profiling/board-of-members/restore/{usr_id}', [ProfilingController::class, 'boards_restore']);
 });
 // ------------------------------------------------------------------------------------------------------------------------------------ //
 

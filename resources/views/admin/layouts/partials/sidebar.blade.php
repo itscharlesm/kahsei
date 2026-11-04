@@ -52,41 +52,6 @@
                         </a>
                     </li>
 
-                    {{-- PROFILING --}}
-                    @if (session('SUPERADMIN') == '1' || session('ADMIN') == '1' || session('MANAGER') == '1' || session('PROFILING OFFICER') == '1')
-                        <li class="nav-header">PROFILING</li>
-
-                        <li class="nav-item {{ request()->is('profiling*') ? 'menu-open' : '' }}">
-                            <a href="#" class="nav-link {{ request()->is('profiling*') ? 'active bg-success' : '' }}">
-                                <i class="nav-icon fas fa-users"></i>
-                                <p>
-                                    MANAGE
-                                    <i class="nav-arrow fas fa-angle-right"></i>
-                                </p>
-                            </a>
-
-                            <ul class="nav nav-treeview">
-                                <li class="nav-item">
-                                    <a href="{{ url('profiling/board-of-members/active') }}"
-                                        class="nav-link {{ request()->is('profiling/board-of-members*') ? 'active bg-success' : '' }}">
-                                        <i class="far fa-circle nav-icon"></i>
-                                        <p>BOARD OF MEMBERS</p>
-                                    </a>
-                                </li>
-                            </ul>
-
-                            <ul class="nav nav-treeview">
-                                <li class="nav-item">
-                                    <a href="{{ url('profiling/users/active') }}"
-                                        class="nav-link {{ request()->is('profiling/users*') ? 'active bg-success' : '' }}">
-                                        <i class="far fa-circle nav-icon"></i>
-                                        <p>USERS</p>
-                                    </a>
-                                </li>
-                            </ul>
-                        </li>
-                    @endif
-
                     {{-- MANAGEMENT --}}
                     @if (session('SUPERADMIN') == '1' || session('ADMIN') == '1')
                         <li class="nav-header">MANAGEMENT</li>
@@ -137,6 +102,41 @@
                                 </ul>
                             </li>
                         @endif
+                    @endif
+
+                    {{-- PROFILING --}}
+                    @if (session('SUPERADMIN') == '1' || session('ADMIN') == '1' || session('MANAGER') == '1' || session('PROFILING OFFICER') == '1')
+                        <li class="nav-header">PROFILING</li>
+
+                        <li class="nav-item {{ request()->is('profiling*') ? 'menu-open' : '' }}">
+                            <a href="#" class="nav-link {{ request()->is('profiling*') ? 'active bg-success' : '' }}">
+                                <i class="nav-icon fas fa-users"></i>
+                                <p>
+                                    MANAGE
+                                    <i class="nav-arrow fas fa-angle-right"></i>
+                                </p>
+                            </a>
+
+                            <ul class="nav nav-treeview">
+                                <li class="nav-item">
+                                    <a href="{{ url('profiling/board-of-members/active') }}"
+                                        class="nav-link {{ request()->is('profiling/board-of-members*') ? 'active bg-success' : '' }}">
+                                        <i class="far fa-circle nav-icon"></i>
+                                        <p>BOARD OF MEMBERS</p>
+                                    </a>
+                                </li>
+                            </ul>
+
+                            <ul class="nav nav-treeview">
+                                <li class="nav-item">
+                                    <a href="{{ url('profiling/users/active') }}"
+                                        class="nav-link {{ request()->is('profiling/users*') ? 'active bg-success' : '' }}">
+                                        <i class="far fa-circle nav-icon"></i>
+                                        <p>USERS</p>
+                                    </a>
+                                </li>
+                            </ul>
+                        </li>
                     @endif
                 @endif
 
