@@ -32,7 +32,7 @@
                     <div class="row">
                         <div class="col-md-12">
                             @if (session('SUPERADMIN') == '1' || session('ADMIN') == '1' || session('MANAGER') == '1' || session('PROFILING OFFICER') == '1')
-                                <a class="btn btn-danger mb-3" href="{{ url('profiling/users/deleted') }}">
+                                <a class="btn btn-danger mb-3" href="{{ url('admin/profiling/users/deleted') }}">
                                     <span class="fa fa-archive"></span> Deleted Users
                                 </a>
 
@@ -47,7 +47,7 @@
                     <div class="row">
                         <!-- Table Column -->
                         <div class="col-lg-9 col-md-7">
-                            <form method="GET" action="{{ url('profiling/users/active') }}" class="mb-3">
+                            <form method="GET" action="{{ url('admin/profiling/users/active') }}" class="mb-3">
                                 <div class="input-group">
                                     <input type="text" name="search" id="searchInput" class="form-control"
                                         placeholder="Search users..." value="{{ request('search') }}">
@@ -139,7 +139,7 @@
     <div class="modal fade" id="addUserModal" tabindex="-1" aria-labelledby="addUserModalLabel" aria-hidden="true">
         <div class="modal-dialog modal-lg">
             <div class="modal-content">
-                <form action="{{ url('profiling/users/add') }}" method="POST">
+                <form action="{{ url('admin/profiling/users/add') }}" method="POST">
                     @csrf
                     {{-- Hidden fields (filled by the location dropdowns) --}}
                     <input type="hidden" name="region" id="add_hidden_region" value="">
@@ -260,7 +260,7 @@
             aria-labelledby="updateRoleModalLabel-{{ $user->usr_id }}" aria-hidden="true">
             <div class="modal-dialog">
                 <div class="modal-content">
-                    <form action="{{ url('profiling/users/update/user', $user->usr_id) }}" method="POST">
+                    <form action="{{ url('admin/profiling/users/update/user', $user->usr_id) }}" method="POST">
                         @csrf
                         <div class="modal-header bg-warning">
                             <h5 class="modal-title" id="updateRoleModalLabel-{{ $user->usr_id }}">

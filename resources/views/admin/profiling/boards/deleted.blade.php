@@ -33,7 +33,7 @@
                     <div class="row">
                         <div class="col-md-12">
                             @if (session('SUPERADMIN') == '1' || session('ADMIN') == '1' || session('MANAGER') == '1' || session('PROFILING OFFICER') == '1')
-                                <a class="btn btn-success mb-3" href="{{ url('profiling/board-of-members/active') }}">
+                                <a class="btn btn-success mb-3" href="{{ url('admin/profiling/board-of-members/active') }}">
                                     <span class="fa fa-users"></span> Board of Members
                                 </a>
                             @endif
@@ -42,7 +42,7 @@
 
                     <div class="row">
                         <div class="col-md-12">
-                            <form method="GET" action="{{ url('profiling/board-of-members/deleted') }}" class="mb-3">
+                            <form method="GET" action="{{ url('admin/profiling/board-of-members/deleted') }}" class="mb-3">
                                 <div class="input-group">
                                     <input type="text" name="search" id="searchInput" class="form-control"
                                         placeholder="Search deleted members..." value="{{ request('search') }}">

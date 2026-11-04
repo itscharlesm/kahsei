@@ -33,7 +33,7 @@
                     <div class="row">
                         <div class="col-md-12">
                             @if (session('SUPERADMIN') == '1' || session('ADMIN') == '1' || session('MANAGER') == '1' || session('PROFILING OFFICER') == '1')
-                                <a class="btn btn-success mb-3" href="{{ url('profiling/users/active') }}">
+                                <a class="btn btn-success mb-3" href="{{ url('admin/profiling/users/active') }}">
                                     <span class="fa fa-users"></span> Users
                                 </a>
                             @endif
@@ -43,7 +43,7 @@
                     <div class="row">
                         <!-- Table Column -->
                         <div class="col-lg-9 col-md-7">
-                            <form method="GET" action="{{ url('profiling/users/deleted') }}" class="mb-3">
+                            <form method="GET" action="{{ url('admin/profiling/users/deleted') }}" class="mb-3">
                                 <div class="input-group">
                                     <input type="text" name="search" id="searchInput" class="form-control"
                                         placeholder="Search deleted users..." value="{{ request('search') }}">

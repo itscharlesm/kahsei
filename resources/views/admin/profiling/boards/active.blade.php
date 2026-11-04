@@ -43,7 +43,7 @@
                     <div class="row">
                         <div class="col-md-12">
                             @if (session('SUPERADMIN') == '1' || session('ADMIN') == '1' || session('MANAGER') == '1' || session('PROFILING OFFICER') == '1')
-                                <a class="btn btn-danger mb-3" href="{{ url('profiling/board-of-members/deleted') }}">
+                                <a class="btn btn-danger mb-3" href="{{ url('admin/profiling/board-of-members/deleted') }}">
                                     <span class="fa fa-archive"></span> Deleted Members
                                 </a>
 
@@ -57,7 +57,7 @@
 
                     <div class="row">
                         <div class="col-md-12">
-                            <form method="GET" action="{{ url('profiling/board-of-members/active') }}" class="mb-3">
+                            <form method="GET" action="{{ url('admin/profiling/board-of-members/active') }}" class="mb-3">
                                 <div class="input-group">
                                     <input type="text" name="search" id="searchInput" class="form-control"
                                         placeholder="Search board members..." value="{{ request('search') }}">
@@ -170,7 +170,7 @@
     <div class="modal fade" id="addBoardModal" tabindex="-1" aria-labelledby="addBoardModalLabel" aria-hidden="true">
         <div class="modal-dialog modal-lg">
             <div class="modal-content">
-                <form action="{{ url('profiling/board-of-members/add') }}" method="POST"
+                <form action="{{ url('admin/profiling/board-of-members/add') }}" method="POST"
                     enctype="multipart/form-data">
                     @csrf
                     {{-- Hidden fields (filled by the location dropdowns) --}}
@@ -341,7 +341,7 @@
             aria-labelledby="updateBoardModalLabel-{{ $board->usr_id }}" aria-hidden="true">
             <div class="modal-dialog">
                 <div class="modal-content">
-                    <form action="{{ url('profiling/board-of-members/update/user/' . $board->usr_id) }}"
+                    <form action="{{ url('admin/profiling/board-of-members/update/user/' . $board->usr_id) }}"
                         method="POST" enctype="multipart/form-data">
                         @csrf
                         <div class="modal-header bg-warning">
