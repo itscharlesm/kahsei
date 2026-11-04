@@ -52,6 +52,22 @@
                         </a>
                     </li>
 
+                    {{-- HOMEPAGE --}}
+                    @if (session('SUPERADMIN') == '1' || session('ADMIN') == '1')
+                        <li class="nav-header">HOMEPAGE</li>
+
+                        @if (session('SUPERADMIN') == '1' || session('ADMIN') == '1')
+                            {{-- About --}}
+                            <li class="nav-item">
+                                <a href="{{ url('admin/homepage/about') }}"
+                                    class="nav-link {{ request()->is('admin/homepage/about') ? 'active bg-success' : '' }}">
+                                    <i class="nav-icon fas fa-info-circle"></i>
+                                    <p>ABOUT</p>
+                                </a>
+                            </li>
+                        @endif
+                    @endif
+
                     {{-- MANAGEMENT --}}
                     @if (session('SUPERADMIN') == '1' || session('ADMIN') == '1')
                         <li class="nav-header">MANAGEMENT</li>

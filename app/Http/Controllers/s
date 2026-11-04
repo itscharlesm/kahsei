@@ -15,3 +15,5 @@ class HomepageController extends Controller
     // START ABOUT
     // END ABOUT
 }
+
+admin.homepage.about
