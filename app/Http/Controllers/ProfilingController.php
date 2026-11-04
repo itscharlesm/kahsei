@@ -61,7 +61,7 @@ class ProfilingController extends Controller
             });
         }
 
-        $users = $query->paginate(500);
+        $users = $query->paginate(150);
 
         $roles = DB::table('roles')
             ->select('rol_id', 'rol_name', 'rol_description')
@@ -142,7 +142,7 @@ class ProfilingController extends Controller
             });
         }
 
-        $users = $query->paginate(500);
+        $users = $query->paginate(150);
 
         $roles = DB::table('roles')
             ->select('rol_id', 'rol_name', 'rol_description')
@@ -435,7 +435,7 @@ class ProfilingController extends Controller
             });
         }
 
-        $boards = $query->paginate(500);
+        $boards = $query->paginate(150);
 
         $positions = DB::table('positions')
             ->select('pos_id', 'pos_name')
@@ -517,7 +517,7 @@ class ProfilingController extends Controller
             });
         }
 
-        $boards = $query->paginate(500);
+        $boards = $query->paginate(150);
 
         return view('admin.profiling.boards.deleted', compact('boards', 'search'));
     }
