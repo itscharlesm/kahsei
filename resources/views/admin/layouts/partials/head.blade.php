@@ -1,7 +1,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>KAHSEI</title>
-<link rel="icon" type="image/png" href="{{ asset('images/logos/logo.jpg') }}">
+<link rel="icon" type="image/png" href="{{ asset('images/logos/kahsei.png') }}">
 
 {{-- Fonts --}}
 <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fontsource/source-sans-3@5.0.12/index.css">
