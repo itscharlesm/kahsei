@@ -85,14 +85,21 @@
                                         @endphp
                                         <tr>
                                             <td class="align-middle text-start">
-                                                {{ $board->usr_last_name }}, {{ $board->usr_first_name }}
-                                                {{ $board->usr_middle_name }}
-                                                <br />
-                                                <small>{{ $board->usr_email }}</small>
-                                                <br />
-                                                <small>{{ $address !== '' ? $address : '-' }}</small>
-                                                <br />
-                                                <em><small>Last login: {{ getLastLogin($board->usr_id) }}</small></em>
+                                                <div class="d-flex align-items-center">
+                                                    <img class="rounded-circle me-3 flex-shrink-0"
+                                                        src="{{ asset(getAvatar($board->usr_id)) }}" alt="user image" loading="lazy"
+                                                        style="width:50px; height:50px; object-fit:cover;">
+                                                    <div>
+                                                        {{ $board->usr_last_name }}, {{ $board->usr_first_name }}
+                                                        {{ $board->usr_middle_name }}
+                                                        <br />
+                                                        <small>{{ $board->usr_email }}</small>
+                                                        <br />
+                                                        <small>{{ $address !== '' ? $address : '-' }}</small>
+                                                        <br />
+                                                        <em><small>Last login: {{ getLastLogin($board->usr_id) }}</small></em>
+                                                    </div>
+                                                </div>
                                             </td>
                                             <td class="align-middle text-center">
                                                 @if (!empty($board->pos_name))
