@@ -8,13 +8,10 @@ use App\Http\Controllers\AdminController;
 use App\Http\Controllers\AnnouncementController;
 use App\Http\Controllers\UserController;
 use App\Http\Controllers\MessageController;
-use App\Http\Controllers\ProfilingController;
-use App\Http\Controllers\AppointmentController;
-use App\Http\Controllers\AccountingController;
-use App\Http\Controllers\ReportController;
+use App\Http\Controllers\HomepageController;
 use App\Http\Controllers\ManagementController;
+use App\Http\Controllers\ProfilingController;
 use App\Http\Controllers\LocationController;
-use App\Http\Controllers\ClientController;
 
 /*
 |--------------------------------------------------------------------------
@@ -69,6 +66,12 @@ Route::get('messages/{mes_id}/image', [MessageController::class, 'image'])->name
 Route::patch('messages/{mes_id}', [MessageController::class, 'update']);
 Route::post('messages/{mes_id}/unsend', [MessageController::class, 'unsend']);
 // ------------------------------------------------------------------------------------------------------------------------------------ //
+
+// ------------------------------------------------------------------------------------------------------------------------------------ //
+// ABOUT
+Route::get('admin/homepage/about', [HomepageController::class, 'about']);
+Route::post('admin/homepage/update/{about_id}', [HomepageController::class, 'about_update']);
+//------------------------------------------------------------------------------------------------------------------------------------
 
 // ------------------------------------------------------------------------------------------------------------------------------------ //
 // MANAGEMENT
