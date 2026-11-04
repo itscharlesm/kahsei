@@ -28,7 +28,7 @@
                 @if (session('utyp_id') == 1)
                     {{-- Home --}}
                     <li class="nav-item">
-                        <a href="{{ url('home') }}" class="nav-link {{ request()->is('home') ? 'active bg-success' : '' }}">
+                        <a href="{{ url('admin/home') }}" class="nav-link {{ request()->is('admin/home') ? 'active bg-success' : '' }}">
                             <i class="nav-icon fas fa-home"></i>
                             <p>HOME</p>
                         </a>
