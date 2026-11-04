@@ -103,7 +103,7 @@
                                                 <br />
                                                 <small>{{ $board->usr_email }}</small>
                                                 <br />
-                                                <small>gi{{ $address !== '' ? $address : '-' }}</small>
+                                                <small>{{ $address !== '' ? $address : '-' }}</small>
                                                 <br />
                                                 <em><small>Last login: {{ getLastLogin($board->usr_id) }}</small></em>
                                             </td>
