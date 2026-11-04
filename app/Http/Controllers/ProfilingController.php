@@ -377,13 +377,13 @@ class ProfilingController extends Controller
             ->leftJoin('user_addresses', function ($join) {
                 $join->on('user_addresses.usr_id', '=', 'users.usr_id')
                     ->whereRaw('user_addresses.uadd_id = (
-                        SELECT ua.uadd_id
-                        FROM user_addresses ua
-                        WHERE ua.usr_id = users.usr_id
-                        AND ua.uadd_active = 1
-                        ORDER BY ua.uadd_date_created DESC, ua.uadd_id DESC
-                        LIMIT 1
-                    )');
+                    SELECT ua.uadd_id
+                    FROM user_addresses ua
+                    WHERE ua.usr_id = users.usr_id
+                    AND ua.uadd_active = 1
+                    ORDER BY ua.uadd_date_created DESC, ua.uadd_id DESC
+                    LIMIT 1
+                )');
             })
             ->where('users.usr_id', '!=', '1')
             ->where('users.utyp_id', '=', '2')
@@ -459,13 +459,13 @@ class ProfilingController extends Controller
             ->leftJoin('user_addresses', function ($join) {
                 $join->on('user_addresses.usr_id', '=', 'users.usr_id')
                     ->whereRaw('user_addresses.uadd_id = (
-                        SELECT ua.uadd_id
-                        FROM user_addresses ua
-                        WHERE ua.usr_id = users.usr_id
-                        AND ua.uadd_active = 1
-                        ORDER BY ua.uadd_date_created DESC, ua.uadd_id DESC
-                        LIMIT 1
-                    )');
+                    SELECT ua.uadd_id
+                    FROM user_addresses ua
+                    WHERE ua.usr_id = users.usr_id
+                    AND ua.uadd_active = 1
+                    ORDER BY ua.uadd_date_created DESC, ua.uadd_id DESC
+                    LIMIT 1
+                )');
             })
             ->where('users.usr_id', '!=', '1')
             ->where('users.utyp_id', '=', '2')
@@ -534,6 +534,7 @@ class ProfilingController extends Controller
             'usr_position' => 'required|exists:positions,pos_id',
             'usr_birth_date' => 'required|date|before:today',
             'usr_civil_status' => 'required|in:Single,Married,Divorced,Separated,Widowed',
+            'avatar' => 'nullable|mimes:jpeg,jpg,png,webp|max:8192',
 
             // address validation
             'street' => 'nullable|string|max:255',
@@ -544,6 +545,38 @@ class ProfilingController extends Controller
         ]);
 
         $code = '123456';
+        $imageName = null;
+
+        // AVATAR UPLOAD
+        if ($request->hasFile('avatar')) {
+            $file = $request->file('avatar');
+            $fileName = uniqid() . '_' . $file->getClientOriginalName();
+            $path = public_path('images/users/' . $fileName);
+            $ext = strtolower($file->getClientOriginalExtension());
+
+            if (in_array($ext, ['jpg', 'jpeg'])) {
+                $source = imagecreatefromjpeg($file->getPathname());
+                imagejpeg($source, $path, 75);
+                imagedestroy($source);
+            } elseif ($ext === 'png') {
+                $source = imagecreatefrompng($file->getPathname());
+
+                if ($source && imageistruecolor($source) === false) {
+                    imagepalettetotruecolor($source);
+                }
+
+                if ($source) {
+                    imagepng($source, $path, 7);
+                    imagedestroy($source);
+                }
+            } elseif ($ext === 'webp') {
+                $source = imagecreatefromwebp($file->getPathname());
+                imagewebp($source, $path, 75);
+                imagedestroy($source);
+            }
+
+            $imageName = $fileName;
+        }
 
         DB::beginTransaction();
 
@@ -560,6 +593,7 @@ class ProfilingController extends Controller
             'usr_position' => $request->usr_position,
             'usr_birth_date' => $request->usr_birth_date,
             'usr_civil_status' => $request->usr_civil_status,
+            'usr_image_path' => $imageName,
             'usr_password' => md5($code),
             'usr_code' => $code,
             'usr_date_created' => Carbon::now(),
@@ -596,6 +630,7 @@ class ProfilingController extends Controller
             'usr_tin' => 'nullable|string|max:50',
             'usr_birth_date' => 'required|date|before:today',
             'usr_civil_status' => 'required|in:Single,Married,Divorced,Separated,Widowed',
+            'avatar' => 'nullable|mimes:jpeg,jpg,png,webp|max:8192',
         ]);
 
         $board = DB::table('users')
@@ -614,16 +649,49 @@ class ProfilingController extends Controller
             ->where('pos_id', '=', $request->usr_position)
             ->value('pos_name');
 
+        $updateData = [
+            'usr_position' => $request->usr_position,
+            'usr_tin' => $request->usr_tin ?: null,
+            'usr_birth_date' => $request->usr_birth_date,
+            'usr_civil_status' => $request->usr_civil_status,
+            'usr_date_modified' => Carbon::now(),
+            'usr_modified_by' => session('usr_id')
+        ];
+
+        // AVATAR UPLOAD
+        if ($request->hasFile('avatar')) {
+            $file = $request->file('avatar');
+            $fileName = uniqid() . '_' . $file->getClientOriginalName();
+            $path = public_path('images/users/' . $fileName);
+            $ext = strtolower($file->getClientOriginalExtension());
+
+            if (in_array($ext, ['jpg', 'jpeg'])) {
+                $source = imagecreatefromjpeg($file->getPathname());
+                imagejpeg($source, $path, 75);
+                imagedestroy($source);
+            } elseif ($ext === 'png') {
+                $source = imagecreatefrompng($file->getPathname());
+
+                if ($source && imageistruecolor($source) === false) {
+                    imagepalettetotruecolor($source);
+                }
+
+                if ($source) {
+                    imagepng($source, $path, 7);
+                    imagedestroy($source);
+                }
+            } elseif ($ext === 'webp') {
+                $source = imagecreatefromwebp($file->getPathname());
+                imagewebp($source, $path, 75);
+                imagedestroy($source);
+            }
+
+            $updateData['usr_image_path'] = $fileName;
+        }
+
         DB::table('users')
             ->where('usr_id', '=', $usr_id)
-            ->update([
-                'usr_position' => $request->usr_position,
-                'usr_tin' => $request->usr_tin ?: null,
-                'usr_birth_date' => $request->usr_birth_date,
-                'usr_civil_status' => $request->usr_civil_status,
-                'usr_date_modified' => Carbon::now(),
-                'usr_modified_by' => session('usr_id')
-            ]);
+            ->update($updateData);
 
         logUserActivity(
             'Manage Board of Members',

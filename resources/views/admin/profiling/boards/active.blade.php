@@ -100,7 +100,8 @@
                                             <td class="align-middle text-start">
                                                 <div class="d-flex align-items-center">
                                                     <img class="rounded-circle me-3 flex-shrink-0"
-                                                        src="{{ asset(getAvatar($board->usr_id)) }}" alt="user image" loading="lazy"
+                                                        src="{{ asset(getAvatar($board->usr_id)) }}" alt="user image"
+                                                        loading="lazy"
                                                         style="width:50px; height:50px; object-fit:cover;">
                                                     <div>
                                                         {{ $board->usr_last_name }}, {{ $board->usr_first_name }}
@@ -169,7 +170,8 @@
     <div class="modal fade" id="addBoardModal" tabindex="-1" aria-labelledby="addBoardModalLabel" aria-hidden="true">
         <div class="modal-dialog modal-lg">
             <div class="modal-content">
-                <form action="{{ url('profiling/board-of-members/add') }}" method="POST">
+                <form action="{{ url('profiling/board-of-members/add') }}" method="POST"
+                    enctype="multipart/form-data">
                     @csrf
                     {{-- Hidden fields (filled by the location dropdowns) --}}
                     <input type="hidden" name="region" id="add_hidden_region" value="">
@@ -263,6 +265,13 @@
                                     placeholder="TIN" maxlength="50">
                             </div>
 
+                            {{-- Photo --}}
+                            <div class="col-md-12 mb-3">
+                                <label for="add_avatar">Photo</label>
+                                <input type="file" class="form-control" id="add_avatar" name="avatar"
+                                    accept=".jpg,.jpeg,.png,.webp">
+                            </div>
+
                             {{-- Street --}}
                             <div class="col-md-12 mb-3">
                                 <label for="add_street">Street</label>
@@ -333,7 +342,7 @@
             <div class="modal-dialog">
                 <div class="modal-content">
                     <form action="{{ url('profiling/board-of-members/update/user/' . $board->usr_id) }}"
-                        method="POST">
+                        method="POST" enctype="multipart/form-data">
                         @csrf
                         <div class="modal-header bg-warning">
                             <h5 class="modal-title" id="updateBoardModalLabel-{{ $board->usr_id }}">
@@ -348,6 +357,12 @@
                                 <div class="form-control-plaintext">
                                     {{ $board->usr_first_name }} {{ $board->usr_last_name }}
                                 </div>
+                            </div>
+
+                            <div class="mb-3">
+                                <label for="avatar-{{ $board->usr_id }}">Photo</label>
+                                <input type="file" class="form-control" id="avatar-{{ $board->usr_id }}"
+                                    name="avatar" accept=".jpg,.jpeg,.png,.webp">
                             </div>
 
                             <div class="mb-3">
