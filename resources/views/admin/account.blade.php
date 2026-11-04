@@ -37,7 +37,7 @@
                 </div>
                 <div class="card-body">
 
-                    <form method="POST" action="{{ url('account/update') }}" enctype="multipart/form-data">
+                    <form method="POST" action="{{ url('admin/account/update') }}" enctype="multipart/form-data">
                         @csrf
 
                         {{-- PROFILE IMAGE --}}
@@ -211,7 +211,7 @@
         <div class="modal fade" id="editAddressModal-{{ $addr->uadd_id }}" tabindex="-1" aria-hidden="true">
             <div class="modal-dialog modal-lg">
                 <div class="modal-content">
-                    <form method="POST" action="{{ url('account/address/edit') }}">
+                    <form method="POST" action="{{ url('admin/account/address/edit') }}">
                         @csrf
                         <input type="hidden" name="uadd_id" value="{{ $addr->uadd_id }}">
 
@@ -336,7 +336,7 @@
     <div class="modal fade" id="addAddressModal" tabindex="-1" aria-hidden="true">
         <div class="modal-dialog modal-lg">
             <div class="modal-content">
-                <form method="POST" action="{{ url('account/address/add') }}">
+                <form method="POST" action="{{ url('admin/account/address/add') }}">
                     @csrf
                     <div class="modal-header bg-success">
                         <h5 class="modal-title text-white">

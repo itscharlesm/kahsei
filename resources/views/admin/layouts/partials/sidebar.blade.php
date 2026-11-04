@@ -45,8 +45,8 @@
 
                     {{-- Account --}}
                     <li class="nav-item">
-                        <a href="{{ url('account') }}"
-                            class="nav-link {{ request()->is('account') ? 'active bg-success' : '' }}">
+                        <a href="{{ url('admin/account') }}"
+                            class="nav-link {{ request()->is('admin/account') ? 'active bg-success' : '' }}">
                             <i class="nav-icon fas fa-cog"></i>
                             <p>ACCOUNT</p>
                         </a>

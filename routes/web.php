@@ -49,11 +49,11 @@ Route::post('admin/announcement/delete/{ann_uuid}', [AnnouncementController::cla
 
 // ------------------------------------------------------------------------------------------------------------------------------------ //
 // ACCOUNT
-Route::get('account', [UserController::class, 'account']);
-Route::post('account/update', [UserController::class, 'account_update']);
-Route::post('account/address/add', [UserController::class, 'account_address_add']);
-Route::post('account/address/edit', [UserController::class, 'account_address_edit']);
-Route::post('account/update/password', [UserController::class, 'account_update_password']);
+Route::get('admin/account', [UserController::class, 'account']);
+Route::post('admin/account/update', [UserController::class, 'account_update']);
+Route::post('admin/account/address/add', [UserController::class, 'account_address_add']);
+Route::post('admin/account/address/edit', [UserController::class, 'account_address_edit']);
+Route::post('admin/account/update/password', [UserController::class, 'account_update_password']);
 // ------------------------------------------------------------------------------------------------------------------------------------ //
 
 // ------------------------------------------------------------------------------------------------------------------------------------ //
