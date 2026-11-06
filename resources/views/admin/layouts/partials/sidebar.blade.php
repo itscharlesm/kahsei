@@ -56,24 +56,35 @@
                     @if (session('SUPERADMIN') == '1' || session('ADMIN') == '1')
                         <li class="nav-header">HOMEPAGE</li>
 
-                        @if (session('SUPERADMIN') == '1' || session('ADMIN') == '1')
-                            {{-- About --}}
-                            <li class="nav-item">
-                                <a href="{{ url('admin/homepage/about') }}"
-                                    class="nav-link {{ request()->is('admin/homepage/about') ? 'active bg-success' : '' }}">
-                                    <i class="nav-icon fas fa-info-circle"></i>
-                                    <p>ABOUT</p>
-                                </a>
-                            </li>
-                            {{-- Vision --}}
-                            <li class="nav-item">
-                                <a href="{{ url('admin/homepage/vision') }}"
-                                    class="nav-link {{ request()->is('admin/homepage/vision') ? 'active bg-success' : '' }}">
-                                    <i class="nav-icon fas fa-info-circle"></i>
-                                    <p>VISION</p>
-                                </a>
-                            </li>
-                        @endif
+                        <li class="nav-item {{ request()->is('admin/homepage/*') ? 'menu-open' : '' }}">
+                            <a href="#" class="nav-link {{ request()->is('admin/homepage/*') ? 'active bg-success' : '' }}">
+                                <i class="nav-icon fas fa-home"></i>
+                                <p>
+                                    PAGES
+                                    <i class="nav-arrow fas fa-angle-right"></i>
+                                </p>
+                            </a>
+
+                            <ul class="nav nav-treeview">
+                                {{-- About --}}
+                                <li class="nav-item">
+                                    <a href="{{ url('admin/homepage/about') }}"
+                                        class="nav-link {{ request()->is('admin/homepage/about*') ? 'active bg-success' : '' }}">
+                                        <i class="far fa-circle nav-icon"></i>
+                                        <p>ABOUT</p>
+                                    </a>
+                                </li>
+
+                                {{-- Vision --}}
+                                <li class="nav-item">
+                                    <a href="{{ url('admin/homepage/vision') }}"
+                                        class="nav-link {{ request()->is('admin/homepage/vision*') ? 'active bg-success' : '' }}">
+                                        <i class="far fa-circle nav-icon"></i>
+                                        <p>VISION</p>
+                                    </a>
+                                </li>
+                            </ul>
+                        </li>
                     @endif
 
                     {{-- MANAGEMENT --}}

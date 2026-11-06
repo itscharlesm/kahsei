@@ -54,7 +54,7 @@
                                 </div>
                             </div>
 
-                            <form method="POST" action="{{ url('admin/homepage/update/' . $about->about_id) }}"
+                            <form method="POST" action="{{ url('admin/homepage/about/update/' . $about->about_id) }}"
                                 id="aboutForm">
                                 @csrf
                                 <div class="card-body">
