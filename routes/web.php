@@ -68,9 +68,12 @@ Route::post('messages/{mes_id}/unsend', [MessageController::class, 'unsend']);
 // ------------------------------------------------------------------------------------------------------------------------------------ //
 
 // ------------------------------------------------------------------------------------------------------------------------------------ //
-// ABOUT
-Route::get('admin/homepage/about', [HomepageController::class, 'about']);
-Route::post('admin/homepage/update/{about_id}', [HomepageController::class, 'about_update']);
+// HOMEPAGE
+Route::middleware('role:SUPERADMIN,ADMIN')->group(function () {
+    // - About
+    Route::get('admin/homepage/about', [HomepageController::class, 'about']);
+    Route::post('admin/homepage/update/{about_id}', [HomepageController::class, 'about_update']);
+});
 //------------------------------------------------------------------------------------------------------------------------------------
 
 // ------------------------------------------------------------------------------------------------------------------------------------ //

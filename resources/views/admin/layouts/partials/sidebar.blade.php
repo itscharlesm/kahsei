@@ -65,6 +65,14 @@
                                     <p>ABOUT</p>
                                 </a>
                             </li>
+                            {{-- Vision --}}
+                            <li class="nav-item">
+                                <a href="{{ url('admin/homepage/vision') }}"
+                                    class="nav-link {{ request()->is('admin/homepage/vision') ? 'active bg-success' : '' }}">
+                                    <i class="nav-icon fas fa-info-circle"></i>
+                                    <p>VISION</p>
+                                </a>
+                            </li>
                         @endif
                     @endif
 
@@ -80,6 +88,9 @@
                                     <i class="nav-icon fas fa-map-marker-alt"></i>
                                     <p>ADDRESSES</p>
                                 </a>
+                            </li>
+                            {{-- Positions --}}
+                            <li class="nav-item">
                                 <a href="{{ url('admin/management/positions/active') }}"
                                     class="nav-link {{ request()->is('admin/management/positions*') ? 'active bg-success' : '' }}">
                                     <i class="nav-icon fas fa-user-alt"></i>
