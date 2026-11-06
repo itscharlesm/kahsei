@@ -76,6 +76,9 @@ Route::middleware('role:SUPERADMIN,ADMIN')->group(function () {
     // - Vision
     Route::get('admin/homepage/vision', [HomepageController::class, 'vision']);
     Route::post('admin/homepage/vision/update/{vis_id}', [HomepageController::class, 'vision_update']);
+    // - Mission
+    Route::get('admin/homepage/mission', [HomepageController::class, 'mission']);
+    Route::post('admin/homepage/mission/update/{mis_id}', [HomepageController::class, 'mission_update']);
 });
 //------------------------------------------------------------------------------------------------------------------------------------
 

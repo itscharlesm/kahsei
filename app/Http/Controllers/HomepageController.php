@@ -71,4 +71,36 @@ class HomepageController extends Controller
         return redirect()->back();
     }
     // END VISION
+
+    // START MISSION
+    public function mission()
+    {
+        $mission = DB::table('homepage_mission')
+            ->where('mis_active', 1)
+            ->first();
+
+        return view('admin.homepage.mission', compact('mission'));
+    }
+
+    public function mission_update(Request $request, $mis_id)
+    {
+        // Validate request
+        $request->validate([
+            'mis_details' => 'required',
+        ]);
+
+        DB::table('homepage_mission')
+            ->where('mis_id', $mis_id)
+            ->update([
+                'mis_details' => $request->mis_details,
+                'mis_date_modified' => Carbon::now(),
+                'mis_modified_by' => session('usr_id'),
+            ]);
+
+        logUserActivity('Manage Homepage', 'Updated mission');
+
+        session()->flash('successMessage', 'Mission has been updated.');
+        return redirect()->back();
+    }
+    // END MISSION
 }

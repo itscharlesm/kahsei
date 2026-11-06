@@ -83,6 +83,15 @@
                                         <p>VISION</p>
                                     </a>
                                 </li>
+
+                                {{-- Mission --}}
+                                <li class="nav-item">
+                                    <a href="{{ url('admin/homepage/mission') }}"
+                                        class="nav-link {{ request()->is('admin/homepage/mission*') ? 'active bg-success' : '' }}">
+                                        <i class="far fa-circle nav-icon"></i>
+                                        <p>MISSION</p>
+                                    </a>
+                                </li>
                             </ul>
                         </li>
                     @endif
