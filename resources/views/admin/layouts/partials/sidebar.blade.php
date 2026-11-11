@@ -109,16 +109,6 @@
                     @if (session('SUPERADMIN') == '1' || session('ADMIN') == '1')
                         <li class="nav-header">MANAGEMENT</li>
 
-                                    </a>
-                                </li>
-                            </ul>
-                        </li>
-                    @endif
-
-                    {{-- MANAGEMENT --}}
-                    @if (session('SUPERADMIN') == '1' || session('ADMIN') == '1')
-                        <li class="nav-header">MANAGEMENT</li>
-
                         @if (session('SUPERADMIN') == '1' || session('ADMIN') == '1')
                             {{-- Addresses --}}
                             <li class="nav-item">
