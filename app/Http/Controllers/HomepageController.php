@@ -40,6 +40,38 @@ class HomepageController extends Controller
     }
     // END ABOUT
 
+    // START GOALS
+    public function goals()
+    {
+        $goals = DB::table('homepage_goals')
+            ->where('goals_active', 1)
+            ->first();
+
+        return view('admin.homepage.goals', compact('goals'));
+    }
+
+    public function goals_update(Request $request, $goals_id)
+    {
+        // Validate request
+        $request->validate([
+            'goals_details' => 'required',
+        ]);
+
+        DB::table('homepage_goals')
+            ->where('goals_id', $goals_id)
+            ->update([
+                'goals_details' => $request->goals_details,
+                'goals_date_modified' => Carbon::now(),
+                'goals_modified_by' => session('usr_id'),
+            ]);
+
+        logUserActivity('Manage Homepage', 'Updated goals');
+
+        session()->flash('successMessage', 'Goals has been updated.');
+        return redirect()->back();
+    }
+    // END GOALS
+
     // START MISSION
     public function mission()
     {

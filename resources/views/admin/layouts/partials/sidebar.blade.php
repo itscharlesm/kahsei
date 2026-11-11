@@ -75,12 +75,12 @@
                                     </a>
                                 </li>
 
-                                {{-- Vision --}}
+                                {{-- Goals --}}
                                 <li class="nav-item">
-                                    <a href="{{ url('admin/homepage/vision') }}"
-                                        class="nav-link {{ request()->is('admin/homepage/vision*') ? 'active bg-success' : '' }}">
+                                    <a href="{{ url('admin/homepage/goals') }}"
+                                        class="nav-link {{ request()->is('admin/homepage/goals*') ? 'active bg-success' : '' }}">
                                         <i class="far fa-circle nav-icon"></i>
-                                        <p>VISION</p>
+                                        <p>GOALS</p>
                                     </a>
                                 </li>
 
@@ -93,12 +93,12 @@
                                     </a>
                                 </li>
 
-                                {{-- Partners --}}
+                                {{-- Vision --}}
                                 <li class="nav-item">
-                                    <a href="{{ url('admin/homepage/partners') }}"
-                                        class="nav-link {{ request()->is('admin/homepage/partners*') ? 'active bg-success' : '' }}">
+                                    <a href="{{ url('admin/homepage/vision') }}"
+                                        class="nav-link {{ request()->is('admin/homepage/vision*') ? 'active bg-success' : '' }}">
                                         <i class="far fa-circle nav-icon"></i>
-                                        <p>PARTNERS</p>
+                                        <p>VISION</p>
                                     </a>
                                 </li>
                             </ul>
