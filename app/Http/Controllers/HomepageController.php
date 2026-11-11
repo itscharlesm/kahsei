@@ -40,38 +40,6 @@ class HomepageController extends Controller
     }
     // END ABOUT
 
-    // START VISION
-    public function vision()
-    {
-        $vision = DB::table('homepage_vision')
-            ->where('vis_active', 1)
-            ->first();
-
-        return view('admin.homepage.vision', compact('vision'));
-    }
-
-    public function vision_update(Request $request, $vis_id)
-    {
-        // Validate request
-        $request->validate([
-            'vis_details' => 'required',
-        ]);
-
-        DB::table('homepage_vision')
-            ->where('vis_id', $vis_id)
-            ->update([
-                'vis_details' => $request->vis_details,
-                'vis_date_modified' => Carbon::now(),
-                'vis_modified_by' => session('usr_id'),
-            ]);
-
-        logUserActivity('Manage Homepage', 'Updated vision');
-
-        session()->flash('successMessage', 'Vision has been updated.');
-        return redirect()->back();
-    }
-    // END VISION
-
     // START MISSION
     public function mission()
     {
@@ -103,4 +71,36 @@ class HomepageController extends Controller
         return redirect()->back();
     }
     // END MISSION
+
+    // START VISION
+    public function vision()
+    {
+        $vision = DB::table('homepage_vision')
+            ->where('vis_active', 1)
+            ->first();
+
+        return view('admin.homepage.vision', compact('vision'));
+    }
+
+    public function vision_update(Request $request, $vis_id)
+    {
+        // Validate request
+        $request->validate([
+            'vis_details' => 'required',
+        ]);
+
+        DB::table('homepage_vision')
+            ->where('vis_id', $vis_id)
+            ->update([
+                'vis_details' => $request->vis_details,
+                'vis_date_modified' => Carbon::now(),
+                'vis_modified_by' => session('usr_id'),
+            ]);
+
+        logUserActivity('Manage Homepage', 'Updated vision');
+
+        session()->flash('successMessage', 'Vision has been updated.');
+        return redirect()->back();
+    }
+    // END VISION
 }
