@@ -487,3 +487,5 @@ then below the que_video_link display this
 but makee sure it is bootstrap 5 ready (since mty project is bootstrap 5)
 
 if approved (que_status = APPROVED, que_date_created: Carbon::now(), que_created_by: session('usr_id'))
+
+blade is admin.homepage.questions.for_apporval.blade.php
