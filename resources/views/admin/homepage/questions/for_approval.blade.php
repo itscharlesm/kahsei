@@ -1,0 +1,233 @@
+@extends('admin.layouts.themes.main')
+
+@section('content')
+    {{-- Content Header --}}
+    <div class="app-content-header">
+        <div class="container-fluid">
+            <div class="row">
+                <div class="col-sm-6">
+                    <h3 class="mb-0">Questions For Approval</h3>
+                </div>
+                <div class="col-sm-6">
+                    <ol class="breadcrumb float-sm-end">
+                        <li class="breadcrumb-item">
+                            <a href="{{ url('admin/home') }}">Home</a>
+                        </li>
+                        <li class="breadcrumb-item">Homepage</li>
+                        <li class="breadcrumb-item active">Questions For Approval</li>
+                    </ol>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    {{-- Main Content --}}
+    <div class="app-content">
+        @include('admin.layouts.partials.onclick')
+        @include('admin.layouts.partials.alerts')
+        @include('admin.layouts.partials.modal_style')
+        <div class="container-fluid">
+
+            @if ($errors->any())
+                <div class="alert alert-danger">
+                    <ul class="mb-0">
+                        @foreach ($errors->all() as $error)
+                            <li>{{ $error }}</li>
+                        @endforeach
+                    </ul>
+                </div>
+            @endif
+
+            <div class="card">
+                <div class="card-body overflow-auto">
+                    <div class="row">
+                        <div class="col-md-12">
+                            <input type="text" id="searchInput" class="form-control mb-3"
+                                placeholder="Search questions...">
+
+                            <table id="questionsTable" class="table table-hover table-bordered table-sm">
+                                <thead>
+                                    <tr>
+                                        <th class="align-middle text-center" width="60px">No</th>
+                                        <th class="align-middle text-center">Date Submitted</th>
+                                        <th class="align-middle text-center">Inquirer</th>
+                                        <th class="align-middle text-center">Question</th>
+                                        <th class="align-middle text-center" width="110px">Action</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    @foreach ($questions as $question)
+                                        <tr>
+                                            <td class="align-middle text-center">{{ $loop->index + 1 }}</td>
+                                            <td class="align-middle text-center">
+                                                {{ \Carbon\Carbon::parse($question->que_date_created)->format('m/d/Y | h:i A') }}
+                                            </td>
+                                            <td class="align-middle text-center">
+                                                @if ($question->is_anonymous == 1)
+                                                    Anonymous
+                                                @else
+                                                    {{ $question->usr_first_name }} {{ $question->usr_last_name }}
+                                                @endif
+                                            </td>
+                                            <td class="align-middle text-start">{{ $question->que_question }}</td>
+                                            <td class="align-middle text-center">
+                                                <a class="btn btn-success btn-sm mb-1" href="javascript:void(0)"
+                                                    data-bs-toggle="modal"
+                                                    data-bs-target="#approveModal-{{ $question->que_id }}">
+                                                    <span class="fa fa-check"></span>
+                                                </a>
+                                                <a class="btn btn-danger btn-sm mb-1" href="javascript:void(0)"
+                                                    data-bs-toggle="modal"
+                                                    data-bs-target="#rejectModal-{{ $question->que_id }}">
+                                                    <span class="fa fa-times"></span>
+                                                </a>
+                                            </td>
+                                        </tr>
+                                    @endforeach
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    @foreach ($questions as $question)
+        {{-- Approve Modal --}}
+        <div class="modal fade" id="approveModal-{{ $question->que_id }}" tabindex="-1"
+            aria-labelledby="approveModalLabel-{{ $question->que_id }}" aria-hidden="true">
+            <div class="modal-dialog modal-lg">
+                <div class="modal-content">
+                    <form action="{{ url('admin/homepage/questions/approve/' . $question->que_id) }}" method="POST">
+                        @csrf
+                        <div class="modal-header bg-success text-white">
+                            <h5 class="modal-title text-white" id="approveModalLabel-{{ $question->que_id }}">
+                                <span class="fa fa-check text-white"></span> Approve Question
+                            </h5>
+                            <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"
+                                aria-label="Close"></button>
+                        </div>
+
+                        <div class="modal-body">
+                            <div class="row">
+                                <div class="col-md-12 mb-3">
+                                    <label class="form-label">Inquirer</label>
+                                    <div class="form-control-plaintext fw-bold">
+                                        @if ($question->is_anonymous == 1)
+                                            Anonymous
+                                        @else
+                                            {{ $question->usr_first_name }} {{ $question->usr_last_name }}
+                                        @endif
+                                    </div>
+                                </div>
+
+                                <div class="col-md-12 mb-3">
+                                    <label class="form-label">Question</label>
+                                    <div class="form-control-plaintext">{{ $question->que_question }}</div>
+                                </div>
+
+                                <div class="col-md-12 mb-3">
+                                    <div class="alert alert-info py-2 mb-0">
+                                        Provide an <strong>answer</strong>, a <strong>YouTube video</strong>, or
+                                        <strong>both</strong>.
+                                    </div>
+                                </div>
+
+                                <div class="col-md-12 mb-3">
+                                    <label for="que_answer-{{ $question->que_id }}" class="form-label">Answer</label>
+                                    <textarea class="form-control" id="que_answer-{{ $question->que_id }}" name="que_answer" rows="4"
+                                        placeholder="Type the answer here..."></textarea>
+                                </div>
+
+                                <div class="col-md-12 mb-3">
+                                    <label for="que_video_link-{{ $question->que_id }}" class="form-label">Youtube
+                                        Video</label>
+                                    <input class="form-control" type="text"
+                                        id="que_video_link-{{ $question->que_id }}" name="que_video_link"
+                                        placeholder="Paste the YouTube embed code here">
+                                </div>
+
+                                <div class="col-md-12 mb-3">
+                                    <div class="card border-info">
+                                        <div class="card-header bg-info text-white">
+                                            How to embed a YouTube video
+                                        </div>
+                                        <div class="card-body">
+                                            <p>Follow these steps on how to embed Youtube video:</p>
+                                            <p><strong>Step 1:</strong> Click the Youtube "Share" button.</p>
+                                            <img src="{{ asset('/images/youtube/01.jpg') }}"
+                                                class="img-thumbnail mb-3" style="width:25%" alt="Step 1">
+                                            <p><strong>Step 2:</strong> Click the "Embed" button.</p>
+                                            <img src="{{ asset('/images/youtube/02.jpg') }}"
+                                                class="img-thumbnail mb-3" style="width:25%" alt="Step 2">
+                                            <p><strong>Step 3:</strong> Click the "Copy" button</p>
+                                            <img src="{{ asset('/images/youtube/03.jpg') }}"
+                                                class="img-thumbnail mb-3" style="width:25%" alt="Step 3">
+                                            <p class="mb-0"><strong>Step 4:</strong> Paste the code in the Youtube
+                                                Video field above and press "Approve"</p>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="modal-footer">
+                            <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">
+                                <span class="fa fa-close"></span> Close
+                            </button>
+                            <button type="submit" class="btn btn-success">
+                                <span class="fa fa-check"></span> Approve
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+
+        {{-- Reject Modal --}}
+        <div class="modal fade" id="rejectModal-{{ $question->que_id }}" tabindex="-1"
+            aria-labelledby="rejectModalLabel-{{ $question->que_id }}" aria-hidden="true">
+            <div class="modal-dialog">
+                <div class="modal-content">
+                    <form method="POST" action="{{ url('admin/homepage/questions/reject/' . $question->que_id) }}">
+                        @csrf
+                        <div class="modal-header bg-danger text-white">
+                            <h5 class="modal-title text-white" id="rejectModalLabel-{{ $question->que_id }}">
+                                Please Confirm
+                            </h5>
+                            <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"
+                                aria-label="Close"></button>
+                        </div>
+                        <div class="modal-body">
+                            <p>Are you sure you want to <strong>REJECT</strong> this question?</p>
+                            <p class="mb-0 text-muted">{{ $question->que_question }}</p>
+                        </div>
+                        <div class="modal-footer">
+                            <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">
+                                <span class="fa fa-close"></span> Close
+                            </button>
+                            <button type="submit" class="btn btn-danger">
+                                <span class="fa fa-times"></span> Confirm Reject
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    @endforeach
+@endsection
+
+@section('page_scripts')
+    {{-- Dynamic Search While Typing --}}
+    <script>
+        document.getElementById("searchInput").addEventListener("keyup", function() {
+            let value = this.value.toLowerCase();
+            let rows = document.querySelectorAll('#questionsTable tbody tr');
+
+            rows.forEach(function(row) {
+                row.style.display = row.innerText.toLowerCase().includes(value) ? "" : "none";
+            });
+        });
+    </script>
+@endsection

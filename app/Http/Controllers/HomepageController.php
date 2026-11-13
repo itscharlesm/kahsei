@@ -305,4 +305,97 @@ class HomepageController extends Controller
         return redirect()->back();
     }
     // END VISION
+
+    // START QUESTIONS
+    public function questions_for_approval(Request $request)
+    {
+        $questions = DB::table('homepage_questions')
+            ->leftJoin('users', 'homepage_questions.usr_id', '=', 'users.usr_id')
+            ->where('homepage_questions.que_status', '=', 'FOR APPROVAL')
+            ->where('homepage_questions.que_active', '=', 1)
+            ->select(
+                'homepage_questions.que_id',
+                'homepage_questions.que_is_anonymous',
+                'homepage_questions.que_question',
+                'homepage_questions.que_date_created',
+                'users.usr_first_name',
+                'users.usr_last_name',
+                DB::raw('CASE
+                WHEN homepage_questions.que_is_anonymous = 1
+                  OR homepage_questions.usr_id IS NULL
+                  OR homepage_questions.usr_id = 0
+                THEN 1 ELSE 0 END AS is_anonymous')
+            )
+            ->orderBy('homepage_questions.que_date_created', 'desc')
+            ->get();
+
+        return view('admin.homepage.questions.for_approval', compact('questions'));
+    }
+
+    public function questions_approve(Request $request, $que_id)
+    {
+        $request->validate([
+            'que_answer' => 'nullable|string|required_without:que_video_link',
+            'que_video_link' => 'nullable|string|required_without:que_answer',
+        ], [
+            'que_answer.required_without' => 'Please provide an answer, a YouTube video, or both.',
+            'que_video_link.required_without' => 'Please provide an answer, a YouTube video, or both.',
+        ]);
+
+        $question = DB::table('homepage_questions')
+            ->where('que_id', '=', $que_id)
+            ->where('que_status', '=', 'FOR APPROVAL')
+            ->where('que_active', '=', 1)
+            ->first();
+
+        if (!$question) {
+            alert()->error('Error', 'Question not found.');
+            return redirect()->back();
+        }
+
+        $answer = trim((string) $request->que_answer);
+        $video = trim((string) $request->que_video_link);
+
+        DB::table('homepage_questions')
+            ->where('que_id', '=', $que_id)
+            ->update([
+                'que_answer' => $answer !== '' ? $answer : null,
+                'que_video_link' => $video !== '' ? $video : null,
+                'que_status' => 'APPROVED',
+                'que_date_created' => Carbon::now(),
+                'que_created_by' => session('usr_id'),
+            ]);
+
+        logUserActivity('Manage Homepage', 'Approved question #' . $que_id);
+
+        session()->flash('successMessage', 'Question has been approved.');
+        return redirect()->back();
+    }
+
+    public function questions_reject(Request $request, $que_id)
+    {
+        $question = DB::table('homepage_questions')
+            ->where('que_id', '=', $que_id)
+            ->first();
+
+        if (!$question) {
+            alert()->error('Error', 'Question not found.');
+            return redirect()->back();
+        }
+
+        DB::table('homepage_questions')
+            ->where('que_id', '=', $que_id)
+            ->update([
+                'que_status' => 'REJECTED',
+                'que_active' => 0,
+                'que_date_modified' => Carbon::now(),
+                'que_modified_by' => session('usr_id'),
+            ]);
+
+        logUserActivity('Manage Homepage', 'Rejected question #' . $que_id);
+
+        session()->flash('successMessage', 'Question has been rejected.');
+        return redirect()->back();
+    }
+    // END QUESTIONS
 }

@@ -92,6 +92,7 @@ Route::middleware('role:SUPERADMIN,ADMIN')->group(function () {
     Route::post('admin/homepage/vision/update/{vis_id}', [HomepageController::class, 'vision_update']);
     // - Questions
     Route::get('admin/homepage/questions/for-approval', [HomepageController::class, 'questions_for_approval']);
+    Route::post('admin/homepage/questions/approve/{que_id}', [HomepageController::class, 'questions_approve']);
     Route::post('admin/homepage/questions/reject/{que_id}', [HomepageController::class, 'questions_reject']);
 });
 //------------------------------------------------------------------------------------------------------------------------------------

@@ -124,7 +124,7 @@
 
                         <li class="nav-item {{ request()->is('admin/homepage/*') ? 'menu-open' : '' }}">
                             <a href="#" class="nav-link {{ request()->is('admin/homepage/*') ? 'active bg-success' : '' }}">
-                                <i class="nav-icon fas fa-home"></i>
+                                <i class="nav-icon fas fa-question-circle"></i>
                                 <p>
                                     QUESTIONS
                                     <i class="nav-arrow fas fa-angle-right"></i>
@@ -134,8 +134,8 @@
                             <ul class="nav nav-treeview">
                                 {{-- For Approval --}}
                                 <li class="nav-item">
-                                    <a href="{{ url('admin/homepage/about') }}"
-                                        class="nav-link {{ request()->is('admin/homepage/about*') ? 'active bg-success' : '' }}">
+                                    <a href="{{ url('admin/homepage/questions/for-approval') }}"
+                                        class="nav-link {{ request()->is('admin/homepage/questions/for-approval*') ? 'active bg-success' : '' }}">
                                         <i class="far fa-circle nav-icon"></i>
                                         <p>FOR APPROVAL</p>
                                     </a>
