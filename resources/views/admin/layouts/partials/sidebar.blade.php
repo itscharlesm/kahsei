@@ -93,6 +93,15 @@
                                     </a>
                                 </li>
 
+                                {{-- Objectives --}}
+                                <li class="nav-item">
+                                    <a href="{{ url('admin/homepage/objectives') }}"
+                                        class="nav-link {{ request()->is('admin/homepage/objectives*') ? 'active bg-success' : '' }}">
+                                        <i class="far fa-circle nav-icon"></i>
+                                        <p>OBJECTIVES</p>
+                                    </a>
+                                </li>
+
                                 {{-- Vision --}}
                                 <li class="nav-item">
                                     <a href="{{ url('admin/homepage/vision') }}"

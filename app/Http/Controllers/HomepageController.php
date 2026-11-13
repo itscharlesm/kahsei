@@ -104,6 +104,38 @@ class HomepageController extends Controller
     }
     // END MISSION
 
+    // START OBJECTIVES
+    public function objectives()
+    {
+        $objectives = DB::table('homepage_objectives')
+            ->where('obj_active', 1)
+            ->first();
+
+        return view('admin.homepage.objectives', compact('objectives'));
+    }
+
+    public function objectives_update(Request $request, $obj_id)
+    {
+        // Validate request
+        $request->validate([
+            'obj_details' => 'required',
+        ]);
+
+        DB::table('homepage_objectives')
+            ->where('obj_id', $obj_id)
+            ->update([
+                'obj_details' => $request->obj_details,
+                'obj_date_modified' => Carbon::now(),
+                'obj_modified_by' => session('usr_id'),
+            ]);
+
+        logUserActivity('Manage Homepage', 'Updated objectives');
+
+        session()->flash('successMessage', 'Objectives has been updated.');
+        return redirect()->back();
+    }
+    // END OBJECTIVES
+
     // START VISION
     public function vision()
     {
