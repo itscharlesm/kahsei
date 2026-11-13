@@ -28,7 +28,8 @@
                 @if (session('utyp_id') == 1)
                     {{-- Home --}}
                     <li class="nav-item">
-                        <a href="{{ url('admin/home') }}" class="nav-link {{ request()->is('admin/home') ? 'active bg-success' : '' }}">
+                        <a href="{{ url('admin/home') }}"
+                            class="nav-link {{ request()->is('admin/home') ? 'active bg-success' : '' }}">
                             <i class="nav-icon fas fa-home"></i>
                             <p>HOME</p>
                         </a>
@@ -56,8 +57,20 @@
                     @if (session('SUPERADMIN') == '1' || session('ADMIN') == '1')
                         <li class="nav-header">HOMEPAGE</li>
 
-                        <li class="nav-item {{ request()->is('admin/homepage/*') ? 'menu-open' : '' }}">
-                            <a href="#" class="nav-link {{ request()->is('admin/homepage/*') ? 'active bg-success' : '' }}">
+                        @php
+                            $pagesActive = request()->is(
+                                'admin/homepage/about*',
+                                'admin/homepage/goals*',
+                                'admin/homepage/mission*',
+                                'admin/homepage/objectives*',
+                                'admin/homepage/partners*',
+                                'admin/homepage/vision*'
+                            );
+                            $questionsActive = request()->is('admin/homepage/questions/*');
+                        @endphp
+
+                        <li class="nav-item {{ $pagesActive ? 'menu-open' : '' }}">
+                            <a href="#" class="nav-link {{ $pagesActive ? 'active bg-success' : '' }}">
                                 <i class="nav-icon fas fa-home"></i>
                                 <p>
                                     PAGES
@@ -122,8 +135,8 @@
                             </ul>
                         </li>
 
-                        <li class="nav-item {{ request()->is('admin/homepage/*') ? 'menu-open' : '' }}">
-                            <a href="#" class="nav-link {{ request()->is('admin/homepage/*') ? 'active bg-success' : '' }}">
+                        <li class="nav-item {{ $questionsActive ? 'menu-open' : '' }}">
+                            <a href="#" class="nav-link {{ $questionsActive ? 'active bg-success' : '' }}">
                                 <i class="nav-icon fas fa-question-circle"></i>
                                 <p>
                                     QUESTIONS
@@ -138,6 +151,15 @@
                                         class="nav-link {{ request()->is('admin/homepage/questions/for-approval*') ? 'active bg-success' : '' }}">
                                         <i class="far fa-circle nav-icon"></i>
                                         <p>FOR APPROVAL</p>
+                                    </a>
+                                </li>
+
+                                {{-- Rejected --}}
+                                <li class="nav-item">
+                                    <a href="{{ url('admin/homepage/questions/rejected') }}"
+                                        class="nav-link {{ request()->is('admin/homepage/questions/rejected*') ? 'active bg-success' : '' }}">
+                                        <i class="far fa-circle nav-icon"></i>
+                                        <p>REJECTED</p>
                                     </a>
                                 </li>
                             </ul>

@@ -141,7 +141,7 @@
 
                             <div class="col-md-12 mb-3">
                                 <label class="form-label">Question</label>
-                                <div class="form-control-plaintext text-break" style="white-space: pre-wrap;">
+                                <div class="form-control-plaintext text-break">
                                     {{ $question->que_question }}</div>
                             </div>
                         </div>

@@ -1,6 +1,15 @@
 @extends('admin.layouts.themes.main')
 
 @section('content')
+    <style>
+        .question-truncate {
+            max-width: 450px;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+    </style>
+
     {{-- Content Header --}}
     <div class="app-content-header">
         <div class="container-fluid">
@@ -42,8 +51,7 @@
                 <div class="card-body overflow-auto">
                     <div class="row">
                         <div class="col-md-12">
-                            <input type="text" id="searchInput" class="form-control mb-3"
-                                placeholder="Search questions...">
+                            <input type="text" id="searchInput" class="form-control mb-3" placeholder="Search questions...">
 
                             <table id="questionsTable" class="table table-hover table-bordered table-sm">
                                 <thead>
@@ -69,7 +77,11 @@
                                                     {{ $question->usr_first_name }} {{ $question->usr_last_name }}
                                                 @endif
                                             </td>
-                                            <td class="align-middle text-start">{{ $question->que_question }}</td>
+                                            <td class="align-middle text-start">
+                                                <div class="question-truncate" title="{{ trim($question->que_question) }}">
+                                                    {{ trim($question->que_question) }}
+                                                </div>
+                                            </td>
                                             <td class="align-middle text-center">
                                                 <a class="btn btn-success btn-sm mb-1" href="javascript:void(0)"
                                                     data-bs-toggle="modal"
@@ -124,7 +136,8 @@
 
                                 <div class="col-md-12 mb-3">
                                     <label class="form-label">Question</label>
-                                    <div class="form-control-plaintext">{{ $question->que_question }}</div>
+                                    <div class="form-control-plaintext text-break">
+                                        {{ trim($question->que_question) }}</div>
                                 </div>
 
                                 <div class="col-md-12 mb-3">
@@ -136,16 +149,15 @@
 
                                 <div class="col-md-12 mb-3">
                                     <label for="que_answer-{{ $question->que_id }}" class="form-label">Answer</label>
-                                    <textarea class="form-control" id="que_answer-{{ $question->que_id }}" name="que_answer" rows="4"
-                                        placeholder="Type the answer here..."></textarea>
+                                    <textarea class="form-control" id="que_answer-{{ $question->que_id }}" name="que_answer"
+                                        rows="4" placeholder="Type the answer here..."></textarea>
                                 </div>
 
                                 <div class="col-md-12 mb-3">
                                     <label for="que_video_link-{{ $question->que_id }}" class="form-label">Youtube
                                         Video</label>
-                                    <input class="form-control" type="text"
-                                        id="que_video_link-{{ $question->que_id }}" name="que_video_link"
-                                        placeholder="Paste the YouTube embed code here">
+                                    <input class="form-control" type="text" id="que_video_link-{{ $question->que_id }}"
+                                        name="que_video_link" placeholder="Paste the YouTube embed code here">
                                 </div>
 
                                 <div class="col-md-12 mb-3">
@@ -156,14 +168,14 @@
                                         <div class="card-body">
                                             <p>Follow these steps on how to embed Youtube video:</p>
                                             <p><strong>Step 1:</strong> Click the Youtube "Share" button.</p>
-                                            <img src="{{ asset('/images/youtube/01.jpg') }}"
-                                                class="img-thumbnail mb-3" style="width:25%" alt="Step 1">
+                                            <img src="{{ asset('/images/youtube/01.jpg') }}" class="img-thumbnail mb-3"
+                                                style="width:25%" alt="Step 1">
                                             <p><strong>Step 2:</strong> Click the "Embed" button.</p>
-                                            <img src="{{ asset('/images/youtube/02.jpg') }}"
-                                                class="img-thumbnail mb-3" style="width:25%" alt="Step 2">
+                                            <img src="{{ asset('/images/youtube/02.jpg') }}" class="img-thumbnail mb-3"
+                                                style="width:25%" alt="Step 2">
                                             <p><strong>Step 3:</strong> Click the "Copy" button</p>
-                                            <img src="{{ asset('/images/youtube/03.jpg') }}"
-                                                class="img-thumbnail mb-3" style="width:25%" alt="Step 3">
+                                            <img src="{{ asset('/images/youtube/03.jpg') }}" class="img-thumbnail mb-3"
+                                                style="width:25%" alt="Step 3">
                                             <p class="mb-0"><strong>Step 4:</strong> Paste the code in the Youtube
                                                 Video field above and press "Approve"</p>
                                         </div>
@@ -201,7 +213,8 @@
                         </div>
                         <div class="modal-body">
                             <p>Are you sure you want to <strong>REJECT</strong> this question?</p>
-                            <p class="mb-0 text-muted">{{ $question->que_question }}</p>
+                            <p class="mb-0 text-muted text-break">
+                                {{ trim($question->que_question) }}</p>
                         </div>
                         <div class="modal-footer">
                             <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">
@@ -221,11 +234,11 @@
 @section('page_scripts')
     {{-- Dynamic Search While Typing --}}
     <script>
-        document.getElementById("searchInput").addEventListener("keyup", function() {
+        document.getElementById("searchInput").addEventListener("keyup", function () {
             let value = this.value.toLowerCase();
             let rows = document.querySelectorAll('#questionsTable tbody tr');
 
-            rows.forEach(function(row) {
+            rows.forEach(function (row) {
                 row.style.display = row.innerText.toLowerCase().includes(value) ? "" : "none";
             });
         });
