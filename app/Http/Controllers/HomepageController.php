@@ -397,5 +397,30 @@ class HomepageController extends Controller
         session()->flash('successMessage', 'Question has been rejected.');
         return redirect()->back();
     }
+
+    public function questions_rejected(Request $request)
+    {
+        $questions = DB::table('homepage_questions')
+            ->leftJoin('users', 'homepage_questions.usr_id', '=', 'users.usr_id')
+            ->where('homepage_questions.que_status', '=', 'REJECTED')
+            ->select(
+                'homepage_questions.que_id',
+                'homepage_questions.que_is_anonymous',
+                'homepage_questions.que_question',
+                'homepage_questions.que_date_created',
+                'homepage_questions.que_date_modified',
+                'users.usr_first_name',
+                'users.usr_last_name',
+                DB::raw('CASE
+            WHEN homepage_questions.que_is_anonymous = 1
+                OR homepage_questions.usr_id IS NULL
+                OR homepage_questions.usr_id = 0
+            THEN 1 ELSE 0 END AS is_anonymous')
+            )
+            ->orderBy('homepage_questions.que_date_modified', 'desc')
+            ->get();
+
+        return view('admin.homepage.questions.rejected', compact('questions'));
+    }
     // END QUESTIONS
 }

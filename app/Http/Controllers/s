@@ -1,185 +1,103 @@
 // - Questions
 Route::get('admin/homepage/questions/for-approval', [HomepageController::class, 'questions_for_approval']);
+Route::post('admin/homepage/questions/approve/{que_id}', [HomepageController::class, 'questions_approve']);
 Route::post('admin/homepage/questions/reject/{que_id}', [HomepageController::class, 'questions_reject']);
+Route::get('admin/homepage/questions/rejected', [HomepageController::class, 'questions_rejected']);
 
-same code:
-// START ADDRESSES
-public function addresses_active(Request $request)
+// START QUESTIONS
+public function questions_for_approval(Request $request)
 {
-    $search = $request->search ?? '';
+    $questions = DB::table('homepage_questions')
+        ->leftJoin('users', 'homepage_questions.usr_id', '=', 'users.usr_id')
+        ->where('homepage_questions.que_status', '=', 'FOR APPROVAL')
+        ->where('homepage_questions.que_active', '=', 1)
+        ->select(
+            'homepage_questions.que_id',
+            'homepage_questions.que_is_anonymous',
+            'homepage_questions.que_question',
+            'homepage_questions.que_date_created',
+            'users.usr_first_name',
+            'users.usr_last_name',
+            DB::raw('CASE
+            WHEN homepage_questions.que_is_anonymous = 1
+                OR homepage_questions.usr_id IS NULL
+                OR homepage_questions.usr_id = 0
+            THEN 1 ELSE 0 END AS is_anonymous')
+        )
+        ->orderBy('homepage_questions.que_date_created', 'desc')
+        ->get();
 
-    $query = DB::table('addresses')
-        ->leftJoin('users as creator', 'addresses.add_created_by', '=', 'creator.usr_id')
-        ->leftJoin('users as modifier', 'addresses.add_modified_by', '=', 'modifier.usr_id')
-        ->where('addresses.add_active', '=', '1');
-
-    $query->select(
-        'addresses.add_id',
-        'addresses.add_name',
-        'addresses.add_date_created',
-        'addresses.add_date_modified',
-        'addresses.add_active',
-
-        // Created by
-        'creator.usr_first_name as created_first_name',
-        'creator.usr_last_name as created_last_name',
-
-        // Modified by
-        'modifier.usr_first_name as modified_first_name',
-        'modifier.usr_last_name as modified_last_name'
-    );
-
-    if (!empty($search)) {
-        $query->where(function ($q) use ($search) {
-            $q->where('addresses.add_name', 'LIKE', "%$search%")
-                ->orWhere('creator.usr_first_name', 'LIKE', "%$search%")
-                ->orWhere('creator.usr_last_name', 'LIKE', "%$search%")
-                ->orWhere('modifier.usr_first_name', 'LIKE', "%$search%")
-                ->orWhere('modifier.usr_last_name', 'LIKE', "%$search%");
-        });
-    }
-
-    $query->orderBy('addresses.add_name', 'asc');
-
-    $addresses = $query->paginate(500);
-
-    return view('admin.management.addresses.active', compact('addresses', 'search'));
+    return view('admin.homepage.questions.for_approval', compact('questions'));
 }
 
-public function addresses_deleted(Request $request)
-{
-    $search = $request->search ?? '';
-
-    $query = DB::table('addresses')
-        ->leftJoin('users as creator', 'addresses.add_created_by', '=', 'creator.usr_id')
-        ->leftJoin('users as modifier', 'addresses.add_modified_by', '=', 'modifier.usr_id')
-        ->where('addresses.add_active', '=', '0');
-
-    $query->select(
-        'addresses.add_id',
-        'addresses.add_name',
-        'addresses.add_date_created',
-        'addresses.add_date_modified',
-        'addresses.add_active',
-
-        // Created by
-        'creator.usr_first_name as created_first_name',
-        'creator.usr_last_name as created_last_name',
-
-        // Modified by
-        'modifier.usr_first_name as modified_first_name',
-        'modifier.usr_last_name as modified_last_name'
-    );
-
-    if (!empty($search)) {
-        $query->where(function ($q) use ($search) {
-            $q->where('addresses.add_name', 'LIKE', "%$search%")
-                ->orWhere('creator.usr_first_name', 'LIKE', "%$search%")
-                ->orWhere('creator.usr_last_name', 'LIKE', "%$search%")
-                ->orWhere('modifier.usr_first_name', 'LIKE', "%$search%")
-                ->orWhere('modifier.usr_last_name', 'LIKE', "%$search%");
-        });
-    }
-
-    $query->orderBy('addresses.add_name', 'asc');
-
-    $addresses = $query->paginate(500);
-
-    return view('admin.management.addresses.deleted', compact('addresses', 'search'));
-}
-
-public function addresses_add(Request $request)
+public function questions_approve(Request $request, $que_id)
 {
     $request->validate([
-        'add_name' => 'required|string|max:255|unique:addresses,add_name',
+        'que_answer' => 'nullable|string|required_without:que_video_link',
+        'que_video_link' => 'nullable|string|required_without:que_answer',
+    ], [
+        'que_answer.required_without' => 'Please provide an answer, a YouTube video, or both.',
+        'que_video_link.required_without' => 'Please provide an answer, a YouTube video, or both.',
     ]);
 
-    DB::table('addresses')->insert([
-        'add_uuid' => generateuuid(),
-        'add_name' => strtoupper($request->add_name),
-        'add_date_created' => Carbon::now(),
-        'add_created_by' => session('usr_id'),
-        'add_active' => 1,
-    ]);
-
-    logUserActivity('Manage Addresses', 'Added new address ' . $request->add_name);
-
-    session()->flash('successMessage', 'Address has been added.');
-    return redirect()->back();
-}
-
-public function addresses_update(Request $request, $add_id)
-{
-    // Validate request
-    $request->validate([
-        'add_name' => 'required|string|max:255',
-    ]);
-
-    DB::table('addresses')
-        ->where('add_id', $add_id)
-        ->update([
-            'add_name' => strtoupper($request->add_name),
-            'add_date_modified' => Carbon::now(),
-            'add_modified_by' => session('usr_id'),
-        ]);
-
-    logUserActivity('Manage Addresses', 'Updated address ' . $request->add_name);
-
-    session()->flash('successMessage', 'Address has been updated.');
-    return redirect()->back();
-}
-
-public function addresses_delete(Request $request, $add_id)
-{
-    $address = DB::table('addresses')
-        ->where('add_id', '=', $add_id)
+    $question = DB::table('homepage_questions')
+        ->where('que_id', '=', $que_id)
+        ->where('que_status', '=', 'FOR APPROVAL')
+        ->where('que_active', '=', 1)
         ->first();
 
-    if (!$address) {
-        alert()->error('Client not found.');
+    if (!$question) {
+        alert()->error('Error', 'Question not found.');
         return redirect()->back();
     }
 
-    DB::table('addresses')
-        ->where('add_id', '=', $add_id)
+    $answer = trim((string) $request->que_answer);
+    $video = trim((string) $request->que_video_link);
+
+    DB::table('homepage_questions')
+        ->where('que_id', '=', $que_id)
         ->update([
-            'add_date_modified' => Carbon::now(),
-            'add_modified_by' => session('usr_id'),
-            'add_active' => 0,
+            'que_answer' => $answer !== '' ? $answer : null,
+            'que_video_link' => $video !== '' ? $video : null,
+            'que_status' => 'APPROVED',
+            'que_date_created' => Carbon::now(),
+            'que_created_by' => session('usr_id'),
         ]);
 
-    logUserActivity('Manage Addresses', 'Deleted address ' . $address->add_name);
+    logUserActivity('Manage Homepage', 'Approved question #' . $que_id);
 
-    session()->flash('successMessage', 'Address has been Deleted.');
+    session()->flash('successMessage', 'Question has been approved.');
     return redirect()->back();
 }
 
-public function addresses_restore(Request $request, $add_id)
+public function questions_reject(Request $request, $que_id)
 {
-    $address = DB::table('addresses')
-        ->where('add_id', '=', $add_id)
+    $question = DB::table('homepage_questions')
+        ->where('que_id', '=', $que_id)
         ->first();
 
-    if (!$address) {
-        alert()->error('Client not found.');
+    if (!$question) {
+        alert()->error('Error', 'Question not found.');
         return redirect()->back();
     }
 
-    DB::table('addresses')
-        ->where('add_id', '=', $add_id)
+    DB::table('homepage_questions')
+        ->where('que_id', '=', $que_id)
         ->update([
-            'add_date_modified' => Carbon::now(),
-            'add_modified_by' => session('usr_id'),
-            'add_active' => 1,
+            'que_status' => 'REJECTED',
+            'que_active' => 0,
+            'que_date_modified' => Carbon::now(),
+            'que_modified_by' => session('usr_id'),
         ]);
 
-    logUserActivity('Manage Addresses', 'Restored address ' . $address->add_name);
+    logUserActivity('Manage Homepage', 'Rejected question #' . $que_id);
 
-    session()->flash('successMessage', 'Address has been Restored.');
+    session()->flash('successMessage', 'Question has been rejected.');
     return redirect()->back();
 }
-// END ADDRESSES
+// END QUESTIONS
 
+FOR APPROVAL:
 @extends('admin.layouts.themes.main')
 
 @section('content')
@@ -188,15 +106,15 @@ public function addresses_restore(Request $request, $add_id)
         <div class="container-fluid">
             <div class="row">
                 <div class="col-sm-6">
-                    <h3 class="mb-0">Addresses</h3>
+                    <h3 class="mb-0">Questions For Approval</h3>
                 </div>
                 <div class="col-sm-6">
                     <ol class="breadcrumb float-sm-end">
                         <li class="breadcrumb-item">
                             <a href="{{ url('admin/home') }}">Home</a>
                         </li>
-                        <li class="breadcrumb-item">Management</li>
-                        <li class="breadcrumb-item active">Addresses</li>
+                        <li class="breadcrumb-item">Homepage</li>
+                        <li class="breadcrumb-item active">Questions For Approval</li>
                     </ol>
                 </div>
             </div>
@@ -209,84 +127,60 @@ public function addresses_restore(Request $request, $add_id)
         @include('admin.layouts.partials.alerts')
         @include('admin.layouts.partials.modal_style')
         <div class="container-fluid">
+
+            @if ($errors->any())
+                <div class="alert alert-danger">
+                    <ul class="mb-0">
+                        @foreach ($errors->all() as $error)
+                            <li>{{ $error }}</li>
+                        @endforeach
+                    </ul>
+                </div>
+            @endif
+
             <div class="card">
                 <div class="card-body overflow-auto">
                     <div class="row">
                         <div class="col-md-12">
-                            @if (session('SUPERADMIN') == '1' || session('ADMIN') == '1' || session('MANAGER') == '1' || session('DATA OFFICER') == '1')
-                                <a class="btn btn-danger mb-3" href="{{ url('admin/management/addresses/deleted') }}">
-                                    <span class="fa fa-archive"></span> Deleted Addresses
-                                </a>
+                            <input type="text" id="searchInput" class="form-control mb-3"
+                                placeholder="Search questions...">
 
-                                <button type="button" class="btn btn-success mb-3" data-bs-toggle="modal"
-                                    data-bs-target="#addAddressModal">
-                                    <span class="fa fa-plus"></span> Add Address
-                                </button>
-                            @endif
-                        </div>
-                    </div>
-
-                    <div class="row">
-                        <!-- Table Column -->
-                        <div class="col-lg-12 col-md-7">
-                            <form method="GET" action="{{ url('admin/management/addresses/active') }}" class="mb-3">
-                                <div class="input-group">
-                                    <input type="text" name="search" id="searchInput" class="form-control"
-                                        placeholder="Search addresses..." value="{{ request('search') }}">
-                                    <button type="submit" class="btn btn-primary">
-                                        <span class="fa fa-search"></span> Search
-                                    </button>
-                                </div>
-                            </form>
-
-                            <table id="profilingTable" class="table table-hover table-bordered table-sm">
+                            <table id="questionsTable" class="table table-hover table-bordered table-sm">
                                 <thead>
                                     <tr>
-                                        <th class="align-middle text-center">No</th>
-                                        <th class="align-middle text-center">Address Identifier</th>
-                                        <th class="align-middle text-center">Created By</th>
-                                        <th class="align-middle text-center">Modified By</th>
+                                        <th class="align-middle text-center" width="60px">No</th>
+                                        <th class="align-middle text-center">Date Submitted</th>
+                                        <th class="align-middle text-center">Inquirer</th>
+                                        <th class="align-middle text-center">Question</th>
                                         <th class="align-middle text-center" width="110px">Action</th>
                                     </tr>
                                 </thead>
                                 <tbody>
-                                    @foreach ($addresses as $address)
+                                    @foreach ($questions as $question)
                                         <tr>
+                                            <td class="align-middle text-center">{{ $loop->index + 1 }}</td>
                                             <td class="align-middle text-center">
-                                                {{ $loop->iteration }}
+                                                {{ \Carbon\Carbon::parse($question->que_date_created)->format('m/d/Y | h:i A') }}
                                             </td>
                                             <td class="align-middle text-center">
-                                                {{ $address->add_name }}
-                                            </td>
-                                            <td class="align-middle text-center">
-                                                @if (!empty($address->created_first_name))
-                                                    {{ $address->created_first_name }} {{ $address->created_last_name }} -
-                                                    {{ \Carbon\Carbon::parse($address->add_date_created)->format('m/d/Y | h:i A') }}
+                                                @if ($question->is_anonymous == 1)
+                                                    Anonymous
                                                 @else
-                                                    -
+                                                    {{ $question->usr_first_name }} {{ $question->usr_last_name }}
                                                 @endif
                                             </td>
+                                            <td class="align-middle text-start">{{ $question->que_question }}</td>
                                             <td class="align-middle text-center">
-                                                @if (!empty($address->modified_first_name))
-                                                    {{ $address->modified_first_name }}
-                                                    {{ $address->modified_last_name }} -
-                                                    {{ \Carbon\Carbon::parse($address->add_date_modified)->format('m/d/Y | h:i A') }}
-                                                @else
-                                                    -
-                                                @endif
-                                            </td>
-                                            <td class="align-middle text-center">
-                                                <a class="btn btn-warning btn-sm mb-1" href="javascript:void(0)"
+                                                <a class="btn btn-success btn-sm mb-1" href="javascript:void(0)"
                                                     data-bs-toggle="modal"
-                                                    data-bs-target="#updateAddressModal-{{ $address->add_id }}">
-                                                    <span class="fa fa-edit"></span>
+                                                    data-bs-target="#approveModal-{{ $question->que_id }}">
+                                                    <span class="fa fa-check"></span>
                                                 </a>
-                                                @if (session('SUPERADMIN') == '1' || session('ADMIN') == '1' || session('MANAGER') == '1')
-                                                    <a class="btn btn-danger btn-sm mb-1" href="javascript:void(0)"
-                                                        data-bs-toggle="modal" data-bs-target="#deleteModal-{{ $address->add_id }}">
-                                                        <span class="fa fa-trash"></span>
-                                                    </a>
-                                                @endif
+                                                <a class="btn btn-danger btn-sm mb-1" href="javascript:void(0)"
+                                                    data-bs-toggle="modal"
+                                                    data-bs-target="#rejectModal-{{ $question->que_id }}">
+                                                    <span class="fa fa-times"></span>
+                                                </a>
                                             </td>
                                         </tr>
                                     @endforeach
@@ -299,67 +193,82 @@ public function addresses_restore(Request $request, $add_id)
         </div>
     </div>
 
-    {{-- Add Address Modal --}}
-    <div class="modal fade" id="addAddressModal" tabindex="-1" aria-labelledby="addAddressModalLabel" aria-hidden="true">
-        <div class="modal-dialog">
-            <div class="modal-content">
-                <form action="{{ url('admin/management/addresses/add') }}" method="POST">
-                    @csrf
-
-                    <div class="modal-header bg-success text-white">
-                        <h5 class="modal-title text-white" id="addAddressModalLabel">
-                            <span class="fa fa-plus text-white"></span> Add Address
-                        </h5>
-                        <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"
-                            aria-label="Close"></button>
-                    </div>
-
-                    <div class="modal-body">
-                        <div class="row">
-                            {{-- Address Name --}}
-                            <div class="col-md-12 mb-3">
-                                <label for="add_address_name">Address Name <span class="text-danger">*</span></label>
-                                <input type="text" class="form-control" id="add_address_name" name="add_name"
-                                    placeholder="Address Identifier" required>
-                            </div>
-                        </div>
-                    </div>
-
-                    <div class="modal-footer">
-                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">
-                            <span class="fa fa-close"></span> Close
-                        </button>
-                        <button type="submit" class="btn btn-success">
-                            <span class="fa fa-save"></span> Save Address Identifier
-                        </button>
-                    </div>
-                </form>
-            </div>
-        </div>
-    </div>
-
-    @foreach ($addresses as $address)
-        {{-- Update Address Modal --}}
-        <div class="modal fade" id="updateAddressModal-{{ $address->add_id }}" tabindex="-1"
-            aria-labelledby="updateAddressModalLabel-{{ $address->add_id }}" aria-hidden="true">
-            <div class="modal-dialog">
+    @foreach ($questions as $question)
+        {{-- Approve Modal --}}
+        <div class="modal fade" id="approveModal-{{ $question->que_id }}" tabindex="-1"
+            aria-labelledby="approveModalLabel-{{ $question->que_id }}" aria-hidden="true">
+            <div class="modal-dialog modal-lg">
                 <div class="modal-content">
-                    <form action="{{ url('admin/management/addresses/update/' . $address->add_id) }}" method="POST">
+                    <form action="{{ url('admin/homepage/questions/approve/' . $question->que_id) }}" method="POST">
                         @csrf
-
-                        <div class="modal-header bg-warning">
-                            <h5 class="modal-title" id="updateAddressModalLabel-{{ $address->add_id }}">
-                                <span class="fa fa-edit"></span> Update Address Identifier
+                        <div class="modal-header bg-success text-white">
+                            <h5 class="modal-title text-white" id="approveModalLabel-{{ $question->que_id }}">
+                                <span class="fa fa-check text-white"></span> Approve Question
                             </h5>
-                            <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                            <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"
+                                aria-label="Close"></button>
                         </div>
 
                         <div class="modal-body">
-                            {{-- Address Identifier --}}
-                            <div class="mb-3">
-                                <label>Address Identifier <span class="text-danger">*</span></label>
-                                <input type="text" class="form-control" name="add_name" value="{{ $address->add_name }}"
-                                    required>
+                            <div class="row">
+                                <div class="col-md-12 mb-3">
+                                    <label class="form-label">Inquirer</label>
+                                    <div class="form-control-plaintext fw-bold">
+                                        @if ($question->is_anonymous == 1)
+                                            Anonymous
+                                        @else
+                                            {{ $question->usr_first_name }} {{ $question->usr_last_name }}
+                                        @endif
+                                    </div>
+                                </div>
+
+                                <div class="col-md-12 mb-3">
+                                    <label class="form-label">Question</label>
+                                    <div class="form-control-plaintext">{{ $question->que_question }}</div>
+                                </div>
+
+                                <div class="col-md-12 mb-3">
+                                    <div class="alert alert-info py-2 mb-0">
+                                        Provide an <strong>answer</strong>, a <strong>YouTube video</strong>, or
+                                        <strong>both</strong>.
+                                    </div>
+                                </div>
+
+                                <div class="col-md-12 mb-3">
+                                    <label for="que_answer-{{ $question->que_id }}" class="form-label">Answer</label>
+                                    <textarea class="form-control" id="que_answer-{{ $question->que_id }}" name="que_answer" rows="4"
+                                        placeholder="Type the answer here..."></textarea>
+                                </div>
+
+                                <div class="col-md-12 mb-3">
+                                    <label for="que_video_link-{{ $question->que_id }}" class="form-label">Youtube
+                                        Video</label>
+                                    <input class="form-control" type="text"
+                                        id="que_video_link-{{ $question->que_id }}" name="que_video_link"
+                                        placeholder="Paste the YouTube embed code here">
+                                </div>
+
+                                <div class="col-md-12 mb-3">
+                                    <div class="card border-info">
+                                        <div class="card-header bg-info text-white">
+                                            How to embed a YouTube video
+                                        </div>
+                                        <div class="card-body">
+                                            <p>Follow these steps on how to embed Youtube video:</p>
+                                            <p><strong>Step 1:</strong> Click the Youtube "Share" button.</p>
+                                            <img src="{{ asset('/images/youtube/01.jpg') }}"
+                                                class="img-thumbnail mb-3" style="width:25%" alt="Step 1">
+                                            <p><strong>Step 2:</strong> Click the "Embed" button.</p>
+                                            <img src="{{ asset('/images/youtube/02.jpg') }}"
+                                                class="img-thumbnail mb-3" style="width:25%" alt="Step 2">
+                                            <p><strong>Step 3:</strong> Click the "Copy" button</p>
+                                            <img src="{{ asset('/images/youtube/03.jpg') }}"
+                                                class="img-thumbnail mb-3" style="width:25%" alt="Step 3">
+                                            <p class="mb-0"><strong>Step 4:</strong> Paste the code in the Youtube
+                                                Video field above and press "Approve"</p>
+                                        </div>
+                                    </div>
+                                </div>
                             </div>
                         </div>
 
@@ -367,8 +276,8 @@ public function addresses_restore(Request $request, $add_id)
                             <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">
                                 <span class="fa fa-close"></span> Close
                             </button>
-                            <button type="submit" class="btn btn-warning">
-                                <span class="fa fa-save"></span> Update
+                            <button type="submit" class="btn btn-success">
+                                <span class="fa fa-check"></span> Approve
                             </button>
                         </div>
                     </form>
@@ -376,32 +285,30 @@ public function addresses_restore(Request $request, $add_id)
             </div>
         </div>
 
-        {{-- Delete Modal --}}
-        <div class="modal fade" id="deleteModal-{{ $address->add_id }}" tabindex="-1"
-            aria-labelledby="deleteModalLabel-{{ $address->add_id }}" aria-hidden="true">
+        {{-- Reject Modal --}}
+        <div class="modal fade" id="rejectModal-{{ $question->que_id }}" tabindex="-1"
+            aria-labelledby="rejectModalLabel-{{ $question->que_id }}" aria-hidden="true">
             <div class="modal-dialog">
                 <div class="modal-content">
-                    <form method="POST" action="{{ url('admin/management/addresses/delete', [$address->add_id]) }}">
+                    <form method="POST" action="{{ url('admin/homepage/questions/reject/' . $question->que_id) }}">
                         @csrf
                         <div class="modal-header bg-danger text-white">
-                            <h5 class="modal-title text-white" id="deleteModalLabel-{{ $address->add_id }}">
+                            <h5 class="modal-title text-white" id="rejectModalLabel-{{ $question->que_id }}">
                                 Please Confirm
                             </h5>
                             <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"
                                 aria-label="Close"></button>
                         </div>
                         <div class="modal-body">
-                            <p>Are you sure you want to <strong>DELETE</strong> address
-                                identifier -
-                                <strong>{{ $address->add_name }}</strong>?
-                            </p>
+                            <p>Are you sure you want to <strong>REJECT</strong> this question?</p>
+                            <p class="mb-0 text-muted">{{ $question->que_question }}</p>
                         </div>
                         <div class="modal-footer">
                             <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">
                                 <span class="fa fa-close"></span> Close
                             </button>
                             <button type="submit" class="btn btn-danger">
-                                <span class="fa fa-trash"></span> Confirm Delete
+                                <span class="fa fa-times"></span> Confirm Reject
                             </button>
                         </div>
                     </form>
@@ -414,78 +321,15 @@ public function addresses_restore(Request $request, $add_id)
 @section('page_scripts')
     {{-- Dynamic Search While Typing --}}
     <script>
-        document.getElementById("searchInput").addEventListener("keyup", function () {
+        document.getElementById("searchInput").addEventListener("keyup", function() {
             let value = this.value.toLowerCase();
+            let rows = document.querySelectorAll('#questionsTable tbody tr');
 
-            // Select all tables with ID containing "Table"
-            let tables = document.querySelectorAll('table[id*="Table"]');
-
-            tables.forEach(function (table) {
-                let rows = table.querySelectorAll("tbody tr");
-
-                rows.forEach(function (row) {
-                    let text = row.innerText.toLowerCase();
-                    row.style.display = text.includes(value) ? "" : "none";
-                });
+            rows.forEach(function(row) {
+                row.style.display = row.innerText.toLowerCase().includes(value) ? "" : "none";
             });
         });
     </script>
 @endsection
 
-homepage_questions
-que_id
-que_uuid
-usr_id
-que_is_anonymous
-que_question
-que_answer
-que_video_link
-que_status
-que_date_created
-que_created_by
-que_date_modified
-que_modified_by
-que_active
-
-now can you help me create questions_for_approval and questions_reject
-
-so in questions_reject funcition we just update que_active = 0 to reject the questio and que_status = REJECTED
-
-in questions_for_approval we just display que_status = FOR APPROVAL AND que_active = 1 and display que_date_created (newest to oldest) No (index + 1) Inquirer (usr_first_name usr_last_name if not anonymous (que_is_anonymous = 0), if que_is_anonymous = 1, display "Anonymous") Question (que_question) Action (fa fa-check to approve and fa fa-times to reject)
-
-next is in questions_for_approval when we click button fa fa check it will display modal
-
-if que_is_anonymous = 1, then display "Anonymous" in the modal if que_is_anonymous = 0, then display the name of the user who created the question (usr_first_name usr_last_name)
-
-then
-display que_question
-
-then a optional textfield for que_answer and optionally que_video_link
-
-but there should one if we submit it's either que_answer or que_video_link
-
-then below the que_video_link display this
-
-<div class="col-md-12 mb-3">
-    <label for="act_youtube">Youtube Video</label> 
-    <div class="card card-info">
-        
-        <div class="card-body">
-            <p>Follow these steps on how to embed Youtube video:</p><br/>
-            <p><strong>Step 1:</strong> Click the Youtube "Share" button.</p>
-            <img src="{{ asset('/images/accounts/youtube/01.jpg') }}" class="img-thumbnail" style="width:25%" alt="Step 1"><br/><br/>
-            <p><strong>Step 2:</strong> Click the "Embed" button.</p>
-            <img src="{{ asset('/images/accounts/youtube/02.jpg') }}" class="img-thumbnail" style="width:25%" alt="Step 2"><br/><br/>
-            <p><strong>Step 3:</strong> Click the "Copy" button</p>
-            <img src="{{ asset('/images/accounts/youtube/03.jpg') }}" class="img-thumbnail" style="width:25%" alt="Step 3"><br/><br/>
-            <p><strong>Step 4:</strong> Paste the code below and press "Save"</p>
-            <input class="form-control" type="text" id="act_youtube" name="act_youtube" placeholder="">
-        </div>
-    </div>
-</div>
-
-but makee sure it is bootstrap 5 ready (since mty project is bootstrap 5)
-
-if approved (que_status = APPROVED, que_date_created: Carbon::now(), que_created_by: session('usr_id'))
-
-blade is admin.homepage.questions.for_apporval.blade.php
+now make me rejected (admin.homepage.questions.rejected) page with the same layout as for approval but with a table of rejected (REJECTED) questions and a button to view the question details. in the questions if it is too long it will rerach second line just add ..., do that in for approval too
