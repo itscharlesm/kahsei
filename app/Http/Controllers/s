@@ -1,19 +1,1109 @@
-// ABOUT
-Route::get('admin/homepage/about', [HomepageController::class, 'about']);
-Route::post('admin/homepage/update/{about_id}', [HomepageController::class, 'about_update']);
+partners:
+// - Partners
+Route::get('admin/homepage/partners', [HomepageController::class, 'partners']);
+Route::post('admin/homepage/partners/add', [HomepageController::class, 'partners_add']);
+Route::post('admin/homepage/partners/update/{obj_id}', [HomepageController::class, 'partners_update']);
+Route::post('admin/homepage/partners/delete/{obj_id}', [HomepageController::class, 'partners_delete']);
 
-<?php
-namespace App\Http\Controllers;
-
-use App\Http\Controllers\Controller;
-use Carbon\Carbon;
-use DB;
-use Illuminate\Http\Request;
-
-class HomepageController extends Controller
+my sample codes:
+// START ABOUT
+public function about()
 {
-    // START ABOUT
-    // END ABOUT
+    $about = DB::table('homepage_about')
+        ->where('about_active', 1)
+        ->first();
+
+    return view('admin.homepage.about', compact('about'));
 }
 
-admin.homepage.about
+public function about_update(Request $request, $about_id)
+{
+    // Validate request
+    $request->validate([
+        'about_details' => 'required',
+    ]);
+
+    DB::table('homepage_about')
+        ->where('about_id', $about_id)
+        ->update([
+            'about_details' => $request->about_details,
+            'about_date_modified' => Carbon::now(),
+            'about_modified_by' => session('usr_id'),
+        ]);
+
+    logUserActivity('Manage Homepage', 'Updated about');
+
+    session()->flash('successMessage', 'About has been updated.');
+    return redirect()->back();
+}
+// END ABOUT
+
+// START BOARD OF MEMBERS
+public function boards_active(Request $request)
+{
+    $search = $request->search ?? '';
+
+    $query = DB::table('users')
+        ->leftJoin('positions', 'users.usr_position', '=', 'positions.pos_id')
+        ->leftJoin('user_addresses', function ($join) {
+            $join->on('user_addresses.usr_id', '=', 'users.usr_id')
+                ->whereRaw('user_addresses.uadd_id = (
+                SELECT ua.uadd_id
+                FROM user_addresses ua
+                WHERE ua.usr_id = users.usr_id
+                AND ua.uadd_active = 1
+                ORDER BY ua.uadd_date_created DESC, ua.uadd_id DESC
+                LIMIT 1
+            )');
+        })
+        ->where('users.usr_id', '!=', '1')
+        ->where('users.utyp_id', '=', '2')
+        ->where('users.usr_active', '=', '1')
+        ->select(
+            'users.usr_id',
+            'users.usr_uuid',
+            'users.usr_last_name',
+            'users.usr_first_name',
+            'users.usr_middle_name',
+            'users.usr_email',
+            'users.usr_mobile',
+            'users.usr_tin',
+            'users.usr_birth_date',
+            'users.usr_civil_status',
+            'users.usr_position',
+            'users.usr_active',
+            'positions.pos_name',
+            'user_addresses.uadd_street',
+            'user_addresses.uadd_barangay',
+            'user_addresses.uadd_city',
+            'user_addresses.uadd_province',
+            'user_addresses.uadd_region'
+        )
+        ->orderBy('users.usr_last_name')
+        ->orderBy('users.usr_first_name');
+
+    // Search filter
+    if (!empty($search)) {
+        $terms = preg_split('/[\s,]+/', trim($search), -1, PREG_SPLIT_NO_EMPTY);
+
+        $query->where(function ($outer) use ($terms) {
+            foreach ($terms as $term) {
+                $outer->where(function ($q) use ($term) {
+                    $q->where('users.usr_last_name', 'LIKE', "%$term%")
+                        ->orWhere('users.usr_first_name', 'LIKE', "%$term%")
+                        ->orWhere('users.usr_middle_name', 'LIKE', "%$term%")
+                        ->orWhere('users.usr_email', 'LIKE', "%$term%")
+                        ->orWhere('users.usr_mobile', 'LIKE', "%$term%")
+                        ->orWhere('users.usr_tin', 'LIKE', "%$term%")
+                        ->orWhere('positions.pos_name', 'LIKE', "%$term%")
+                        ->orWhere('user_addresses.uadd_street', 'LIKE', "%$term%")
+                        ->orWhere('user_addresses.uadd_barangay', 'LIKE', "%$term%")
+                        ->orWhere('user_addresses.uadd_city', 'LIKE', "%$term%")
+                        ->orWhere('user_addresses.uadd_province', 'LIKE', "%$term%")
+                        ->orWhere('user_addresses.uadd_region', 'LIKE', "%$term%");
+                });
+            }
+        });
+    }
+
+    $boards = $query->paginate(150);
+
+    $positions = DB::table('positions')
+        ->select('pos_id', 'pos_name')
+        ->orderBy('pos_name')
+        ->get();
+
+    $regions = DB::table('location_regions')
+        ->where('reg_active', 1)
+        ->orderBy('reg_name')
+        ->get(['reg_id', 'reg_name']);
+
+    return view('admin.profiling.boards.active', compact('boards', 'search', 'positions', 'regions'));
+}
+
+public function boards_deleted(Request $request)
+{
+    $search = $request->search ?? '';
+
+    $query = DB::table('users')
+        ->leftJoin('positions', 'users.usr_position', '=', 'positions.pos_id')
+        ->leftJoin('user_addresses', function ($join) {
+            $join->on('user_addresses.usr_id', '=', 'users.usr_id')
+                ->whereRaw('user_addresses.uadd_id = (
+                SELECT ua.uadd_id
+                FROM user_addresses ua
+                WHERE ua.usr_id = users.usr_id
+                AND ua.uadd_active = 1
+                ORDER BY ua.uadd_date_created DESC, ua.uadd_id DESC
+                LIMIT 1
+            )');
+        })
+        ->where('users.usr_id', '!=', '1')
+        ->where('users.utyp_id', '=', '2')
+        ->where('users.usr_active', '=', '0')
+        ->select(
+            'users.usr_id',
+            'users.usr_uuid',
+            'users.usr_last_name',
+            'users.usr_first_name',
+            'users.usr_middle_name',
+            'users.usr_email',
+            'users.usr_mobile',
+            'users.usr_tin',
+            'users.usr_birth_date',
+            'users.usr_civil_status',
+            'users.usr_position',
+            'users.usr_active',
+            'positions.pos_name',
+            'user_addresses.uadd_street',
+            'user_addresses.uadd_barangay',
+            'user_addresses.uadd_city',
+            'user_addresses.uadd_province',
+            'user_addresses.uadd_region'
+        )
+        ->orderBy('users.usr_last_name')
+        ->orderBy('users.usr_first_name');
+
+    // Search filter
+    if (!empty($search)) {
+        $terms = preg_split('/[\s,]+/', trim($search), -1, PREG_SPLIT_NO_EMPTY);
+
+        $query->where(function ($outer) use ($terms) {
+            foreach ($terms as $term) {
+                $outer->where(function ($q) use ($term) {
+                    $q->where('users.usr_last_name', 'LIKE', "%$term%")
+                        ->orWhere('users.usr_first_name', 'LIKE', "%$term%")
+                        ->orWhere('users.usr_middle_name', 'LIKE', "%$term%")
+                        ->orWhere('users.usr_email', 'LIKE', "%$term%")
+                        ->orWhere('users.usr_mobile', 'LIKE', "%$term%")
+                        ->orWhere('users.usr_tin', 'LIKE', "%$term%")
+                        ->orWhere('positions.pos_name', 'LIKE', "%$term%")
+                        ->orWhere('user_addresses.uadd_street', 'LIKE', "%$term%")
+                        ->orWhere('user_addresses.uadd_barangay', 'LIKE', "%$term%")
+                        ->orWhere('user_addresses.uadd_city', 'LIKE', "%$term%")
+                        ->orWhere('user_addresses.uadd_province', 'LIKE', "%$term%")
+                        ->orWhere('user_addresses.uadd_region', 'LIKE', "%$term%");
+                });
+            }
+        });
+    }
+
+    $boards = $query->paginate(150);
+
+    return view('admin.profiling.boards.deleted', compact('boards', 'search'));
+}
+
+public function boards_add(Request $request)
+{
+    $request->validate([
+        'usr_first_name' => 'required|string|max:255',
+        'usr_middle_name' => 'nullable|string|max:255',
+        'usr_last_name' => 'required|string|max:255',
+        'usr_email' => 'required|email|max:255|unique:users,usr_email',
+        'usr_mobile' => 'nullable|string|max:20',
+        'usr_tin' => 'nullable|string|max:50',
+        'usr_position' => 'required|exists:positions,pos_id',
+        'usr_birth_date' => 'required|date|before:today',
+        'usr_civil_status' => 'required|in:Single,Married,Divorced,Separated,Widowed',
+        'avatar' => 'nullable|mimes:jpeg,jpg,png,webp|max:8192',
+
+        // address validation
+        'street' => 'nullable|string|max:255',
+        'region' => 'nullable|string|max:100',
+        'province' => 'nullable|string|max:100',
+        'municipality' => 'nullable|string|max:100',
+        'barangay' => 'nullable|string|max:100',
+    ]);
+
+    $code = '123456';
+    $imageName = null;
+
+    // AVATAR UPLOAD
+    if ($request->hasFile('avatar')) {
+        $file = $request->file('avatar');
+        $fileName = uniqid() . '_' . $file->getClientOriginalName();
+        $path = public_path('images/users/' . $fileName);
+        $ext = strtolower($file->getClientOriginalExtension());
+
+        if (in_array($ext, ['jpg', 'jpeg'])) {
+            $source = imagecreatefromjpeg($file->getPathname());
+            imagejpeg($source, $path, 75);
+            imagedestroy($source);
+        } elseif ($ext === 'png') {
+            $source = imagecreatefrompng($file->getPathname());
+
+            if ($source && imageistruecolor($source) === false) {
+                imagepalettetotruecolor($source);
+            }
+
+            if ($source) {
+                imagepng($source, $path, 7);
+                imagedestroy($source);
+            }
+        } elseif ($ext === 'webp') {
+            $source = imagecreatefromwebp($file->getPathname());
+            imagewebp($source, $path, 75);
+            imagedestroy($source);
+        }
+
+        $imageName = $fileName;
+    }
+
+    DB::beginTransaction();
+
+    // Insert user
+    $usr_id = DB::table('users')->insertGetId([
+        'usr_uuid' => generateuuid(),
+        'utyp_id' => 2,
+        'usr_first_name' => strtoupper($request->usr_first_name),
+        'usr_middle_name' => $request->usr_middle_name ? strtoupper($request->usr_middle_name) : null,
+        'usr_last_name' => strtoupper($request->usr_last_name),
+        'usr_email' => $request->usr_email,
+        'usr_mobile' => $request->usr_mobile ?: null,
+        'usr_tin' => $request->usr_tin ?: null,
+        'usr_position' => $request->usr_position,
+        'usr_birth_date' => $request->usr_birth_date,
+        'usr_civil_status' => $request->usr_civil_status,
+        'usr_image_path' => $imageName,
+        'usr_password' => md5($code),
+        'usr_code' => $code,
+        'usr_date_created' => Carbon::now(),
+        'usr_created_by' => session('usr_id'),
+        'usr_active' => 1
+    ]);
+
+    // Insert address (if any field is filled)
+    if ($request->street || $request->barangay || $request->municipality || $request->province || $request->region) {
+        DB::table('user_addresses')->insert([
+            'uadd_uuid' => generateuuid(),
+            'usr_id' => $usr_id,
+            'add_id' => 1,
+            'uadd_street' => normalizeAddressStreet($request->street),
+            'uadd_barangay' => strtoupper($request->barangay),
+            'uadd_city' => strtoupper($request->municipality),
+            'uadd_province' => strtoupper($request->province),
+            'uadd_region' => strtoupper($request->region),
+            'uadd_date_created' => Carbon::now(),
+            'uadd_created_by' => session('usr_id'),
+            'uadd_active' => 1,
+        ]);
+    }
+
+    DB::commit();
+
+    return back()->with('successMessage', 'The user has been added to the list of board members and the password has been set to 123456.');
+}
+
+public function boards_update_user(Request $request, $usr_id)
+{
+    $request->validate([
+        'usr_position' => 'required|exists:positions,pos_id',
+        'usr_tin' => 'nullable|string|max:50',
+        'usr_birth_date' => 'required|date|before:today',
+        'usr_civil_status' => 'required|in:Single,Married,Divorced,Separated,Widowed',
+        'avatar' => 'nullable|mimes:jpeg,jpg,png,webp|max:8192',
+    ]);
+
+    $board = DB::table('users')
+        ->leftJoin('positions', 'users.usr_position', '=', 'positions.pos_id')
+        ->where('users.usr_id', '=', $usr_id)
+        ->where('users.utyp_id', '=', '2')
+        ->select('users.usr_first_name', 'users.usr_last_name', 'positions.pos_name as old_position')
+        ->first();
+
+    if (!$board) {
+        alert()->error('Error', 'Board member not found.');
+        return redirect()->back();
+    }
+
+    $newPosition = DB::table('positions')
+        ->where('pos_id', '=', $request->usr_position)
+        ->value('pos_name');
+
+    $updateData = [
+        'usr_position' => $request->usr_position,
+        'usr_tin' => $request->usr_tin ?: null,
+        'usr_birth_date' => $request->usr_birth_date,
+        'usr_civil_status' => $request->usr_civil_status,
+        'usr_date_modified' => Carbon::now(),
+        'usr_modified_by' => session('usr_id')
+    ];
+
+    // AVATAR UPLOAD
+    if ($request->hasFile('avatar')) {
+        $file = $request->file('avatar');
+        $fileName = uniqid() . '_' . $file->getClientOriginalName();
+        $path = public_path('images/users/' . $fileName);
+        $ext = strtolower($file->getClientOriginalExtension());
+
+        if (in_array($ext, ['jpg', 'jpeg'])) {
+            $source = imagecreatefromjpeg($file->getPathname());
+            imagejpeg($source, $path, 75);
+            imagedestroy($source);
+        } elseif ($ext === 'png') {
+            $source = imagecreatefrompng($file->getPathname());
+
+            if ($source && imageistruecolor($source) === false) {
+                imagepalettetotruecolor($source);
+            }
+
+            if ($source) {
+                imagepng($source, $path, 7);
+                imagedestroy($source);
+            }
+        } elseif ($ext === 'webp') {
+            $source = imagecreatefromwebp($file->getPathname());
+            imagewebp($source, $path, 75);
+            imagedestroy($source);
+        }
+
+        $updateData['usr_image_path'] = $fileName;
+    }
+
+    DB::table('users')
+        ->where('usr_id', '=', $usr_id)
+        ->update($updateData);
+
+    logUserActivity(
+        'Manage Board of Members',
+        'Updated board member ' . $board->usr_last_name . ', ' . $board->usr_first_name .
+        ' - Position FROM [' . ($board->old_position ?? '-') . '] TO [' . $newPosition . ']'
+    );
+
+    alert()->success('Success', 'Board member updated successfully.');
+    return redirect()->back();
+}
+
+public function boards_reset_password(Request $request, $usr_id)
+{
+    $board = DB::table('users')
+        ->where('usr_id', '=', $usr_id)
+        ->where('utyp_id', '=', '2')
+        ->first();
+
+    if (!$board) {
+        alert()->error('Board member not found.');
+        return redirect()->back();
+    }
+
+    DB::table('users')
+        ->where('usr_id', '=', $usr_id)
+        ->update([
+            'usr_password' => md5('123456'),
+            'usr_code' => '123456',
+            'usr_date_modified' => Carbon::now(),
+            'usr_modified_by' => session('usr_id')
+        ]);
+
+    logUserActivity('Manage Board of Members', 'Reset password for board member ' . $board->usr_last_name . ', ' . $board->usr_first_name);
+
+    session()->flash('successMessage', 'Password has been reset to 123456.');
+    return redirect()->back();
+}
+
+public function boards_delete(Request $request, $usr_id)
+{
+    $board = DB::table('users')
+        ->where('usr_id', '=', $usr_id)
+        ->where('utyp_id', '=', '2')
+        ->first();
+
+    if (!$board) {
+        alert()->error('Board member not found.');
+        return redirect()->back();
+    }
+
+    DB::table('users')
+        ->where('usr_id', '=', $usr_id)
+        ->update([
+            'usr_date_modified' => Carbon::now(),
+            'usr_modified_by' => session('usr_id'),
+            'usr_active' => 0
+        ]);
+
+    logUserActivity('Manage Board of Members', 'Deleted member ' . $board->usr_last_name . ', ' . $board->usr_first_name);
+
+    session()->flash('successMessage', 'Member has been deleted.');
+    return redirect()->back();
+}
+
+public function boards_restore(Request $request, $usr_id)
+{
+    $board = DB::table('users')
+        ->where('usr_id', '=', $usr_id)
+        ->where('utyp_id', '=', '2')
+        ->first();
+
+    if (!$board) {
+        alert()->error('Board member not found.');
+        return redirect()->back();
+    }
+
+    DB::table('users')
+        ->where('usr_id', '=', $usr_id)
+        ->update([
+            'usr_date_modified' => Carbon::now(),
+            'usr_modified_by' => session('usr_id'),
+            'usr_active' => 1
+        ]);
+
+    logUserActivity('Manage Board of Members', 'Restored member ' . $board->usr_last_name . ', ' . $board->usr_first_name);
+
+    session()->flash('successMessage', 'Member has been restored.');
+    return redirect()->back();
+}
+// END BOARD OF MEMBERS
+
+@extends('admin.layouts.themes.main')
+
+@section('content')
+    {{-- Content Header --}}
+    <div class="app-content-header">
+        <div class="container-fluid">
+            <div class="row">
+                <div class="col-sm-6">
+                    <h3 class="mb-0">Board of Members</h3>
+                </div>
+                <div class="col-sm-6">
+                    <ol class="breadcrumb float-sm-end">
+                        <li class="breadcrumb-item">
+                            <a href="{{ url('admin/home') }}">Home</a>
+                        </li>
+                        <li class="breadcrumb-item">Profiling</li>
+                        <li class="breadcrumb-item active">Board of Members</li>
+                    </ol>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    {{-- Main Content --}}
+    <div class="app-content">
+        @include('admin.layouts.partials.onclick')
+        @include('admin.layouts.partials.alerts')
+        @include('admin.layouts.partials.modal_style')
+        <div class="container-fluid">
+
+            @if ($errors->any())
+                <div class="alert alert-danger">
+                    <ul class="mb-0">
+                        @foreach ($errors->all() as $error)
+                            <li>{{ $error }}</li>
+                        @endforeach
+                    </ul>
+                </div>
+            @endif
+
+            <div class="card">
+                <div class="card-body overflow-auto">
+                    <div class="row">
+                        <div class="col-md-12">
+                            @if (session('SUPERADMIN') == '1' || session('ADMIN') == '1' || session('MANAGER') == '1' || session('PROFILING OFFICER') == '1')
+                                <a class="btn btn-danger mb-3" href="{{ url('admin/profiling/board-of-members/deleted') }}">
+                                    <span class="fa fa-archive"></span> Deleted Members
+                                </a>
+
+                                <button type="button" class="btn btn-success mb-3" data-bs-toggle="modal"
+                                    data-bs-target="#addBoardModal">
+                                    <span class="fa fa-plus"></span> Add Member
+                                </button>
+                            @endif
+                        </div>
+                    </div>
+
+                    <div class="row">
+                        <div class="col-md-12">
+                            <form method="GET" action="{{ url('admin/profiling/board-of-members/active') }}" class="mb-3">
+                                <div class="input-group">
+                                    <input type="text" name="search" id="searchInput" class="form-control"
+                                        placeholder="Search board members..." value="{{ request('search') }}">
+                                    <button type="submit" class="btn btn-primary">
+                                        <span class="fa fa-search"></span> Search
+                                    </button>
+                                </div>
+                            </form>
+
+                            <table id="profilingTable" class="table table-hover table-bordered table-sm">
+                                <thead>
+                                    <tr>
+                                        <th class="align-middle text-center">Name</th>
+                                        <th class="align-middle text-center">Position</th>
+                                        <th class="align-middle text-center">TIN</th>
+                                        <th class="align-middle text-center">Birthdate</th>
+                                        <th class="align-middle text-center">Age</th>
+                                        <th class="align-middle text-center">Civil Status</th>
+                                        <th class="align-middle text-center" width="110px">Action</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    @foreach ($boards as $board)
+                                        @php
+                                            $birth = !empty($board->usr_birth_date)
+                                                ? \Carbon\Carbon::parse($board->usr_birth_date)
+                                                : null;
+
+                                            $address = collect([
+                                                $board->uadd_street,
+                                                $board->uadd_barangay,
+                                                $board->uadd_city,
+                                                $board->uadd_province,
+                                                $board->uadd_region,
+                                            ])
+                                                ->filter()
+                                                ->implode(', ');
+                                        @endphp
+                                        <tr>
+                                            <td class="align-middle text-start">
+                                                <div class="d-flex align-items-center">
+                                                    <img class="rounded-circle me-3 flex-shrink-0"
+                                                        src="{{ asset(getAvatar($board->usr_id)) }}" alt="user image"
+                                                        loading="lazy"
+                                                        style="width:50px; height:50px; object-fit:cover;">
+                                                    <div>
+                                                        {{ $board->usr_last_name }}, {{ $board->usr_first_name }}
+                                                        {{ $board->usr_middle_name }}
+                                                        <br />
+                                                        <small>{{ $board->usr_email }}</small>
+                                                        <br />
+                                                        <small>{{ $address !== '' ? $address : '-' }}</small>
+                                                        <br />
+                                                        <em><small>Last login: {{ getLastLogin($board->usr_id) }}</small></em>
+                                                    </div>
+                                                </div>
+                                            </td>
+                                            <td class="align-middle text-center">
+                                                @if (!empty($board->pos_name))
+                                                    <span class="badge bg-success">{{ $board->pos_name }}</span>
+                                                @else
+                                                    <span class="badge bg-danger">No Position</span>
+                                                @endif
+                                            </td>
+                                            <td class="align-middle text-center">
+                                                {{ trim((string) $board->usr_tin) !== '' ? $board->usr_tin : '-' }}
+                                            </td>
+                                            <td class="align-middle text-center"
+                                                data-order="{{ $birth ? $birth->format('Y-m-d') : '' }}">
+                                                {{ $birth ? $birth->format('m/d/Y') : '-' }}
+                                            </td>
+                                            <td class="align-middle text-center"
+                                                data-order="{{ $birth ? $birth->age : -1 }}">
+                                                {{ $birth ? $birth->age . ' yrs old' : '-' }}
+                                            </td>
+                                            <td class="align-middle text-center">
+                                                {{ !empty($board->usr_civil_status) ? $board->usr_civil_status : '-' }}
+                                            </td>
+                                            <td class="align-middle text-center">
+                                                <a class="btn btn-warning btn-sm mb-1" href="javascript:void(0)"
+                                                    data-bs-toggle="modal"
+                                                    data-bs-target="#updateBoardModal-{{ $board->usr_id }}">
+                                                    <span class="fa fa-edit"></span>
+                                                </a>
+                                                <a class="btn btn-info btn-sm mb-1" href="javascript:void(0)"
+                                                    data-bs-toggle="modal"
+                                                    data-bs-target="#resetModal-{{ $board->usr_id }}">
+                                                    <span class="fa fa-key"></span>
+                                                </a>
+                                                @if (session('SUPERADMIN') == '1' || session('ADMIN') == '1' || session('MANAGER') == '1')
+                                                    <a class="btn btn-danger btn-sm mb-1" href="javascript:void(0)"
+                                                        data-bs-toggle="modal"
+                                                        data-bs-target="#deleteModal-{{ $board->usr_id }}">
+                                                        <span class="fa fa-trash"></span>
+                                                    </a>
+                                                @endif
+                                            </td>
+                                        </tr>
+                                    @endforeach
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    {{-- Add Member Modal --}}
+    <div class="modal fade" id="addBoardModal" tabindex="-1" aria-labelledby="addBoardModalLabel" aria-hidden="true">
+        <div class="modal-dialog modal-lg">
+            <div class="modal-content">
+                <form action="{{ url('admin/profiling/board-of-members/add') }}" method="POST"
+                    enctype="multipart/form-data">
+                    @csrf
+                    {{-- Hidden fields (filled by the location dropdowns) --}}
+                    <input type="hidden" name="region" id="add_hidden_region" value="">
+                    <input type="hidden" name="province" id="add_hidden_province" value="">
+                    <input type="hidden" name="municipality" id="add_hidden_municipality" value="">
+                    <input type="hidden" name="barangay" id="add_hidden_barangay" value="">
+
+                    <div class="modal-header bg-success text-white">
+                        <h5 class="modal-title text-white" id="addBoardModalLabel">
+                            <span class="fa fa-plus text-white"></span> Add Board Member
+                        </h5>
+                        <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"
+                            aria-label="Close"></button>
+                    </div>
+
+                    <div class="modal-body">
+                        <div class="row">
+                            {{-- First Name --}}
+                            <div class="col-md-4 mb-3">
+                                <label for="add_first_name">First Name <span class="text-danger">*</span></label>
+                                <input type="text" class="form-control" id="add_first_name" name="usr_first_name"
+                                    placeholder="First Name" required>
+                            </div>
+
+                            {{-- Middle Name --}}
+                            <div class="col-md-4 mb-3">
+                                <label for="add_middle_name">Middle Name</label>
+                                <input type="text" class="form-control" id="add_middle_name" name="usr_middle_name"
+                                    placeholder="Middle Name">
+                            </div>
+
+                            {{-- Last Name --}}
+                            <div class="col-md-4 mb-3">
+                                <label for="add_last_name">Last Name <span class="text-danger">*</span></label>
+                                <input type="text" class="form-control" id="add_last_name" name="usr_last_name"
+                                    placeholder="Last Name" required>
+                            </div>
+
+                            {{-- Email --}}
+                            <div class="col-md-6 mb-3">
+                                <label for="add_email">Email <span class="text-danger">*</span></label>
+                                <input type="email" class="form-control" id="add_email" name="usr_email"
+                                    placeholder="Email" required>
+                            </div>
+
+                            {{-- Mobile --}}
+                            <div class="col-md-6 mb-3">
+                                <label for="add_mobile">
+                                    Mobile Number
+                                    <small class="text-muted">(9123456789)</small>
+                                </label>
+                                <input type="number" class="form-control" id="add_mobile" name="usr_mobile"
+                                    placeholder="Mobile Number" oninput="this.value=this.value.slice(0,10)">
+                            </div>
+
+                            {{-- Birthdate --}}
+                            <div class="col-md-6 mb-3">
+                                <label for="add_birth_date">Birthdate <span class="text-danger">*</span></label>
+                                <input type="date" class="form-control" id="add_birth_date" name="usr_birth_date"
+                                    max="{{ date('Y-m-d') }}" required>
+                            </div>
+
+                            {{-- Civil Status --}}
+                            <div class="col-md-6 mb-3">
+                                <label for="add_civil_status">Civil Status <span class="text-danger">*</span></label>
+                                <select class="form-select" id="add_civil_status" name="usr_civil_status" required>
+                                    <option value="">-- SELECT CIVIL STATUS --</option>
+                                    <option value="Single">Single</option>
+                                    <option value="Married">Married</option>
+                                    <option value="Divorced">Divorced</option>
+                                    <option value="Separated">Separated</option>
+                                    <option value="Widowed">Widowed</option>
+                                </select>
+                            </div>
+
+                            {{-- Position --}}
+                            <div class="col-md-6 mb-3">
+                                <label for="add_position">Position <span class="text-danger">*</span></label>
+                                <select class="form-select" id="add_position" name="usr_position" required>
+                                    <option value="">-- SELECT POSITION --</option>
+                                    @foreach ($positions as $pos)
+                                        <option value="{{ $pos->pos_id }}">{{ $pos->pos_name }}</option>
+                                    @endforeach
+                                </select>
+                            </div>
+
+                            {{-- TIN --}}
+                            <div class="col-md-6 mb-3">
+                                <label for="add_tin">TIN</label>
+                                <input type="text" class="form-control" id="add_tin" name="usr_tin"
+                                    placeholder="TIN" maxlength="50">
+                            </div>
+
+                            {{-- Photo --}}
+                            <div class="col-md-12 mb-3">
+                                <label for="add_avatar">Photo</label>
+                                <input type="file" class="form-control" id="add_avatar" name="avatar"
+                                    accept=".jpg,.jpeg,.png,.webp">
+                            </div>
+
+                            {{-- Street --}}
+                            <div class="col-md-12 mb-3">
+                                <label for="add_street">Street</label>
+                                <input type="text" class="form-control" id="add_street" name="street"
+                                    placeholder="Street / House No. / Bldg.">
+                            </div>
+
+                            {{-- Region --}}
+                            <div class="col-md-3 mb-3">
+                                <label for="add_region">Region</label>
+                                <select id="add_region" class="form-select">
+                                    <option value="">-- SELECT REGION --</option>
+                                    @foreach ($regions as $r)
+                                        <option value="{{ $r->reg_id }}" data-name="{{ $r->reg_name }}">
+                                            {{ $r->reg_name }}
+                                        </option>
+                                    @endforeach
+                                </select>
+                            </div>
+
+                            {{-- Province --}}
+                            <div class="col-md-3 mb-3">
+                                <label for="add_province">Province</label>
+                                <select id="add_province" class="form-select" disabled>
+                                    <option value="">-- SELECT PROVINCE --</option>
+                                </select>
+                            </div>
+
+                            {{-- Municipality --}}
+                            <div class="col-md-3 mb-3">
+                                <label for="add_municipality">City/Municipality</label>
+                                <select id="add_municipality" class="form-select" disabled>
+                                    <option value="">-- SELECT MUNICIPALITY --</option>
+                                </select>
+                            </div>
+
+                            {{-- Barangay --}}
+                            <div class="col-md-3 mb-3">
+                                <label for="add_barangay">Barangay</label>
+                                <select id="add_barangay" class="form-select" disabled>
+                                    <option value="">-- SELECT BARANGAY --</option>
+                                </select>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">
+                            <span class="fa fa-close"></span> Close
+                        </button>
+                        <button type="submit" class="btn btn-success">
+                            <span class="fa fa-save"></span> Save Member
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    @foreach ($boards as $board)
+        @php
+            $birth = !empty($board->usr_birth_date) ? \Carbon\Carbon::parse($board->usr_birth_date) : null;
+        @endphp
+
+        {{-- Update Member Modal --}}
+        <div class="modal fade" id="updateBoardModal-{{ $board->usr_id }}" tabindex="-1"
+            aria-labelledby="updateBoardModalLabel-{{ $board->usr_id }}" aria-hidden="true">
+            <div class="modal-dialog">
+                <div class="modal-content">
+                    <form action="{{ url('admin/profiling/board-of-members/update/user/' . $board->usr_id) }}"
+                        method="POST" enctype="multipart/form-data">
+                        @csrf
+                        <div class="modal-header bg-warning">
+                            <h5 class="modal-title" id="updateBoardModalLabel-{{ $board->usr_id }}">
+                                Update Board Member
+                            </h5>
+                            <button type="button" class="btn-close" data-bs-dismiss="modal"
+                                aria-label="Close"></button>
+                        </div>
+                        <div class="modal-body">
+                            <div class="mb-3">
+                                <label>Name</label>
+                                <div class="form-control-plaintext">
+                                    {{ $board->usr_first_name }} {{ $board->usr_last_name }}
+                                </div>
+                            </div>
+
+                            <div class="mb-3">
+                                <label for="avatar-{{ $board->usr_id }}">Photo</label>
+                                <input type="file" class="form-control" id="avatar-{{ $board->usr_id }}"
+                                    name="avatar" accept=".jpg,.jpeg,.png,.webp">
+                            </div>
+
+                            <div class="mb-3">
+                                <label for="position-{{ $board->usr_id }}">Position <span
+                                        class="text-danger">*</span></label>
+                                <select class="form-select" id="position-{{ $board->usr_id }}" name="usr_position"
+                                    required>
+                                    <option value="">-- SELECT POSITION --</option>
+                                    @foreach ($positions as $pos)
+                                        <option value="{{ $pos->pos_id }}"
+                                            {{ $board->usr_position == $pos->pos_id ? 'selected' : '' }}>
+                                            {{ $pos->pos_name }}
+                                        </option>
+                                    @endforeach
+                                </select>
+                            </div>
+
+                            <div class="mb-3">
+                                <label for="tin-{{ $board->usr_id }}">TIN</label>
+                                <input type="text" class="form-control" id="tin-{{ $board->usr_id }}"
+                                    name="usr_tin" value="{{ $board->usr_tin }}" maxlength="50">
+                            </div>
+
+                            <div class="mb-3">
+                                <label for="birth-{{ $board->usr_id }}">Birthdate <span
+                                        class="text-danger">*</span></label>
+                                <input type="date" class="form-control" id="birth-{{ $board->usr_id }}"
+                                    name="usr_birth_date" value="{{ $birth ? $birth->format('Y-m-d') : '' }}"
+                                    max="{{ date('Y-m-d') }}" required>
+                            </div>
+
+                            <div class="mb-3">
+                                <label for="civil-{{ $board->usr_id }}">Civil Status <span
+                                        class="text-danger">*</span></label>
+                                <select class="form-select" id="civil-{{ $board->usr_id }}"
+                                    name="usr_civil_status" required>
+                                    <option value="">-- SELECT CIVIL STATUS --</option>
+                                    @foreach (['Single', 'Married', 'Divorced', 'Separated', 'Widowed'] as $status)
+                                        <option value="{{ $status }}"
+                                            {{ $board->usr_civil_status == $status ? 'selected' : '' }}>
+                                            {{ $status }}
+                                        </option>
+                                    @endforeach
+                                </select>
+                            </div>
+                        </div>
+                        <div class="modal-footer">
+                            <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">
+                                <span class="fa fa-close"></span> Close
+                            </button>
+                            <button type="submit" class="btn btn-warning">
+                                <span class="fa fa-save"></span> Update
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+
+        {{-- Reset Password Modal --}}
+        <div class="modal fade" id="resetModal-{{ $board->usr_id }}" tabindex="-1"
+            aria-labelledby="resetModalLabel-{{ $board->usr_id }}" aria-hidden="true">
+            <div class="modal-dialog">
+                <div class="modal-content">
+                    <form method="POST"
+                        action="{{ action('App\Http\Controllers\ProfilingController@boards_reset_password', [$board->usr_id]) }}">
+                        @csrf
+                        <div class="modal-header bg-info">
+                            <h5 class="modal-title" id="resetModalLabel-{{ $board->usr_id }}">
+                                Please Confirm
+                            </h5>
+                            <button type="button" class="btn-close" data-bs-dismiss="modal"
+                                aria-label="Close"></button>
+                        </div>
+                        <div class="modal-body">
+                            <p>Are you sure you want to RESET this member's password to
+                                <strong>123456</strong>?
+                            </p>
+                            <small>{{ $board->usr_first_name }}
+                                {{ $board->usr_last_name }}<br>{{ $board->usr_email }}</small>
+                        </div>
+                        <div class="modal-footer">
+                            <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">
+                                <span class="fa fa-close"></span> Close
+                            </button>
+                            <button type="submit" class="btn btn-info">
+                                <span class="fa fa-refresh"></span> Confirm Reset
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+
+        {{-- Delete Modal --}}
+        <div class="modal fade" id="deleteModal-{{ $board->usr_id }}" tabindex="-1"
+            aria-labelledby="deleteModalLabel-{{ $board->usr_id }}" aria-hidden="true">
+            <div class="modal-dialog">
+                <div class="modal-content">
+                    <form method="POST"
+                        action="{{ action('App\Http\Controllers\ProfilingController@boards_delete', [$board->usr_id]) }}">
+                        @csrf
+                        <div class="modal-header bg-danger text-white">
+                            <h5 class="modal-title text-white" id="deleteModalLabel-{{ $board->usr_id }}">
+                                Please Confirm
+                            </h5>
+                            <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"
+                                aria-label="Close"></button>
+                        </div>
+                        <div class="modal-body">
+                            <p>Are you sure you want to <strong>DELETE</strong> member
+                                <strong>{{ $board->usr_first_name }}
+                                    {{ $board->usr_last_name }}</strong>?
+                            </p>
+                        </div>
+                        <div class="modal-footer">
+                            <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">
+                                <span class="fa fa-close"></span> Close
+                            </button>
+                            <button type="submit" class="btn btn-danger">
+                                <span class="fa fa-trash"></span> Confirm Delete
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    @endforeach
+@endsection
+
+@section('page_scripts')
+    {{-- Dynamic Search While Typing --}}
+    <script>
+        document.getElementById("searchInput").addEventListener("keyup", function() {
+            let value = this.value.toLowerCase();
+
+            // Select all tables with ID containing "Table"
+            let tables = document.querySelectorAll('table[id*="Table"]');
+
+            tables.forEach(function(table) {
+                let rows = table.querySelectorAll("tbody tr");
+
+                rows.forEach(function(row) {
+                    let text = row.innerText.toLowerCase();
+                    row.style.display = text.includes(value) ? "" : "none";
+                });
+            });
+        });
+    </script>
+
+    {{-- Location dropdowns (Add Member) --}}
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            const addRegionSel = document.getElementById('add_region');
+            const addProvSel = document.getElementById('add_province');
+            const addMuniSel = document.getElementById('add_municipality');
+            const addBrgySel = document.getElementById('add_barangay');
+
+            const addHiddenRegion = document.getElementById('add_hidden_region');
+            const addHiddenProv = document.getElementById('add_hidden_province');
+            const addHiddenMuni = document.getElementById('add_hidden_municipality');
+            const addHiddenBrgy = document.getElementById('add_hidden_barangay');
+
+            const csrfToken = document.querySelector('meta[name="csrf-token"]')?.getAttribute('content') || '';
+            const baseUrl = window.location.origin;
+
+            function addResetSelect(el, placeholder) {
+                el.innerHTML = `<option value="">${placeholder}</option>`;
+                el.disabled = true;
+            }
+
+            async function addLoadOptions(el, endpoint, textKey, valueKey, placeholder) {
+                el.innerHTML = '<option value="">Loading...</option>';
+                try {
+                    const response = await fetch(`${baseUrl}${endpoint}`, {
+                        method: 'GET',
+                        credentials: 'same-origin',
+                        headers: {
+                            'X-CSRF-TOKEN': csrfToken,
+                            'Accept': 'application/json',
+                            'X-Requested-With': 'XMLHttpRequest'
+                        }
+                    });
+                    if (!response.ok) throw new Error(`HTTP ${response.status}`);
+                    const data = await response.json();
+                    el.innerHTML = `<option value="">${placeholder}</option>`;
+                    if (data && data.length > 0) {
+                        data.forEach(item => {
+                            el.insertAdjacentHTML('beforeend',
+                                `<option value="${item[valueKey]}" data-name="${item[textKey]}">${item[textKey]}</option>`
+                            );
+                        });
+                        el.disabled = false;
+                    } else {
+                        el.innerHTML = `<option value="">No options available</option>`;
+                    }
+                } catch (err) {
+                    console.error(`Error loading ${el.id}:`, err);
+                    el.innerHTML = `<option value="">Error loading data</option>`;
+                }
+            }
+
+            addRegionSel.addEventListener('change', function() {
+                const regionId = this.value;
+                addHiddenRegion.value = this.options[this.selectedIndex]?.getAttribute('data-name') || '';
+
+                addResetSelect(addProvSel, '-- SELECT PROVINCE --');
+                addResetSelect(addMuniSel, '-- SELECT MUNICIPALITY --');
+                addResetSelect(addBrgySel, '-- SELECT BARANGAY --');
+                addHiddenProv.value = '';
+                addHiddenMuni.value = '';
+                addHiddenBrgy.value = '';
+
+                if (regionId) {
+                    addLoadOptions(addProvSel, `/locations/${regionId}/provinces`, 'prov_name', 'prov_id',
+                        '-- SELECT PROVINCE --');
+                }
+            });
+
+            addProvSel.addEventListener('change', function() {
+                const provId = this.value;
+                addHiddenProv.value = this.options[this.selectedIndex]?.getAttribute('data-name') || '';
+
+                addResetSelect(addMuniSel, '-- SELECT MUNICIPALITY --');
+                addResetSelect(addBrgySel, '-- SELECT BARANGAY --');
+                addHiddenMuni.value = '';
+                addHiddenBrgy.value = '';
+
+                if (provId) {
+                    addLoadOptions(addMuniSel, `/locations/${provId}/municipalities`, 'mun_name', 'mun_id',
+                        '-- SELECT MUNICIPALITY --');
+                }
+            });
+
+            addMuniSel.addEventListener('change', function() {
+                const muniId = this.value;
+                addHiddenMuni.value = this.options[this.selectedIndex]?.getAttribute('data-name') || '';
+
+                addResetSelect(addBrgySel, '-- SELECT BARANGAY --');
+                addHiddenBrgy.value = '';
+
+                if (muniId) {
+                    addLoadOptions(addBrgySel, `/locations/${muniId}/barangays`, 'brg_name', 'brg_id',
+                        '-- SELECT BARANGAY --');
+                }
+            });
+
+            addBrgySel.addEventListener('change', function() {
+                addHiddenBrgy.value = this.options[this.selectedIndex]?.getAttribute('data-name') || '';
+            });
+
+            // Reset modal fields on close
+            document.getElementById('addBoardModal').addEventListener('hidden.bs.modal', function() {
+                this.querySelector('form').reset();
+                addResetSelect(addProvSel, '-- SELECT PROVINCE --');
+                addResetSelect(addMuniSel, '-- SELECT MUNICIPALITY --');
+                addResetSelect(addBrgySel, '-- SELECT BARANGAY --');
+                addHiddenRegion.value = '';
+                addHiddenProv.value = '';
+                addHiddenMuni.value = '';
+                addHiddenBrgy.value = '';
+            });
+        });
+    </script>
+@endsection
+
+homepage_partners:
+prt_id
+prt_uuid
+prt_title
+prt_image
+prt_date_created
+prt_created_by
+prt_date_modified
+prt_modified_buy
+prt_active
+
+so i made a new blade admin.homepage.partners.blade.php
+
+now help me make 4 functions and blade
+
+i want in the blade it displays both prt_active = 1 and 0, but the active ones should be above, and the deleted is in the last
+
+so we just display image fixed size no matter how big the image or small then below it has fa fa edit then toggle on and off
+
+we also have add partner just title (required) and then input file (only png .accept png)
+
+then in upload and edit follow the size compression and the file location is (public/images/partners/) we order it by a-z in prt_title both active = 1 then on the last one active = 0

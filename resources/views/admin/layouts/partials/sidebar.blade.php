@@ -102,6 +102,15 @@
                                     </a>
                                 </li>
 
+                                {{-- Partners --}}
+                                <li class="nav-item">
+                                    <a href="{{ url('admin/homepage/partners') }}"
+                                        class="nav-link {{ request()->is('admin/homepage/partners*') ? 'active bg-success' : '' }}">
+                                        <i class="far fa-circle nav-icon"></i>
+                                        <p>PARTNERS</p>
+                                    </a>
+                                </li>
+
                                 {{-- Vision --}}
                                 <li class="nav-item">
                                     <a href="{{ url('admin/homepage/vision') }}"

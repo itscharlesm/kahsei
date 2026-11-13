@@ -136,6 +136,144 @@ class HomepageController extends Controller
     }
     // END OBJECTIVES
 
+    // START PARTNERS
+    private function savePartnerImage($file)
+    {
+        $dir = public_path('images/partners');
+        if (!is_dir($dir)) {
+            mkdir($dir, 0755, true);
+        }
+
+        $fileName = uniqid() . '_' . $file->getClientOriginalName();
+        $path = $dir . '/' . $fileName;
+
+        $source = imagecreatefrompng($file->getPathname());
+
+        if ($source) {
+            if (imageistruecolor($source) === false) {
+                imagepalettetotruecolor($source);
+            }
+
+            // keep transparency
+            imagealphablending($source, false);
+            imagesavealpha($source, true);
+
+            imagepng($source, $path, 7);
+            imagedestroy($source);
+        }
+
+        return $fileName;
+    }
+
+    public function partners()
+    {
+        $partners = DB::table('homepage_partners')
+            ->orderBy('prt_active', 'desc')
+            ->orderBy('prt_title', 'asc')
+            ->get();
+
+        return view('admin.homepage.partners', compact('partners'));
+    }
+
+    public function partners_add(Request $request)
+    {
+        $request->validate([
+            'prt_title' => 'required|string|max:255',
+            'prt_image' => 'required|mimes:png|max:8192',
+        ]);
+
+        $imageName = $this->savePartnerImage($request->file('prt_image'));
+
+        DB::table('homepage_partners')->insert([
+            'prt_uuid' => generateuuid(),
+            'prt_title' => $request->prt_title,
+            'prt_image' => $imageName,
+            'prt_date_created' => Carbon::now(),
+            'prt_created_by' => session('usr_id'),
+            'prt_active' => 1,
+        ]);
+
+        logUserActivity('Manage Homepage', 'Added partner ' . $request->prt_title);
+
+        session()->flash('successMessage', 'Partner has been added.');
+        return redirect()->back();
+    }
+
+    public function partners_update(Request $request, $obj_id)
+    {
+        $request->validate([
+            'prt_title' => 'required|string|max:255',
+            'prt_image' => 'nullable|mimes:png|max:8192',
+        ]);
+
+        $partner = DB::table('homepage_partners')
+            ->where('prt_id', $obj_id)
+            ->first();
+
+        if (!$partner) {
+            alert()->error('Error', 'Partner not found.');
+            return redirect()->back();
+        }
+
+        $updateData = [
+            'prt_title' => $request->prt_title,
+            'prt_date_modified' => Carbon::now(),
+            'prt_modified_by' => session('usr_id'),
+        ];
+
+        if ($request->hasFile('prt_image')) {
+            $updateData['prt_image'] = $this->savePartnerImage($request->file('prt_image'));
+
+            // remove old image
+            if (!empty($partner->prt_image)) {
+                $old = public_path('images/partners/' . $partner->prt_image);
+                if (file_exists($old)) {
+                    @unlink($old);
+                }
+            }
+        }
+
+        DB::table('homepage_partners')
+            ->where('prt_id', $obj_id)
+            ->update($updateData);
+
+        logUserActivity('Manage Homepage', 'Updated partner ' . $partner->prt_title);
+
+        session()->flash('successMessage', 'Partner has been updated.');
+        return redirect()->back();
+    }
+
+    public function partners_delete(Request $request, $obj_id)
+    {
+        $partner = DB::table('homepage_partners')
+            ->where('prt_id', $obj_id)
+            ->first();
+
+        if (!$partner) {
+            alert()->error('Error', 'Partner not found.');
+            return redirect()->back();
+        }
+
+        $newStatus = $partner->prt_active == 1 ? 0 : 1;
+
+        DB::table('homepage_partners')
+            ->where('prt_id', $obj_id)
+            ->update([
+                'prt_active' => $newStatus,
+                'prt_date_modified' => Carbon::now(),
+                'prt_modified_by' => session('usr_id'),
+            ]);
+
+        logUserActivity(
+            'Manage Homepage',
+            ($newStatus == 1 ? 'Activated' : 'Deactivated') . ' partner ' . $partner->prt_title
+        );
+
+        session()->flash('successMessage', 'Partner has been ' . ($newStatus == 1 ? 'activated' : 'deactivated') . '.');
+        return redirect()->back();
+    }
+    // END PARTNERS
+
     // START VISION
     public function vision()
     {

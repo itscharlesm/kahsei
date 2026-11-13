@@ -82,6 +82,11 @@ Route::middleware('role:SUPERADMIN,ADMIN')->group(function () {
     // - Objectives
     Route::get('admin/homepage/objectives', [HomepageController::class, 'objectives']);
     Route::post('admin/homepage/objectives/update/{obj_id}', [HomepageController::class, 'objectives_update']);
+    // - Partners
+    Route::get('admin/homepage/partners', [HomepageController::class, 'partners']);
+    Route::post('admin/homepage/partners/add', [HomepageController::class, 'partners_add']);
+    Route::post('admin/homepage/partners/update/{obj_id}', [HomepageController::class, 'partners_update']);
+    Route::post('admin/homepage/partners/delete/{obj_id}', [HomepageController::class, 'partners_delete']);
     // - Vision
     Route::get('admin/homepage/vision', [HomepageController::class, 'vision']);
     Route::post('admin/homepage/vision/update/{vis_id}', [HomepageController::class, 'vision_update']);
