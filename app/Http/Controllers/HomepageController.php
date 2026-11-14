@@ -374,62 +374,34 @@ class HomepageController extends Controller
         return redirect()->back();
     }
 
-    public function questions_reject(Request $request, $que_id)
-    {
-        $question = DB::table('homepage_questions')
-            ->where('que_id', '=', $que_id)
-            ->first();
-
-        if (!$question) {
-            alert()->error('Error', 'Question not found.');
-            return redirect()->back();
-        }
-
-        DB::table('homepage_questions')
-            ->where('que_id', '=', $que_id)
-            ->update([
-                'que_status' => 'REJECTED',
-                'que_active' => 0,
-                'que_date_rejected' => Carbon::now(),
-                'que_rejected_by' => session('usr_id'),
-                'que_date_modified' => Carbon::now(),
-                'que_modified_by' => session('usr_id'),
-            ]);
-
-        logUserActivity('Manage Homepage', 'Rejected question #' . $que_id);
-
-        session()->flash('successMessage', 'Question has been rejected.');
-        return redirect()->back();
-    }
-
-    public function questions_rejected(Request $request)
+    public function questions_approved(Request $request)
     {
         $questions = DB::table('homepage_questions')
             ->leftJoin('users', 'homepage_questions.usr_id', '=', 'users.usr_id')
-            ->leftJoin('users as rejector', 'homepage_questions.que_rejected_by', '=', 'rejector.usr_id')
-            ->where('homepage_questions.que_status', '=', 'REJECTED')
-            ->where('homepage_questions.que_active', '=', 0)
+            ->leftJoin('users as archiver', 'homepage_questions.que_archived_by', '=', 'archiver.usr_id')
+            ->where('homepage_questions.que_status', '=', 'APPROVED')
+            ->where('homepage_questions.que_active', '=', 1)
             ->select(
                 'homepage_questions.que_id',
                 'homepage_questions.que_is_anonymous',
                 'homepage_questions.que_question',
                 'homepage_questions.que_date_created',
-                'homepage_questions.que_date_rejected',
-                'homepage_questions.que_rejected_by',
+                'homepage_questions.que_date_answered',
+                'homepage_questions.que_answered_by',
                 'users.usr_first_name',
                 'users.usr_last_name',
-                'rejector.usr_first_name as rejector_first_name',
-                'rejector.usr_last_name as rejector_last_name',
+                'archiver.usr_first_name as answerer_first_name',
+                'archiver.usr_last_name as answerer_last_name',
                 DB::raw('CASE
                 WHEN homepage_questions.que_is_anonymous = 1
                     OR homepage_questions.usr_id IS NULL
                     OR homepage_questions.usr_id = 0
                 THEN 1 ELSE 0 END AS is_anonymous')
             )
-            ->orderBy('homepage_questions.que_date_rejected', 'desc')
+            ->orderBy('homepage_questions.que_date_answered', 'desc')
             ->get();
 
-        return view('admin.homepage.questions.rejected', compact('questions'));
+        return view('admin.homepage.questions.approved', compact('questions'));
     }
 
     public function questions_archive(Request $request, $que_id)
@@ -513,6 +485,64 @@ class HomepageController extends Controller
         logUserActivity('Manage Homepage', 'Activated question #' . $que_id);
 
         session()->flash('successMessage', 'Question has been activated.');
+        return redirect()->back();
+    }
+
+    public function questions_rejected(Request $request)
+    {
+        $questions = DB::table('homepage_questions')
+            ->leftJoin('users', 'homepage_questions.usr_id', '=', 'users.usr_id')
+            ->leftJoin('users as rejector', 'homepage_questions.que_rejected_by', '=', 'rejector.usr_id')
+            ->where('homepage_questions.que_status', '=', 'REJECTED')
+            ->where('homepage_questions.que_active', '=', 0)
+            ->select(
+                'homepage_questions.que_id',
+                'homepage_questions.que_is_anonymous',
+                'homepage_questions.que_question',
+                'homepage_questions.que_date_created',
+                'homepage_questions.que_date_rejected',
+                'homepage_questions.que_rejected_by',
+                'users.usr_first_name',
+                'users.usr_last_name',
+                'rejector.usr_first_name as rejector_first_name',
+                'rejector.usr_last_name as rejector_last_name',
+                DB::raw('CASE
+                WHEN homepage_questions.que_is_anonymous = 1
+                    OR homepage_questions.usr_id IS NULL
+                    OR homepage_questions.usr_id = 0
+                THEN 1 ELSE 0 END AS is_anonymous')
+            )
+            ->orderBy('homepage_questions.que_date_rejected', 'desc')
+            ->get();
+
+        return view('admin.homepage.questions.rejected', compact('questions'));
+    }
+
+    public function questions_reject(Request $request, $que_id)
+    {
+        $question = DB::table('homepage_questions')
+            ->where('que_id', '=', $que_id)
+            ->first();
+
+        if (!$question) {
+            alert()->error('Error', 'Question not found.');
+            return redirect()->back();
+        }
+
+        DB::table('homepage_questions')
+            ->where('que_id', '=', $que_id)
+            ->update([
+                'que_status' => 'REJECTED',
+                'que_active' => 0,
+                'que_date_rejected' => Carbon::now(),
+                'que_rejected_by' => session('usr_id'),
+                'que_date_modified' => Carbon::now(),
+                'que_modified_by' => session('usr_id'),
+            ]);
+
+        logUserActivity('Manage Homepage', 'Rejected question #' . $que_id);
+
+        session()->flash('successMessage', 'Question has been rejected.');
         return redirect()->back();
     }
     // END QUESTIONS

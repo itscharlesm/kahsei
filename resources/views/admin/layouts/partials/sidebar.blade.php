@@ -153,6 +153,15 @@
                                         <p>FOR APPROVAL</p>
                                     </a>
                                 </li>
+
+                                {{-- Approved --}}
+                                <li class="nav-item">
+                                    <a href="{{ url('admin/homepage/questions/approved') }}"
+                                        class="nav-link {{ request()->is('admin/homepage/questions/approved*') ? 'active bg-success' : '' }}">
+                                        <i class="far fa-circle nav-icon"></i>
+                                        <p>APPROVED</p>
+                                    </a>
+                                </li>
                                 
                                 {{-- Archived --}}
                                 <li class="nav-item">

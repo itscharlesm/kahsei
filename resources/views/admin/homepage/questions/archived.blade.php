@@ -15,7 +15,7 @@
         <div class="container-fluid">
             <div class="row">
                 <div class="col-sm-6">
-                    <h3 class="mb-0">Rejected Questions</h3>
+                    <h3 class="mb-0">Archived Questions</h3>
                 </div>
                 <div class="col-sm-6">
                     <ol class="breadcrumb float-sm-end">
@@ -23,7 +23,7 @@
                             <a href="{{ url('admin/home') }}">Home</a>
                         </li>
                         <li class="breadcrumb-item">Homepage</li>
-                        <li class="breadcrumb-item active">Rejected Questions</li>
+                        <li class="breadcrumb-item active">Archived Questions</li>
                     </ol>
                 </div>
             </div>
@@ -48,7 +48,7 @@
                                     <tr>
                                         <th class="align-middle text-center" width="60px">No</th>
                                         <th class="align-middle text-center">Date Submitted</th>
-                                        <th class="align-middle text-center">Date Rejected</th>
+                                        <th class="align-middle text-center">Date Archived</th>
                                         <th class="align-middle text-center">Inquirer</th>
                                         <th class="align-middle text-center">Question</th>
                                         <th class="align-middle text-center" width="80px">Action</th>
@@ -81,10 +81,10 @@
                                                     data-bs-toggle="modal" data-bs-target="#viewModal-{{ $question->que_id }}">
                                                     <span class="fa fa-eye"></span>
                                                 </a>
-                                                <a class="btn btn-success btn-sm mb-1" href="javascript:void(0)"
+                                                <a class="btn btn-danger btn-sm mb-1" href="javascript:void(0)"
                                                     data-bs-toggle="modal"
                                                     data-bs-target="#activateModal-{{ $question->que_id }}">
-                                                    <span class="fa fa-check"></span>
+                                                    <span class="fa fa-archive"></span>
                                                 </a>
                                             </td>
                                         </tr>
