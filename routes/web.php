@@ -95,6 +95,8 @@ Route::middleware('role:SUPERADMIN,ADMIN')->group(function () {
     Route::post('admin/homepage/questions/approve/{que_id}', [HomepageController::class, 'questions_approve']);
     Route::post('admin/homepage/questions/reject/{que_id}', [HomepageController::class, 'questions_reject']);
     Route::get('admin/homepage/questions/rejected', [HomepageController::class, 'questions_rejected']);
+    Route::post('admin/homepage/questions/archive/{que_id}', [HomepageController::class, 'questions_archive']);
+    Route::get('admin/homepage/questions/archived', [HomepageController::class, 'questions_archived']);
 });
 //------------------------------------------------------------------------------------------------------------------------------------
 

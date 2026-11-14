@@ -62,7 +62,7 @@
                                                 {{ \Carbon\Carbon::parse($question->que_date_created)->format('m/d/Y | h:i A') }}
                                             </td>
                                             <td class="align-middle text-center">
-                                                {{ $question->que_date_modified ? \Carbon\Carbon::parse($question->que_date_modified)->format('m/d/Y | h:i A') : '—' }}
+                                                {{ $question->que_date_rejected ? \Carbon\Carbon::parse($question->que_date_rejected)->format('m/d/Y | h:i A') : '—' }}
                                             </td>
                                             <td class="align-middle text-center">
                                                 @if ($question->is_anonymous == 1)
@@ -135,7 +135,7 @@
                             <div class="col-md-6 mb-3">
                                 <label class="form-label">Date Rejected</label>
                                 <div class="form-control-plaintext">
-                                    {{ $question->que_date_modified ? \Carbon\Carbon::parse($question->que_date_modified)->format('m/d/Y | h:i A') : '—' }}
+                                    {{ $question->que_date_rejected ? \Carbon\Carbon::parse($question->que_date_rejected)->format('m/d/Y | h:i A') : '—' }}
                                 </div>
                             </div>
 
