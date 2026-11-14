@@ -378,7 +378,7 @@ class HomepageController extends Controller
     {
         $questions = DB::table('homepage_questions')
             ->leftJoin('users', 'homepage_questions.usr_id', '=', 'users.usr_id')
-            ->leftJoin('users as archiver', 'homepage_questions.que_archived_by', '=', 'archiver.usr_id')
+            ->leftJoin('users as answerer', 'homepage_questions.que_archived_by', '=', 'answerer.usr_id')
             ->where('homepage_questions.que_status', '=', 'APPROVED')
             ->where('homepage_questions.que_active', '=', 1)
             ->select(
@@ -386,12 +386,14 @@ class HomepageController extends Controller
                 'homepage_questions.que_is_anonymous',
                 'homepage_questions.que_question',
                 'homepage_questions.que_date_created',
+                'homepage_questions.que_answer',
+                'homepage_questions.que_video_link',
                 'homepage_questions.que_date_answered',
                 'homepage_questions.que_answered_by',
                 'users.usr_first_name',
                 'users.usr_last_name',
-                'archiver.usr_first_name as answerer_first_name',
-                'archiver.usr_last_name as answerer_last_name',
+                'answerer.usr_first_name as answerer_first_name',
+                'answerer.usr_last_name as answerer_last_name',
                 DB::raw('CASE
                 WHEN homepage_questions.que_is_anonymous = 1
                     OR homepage_questions.usr_id IS NULL

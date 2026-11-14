@@ -99,6 +99,17 @@
     </div>
 
     @foreach ($questions as $question)
+        @php
+            $videoId = null;
+            if (!empty($question->que_video_link) && preg_match(
+                '~(?:youtu\.be/|youtube\.com/(?:watch\?(?:.*&)?v=|embed/|shorts/|live/))([A-Za-z0-9_-]{11})~',
+                $question->que_video_link,
+                $m
+            )) {
+                $videoId = $m[1];
+            }
+        @endphp
+
         {{-- View Modal --}}
         <div class="modal fade" id="viewModal-{{ $question->que_id }}" tabindex="-1"
             aria-labelledby="viewModalLabel-{{ $question->que_id }}" aria-hidden="true">
@@ -160,6 +171,37 @@
                                 <div class="form-control-plaintext text-break">
                                     {{ $question->que_question }}</div>
                             </div>
+
+                            <div class="col-md-12 mb-3">
+                                <label class="form-label">Answer</label>
+                                <div class="form-control-plaintext text-break">
+                                    @if (trim((string) $question->que_answer) !== '')
+                                        {!! nl2br(e($question->que_answer)) !!}
+                                    @else
+                                        <span class="text-muted fst-italic">No written answer provided.</span>
+                                    @endif
+                                </div>
+                            </div>
+
+                            @if (!empty($question->que_video_link))
+                                <div class="col-md-12 mb-3">
+                                    <label class="form-label">Video</label>
+                                    @if ($videoId)
+                                        <div class="ratio ratio-16x9">
+                                            <iframe class="answer-video"
+                                                src="https://www.youtube.com/embed/{{ $videoId }}"
+                                                loading="lazy"
+                                                title="Answer video" frameborder="0" allowfullscreen
+                                                referrerpolicy="strict-origin-when-cross-origin"
+                                                allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"></iframe>
+                                        </div>
+                                    @else
+                                        <div class="form-control-plaintext">
+                                            <a href="{{ $question->que_video_link }}" target="_blank" rel="noopener">{{ $question->que_video_link }}</a>
+                                        </div>
+                                    @endif
+                                </div>
+                            @endif
                         </div>
                     </div>
 
