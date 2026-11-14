@@ -378,7 +378,8 @@ class HomepageController extends Controller
     {
         $questions = DB::table('homepage_questions')
             ->leftJoin('users', 'homepage_questions.usr_id', '=', 'users.usr_id')
-            ->leftJoin('users as answerer', 'homepage_questions.que_archived_by', '=', 'answerer.usr_id')
+            ->leftJoin('users as answerer', 'homepage_questions.que_answered_by', '=', 'answerer.usr_id')
+            ->leftJoin('users as modifier', 'homepage_questions.que_modified_by', '=', 'modifier.usr_id')
             ->where('homepage_questions.que_status', '=', 'APPROVED')
             ->where('homepage_questions.que_active', '=', 1)
             ->select(
@@ -390,20 +391,64 @@ class HomepageController extends Controller
                 'homepage_questions.que_video_link',
                 'homepage_questions.que_date_answered',
                 'homepage_questions.que_answered_by',
+                'homepage_questions.que_date_modified',
+                'homepage_questions.que_modified_by',
                 'users.usr_first_name',
                 'users.usr_last_name',
                 'answerer.usr_first_name as answerer_first_name',
                 'answerer.usr_last_name as answerer_last_name',
+                'modifier.usr_first_name as modifier_first_name',
+                'modifier.usr_last_name as modifier_last_name',
                 DB::raw('CASE
-                WHEN homepage_questions.que_is_anonymous = 1
-                    OR homepage_questions.usr_id IS NULL
-                    OR homepage_questions.usr_id = 0
-                THEN 1 ELSE 0 END AS is_anonymous')
+            WHEN homepage_questions.que_is_anonymous = 1
+                OR homepage_questions.usr_id IS NULL
+                OR homepage_questions.usr_id = 0
+            THEN 1 ELSE 0 END AS is_anonymous')
             )
             ->orderBy('homepage_questions.que_date_answered', 'desc')
             ->get();
 
         return view('admin.homepage.questions.approved', compact('questions'));
+    }
+
+
+    public function questions_approved_edit(Request $request, $que_id)
+    {
+        $request->validate([
+            'que_answer' => 'nullable|string|required_without:que_video_link',
+            'que_video_link' => 'nullable|string|required_without:que_answer',
+        ], [
+            'que_answer.required_without' => 'Please provide an answer, a YouTube video, or both.',
+            'que_video_link.required_without' => 'Please provide an answer, a YouTube video, or both.',
+        ]);
+
+        $question = DB::table('homepage_questions')
+            ->where('que_id', '=', $que_id)
+            ->where('que_status', '=', 'APPROVED')
+            ->where('que_active', '=', 1)
+            ->first();
+
+        if (!$question) {
+            alert()->error('Error', 'Question not found.');
+            return redirect()->back();
+        }
+
+        $answer = trim((string) $request->que_answer);
+        $video = trim((string) $request->que_video_link);
+
+        DB::table('homepage_questions')
+            ->where('que_id', '=', $que_id)
+            ->update([
+                'que_answer' => $answer !== '' ? $answer : null,
+                'que_video_link' => $video !== '' ? $video : null,
+                'que_date_modified' => Carbon::now(),
+                'que_modified_by' => session('usr_id'),
+            ]);
+
+        logUserActivity('Manage Homepage', 'Edited approved question #' . $que_id);
+
+        session()->flash('successMessage', 'Question has been updated.');
+        return redirect()->back();
     }
 
     public function questions_archive(Request $request, $que_id)

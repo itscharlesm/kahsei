@@ -37,6 +37,16 @@
         @include('admin.layouts.partials.modal_style')
         <div class="container-fluid">
 
+            @if ($errors->any())
+                <div class="alert alert-danger">
+                    <ul class="mb-0">
+                        @foreach ($errors->all() as $error)
+                            <li>{{ $error }}</li>
+                        @endforeach
+                    </ul>
+                </div>
+            @endif
+
             <div class="card">
                 <div class="card-body overflow-auto">
                     <div class="row">
@@ -51,7 +61,7 @@
                                         <th class="align-middle text-center">Date Answered</th>
                                         <th class="align-middle text-center">Inquirer</th>
                                         <th class="align-middle text-center">Question</th>
-                                        <th class="align-middle text-center" width="80px">Action</th>
+                                        <th class="align-middle text-center" width="130px">Action</th>
                                     </tr>
                                 </thead>
                                 <tbody>
@@ -80,6 +90,10 @@
                                                 <a class="btn btn-primary btn-sm mb-1" href="javascript:void(0)"
                                                     data-bs-toggle="modal" data-bs-target="#viewModal-{{ $question->que_id }}">
                                                     <span class="fa fa-eye"></span>
+                                                </a>
+                                                <a class="btn btn-warning btn-sm mb-1" href="javascript:void(0)"
+                                                    data-bs-toggle="modal" data-bs-target="#editModal-{{ $question->que_id }}">
+                                                    <span class="fa fa-edit"></span>
                                                 </a>
                                                 <a class="btn btn-danger btn-sm mb-1" href="javascript:void(0)"
                                                     data-bs-toggle="modal"
@@ -166,6 +180,26 @@
                                 </div>
                             </div>
 
+                            @if (!empty($question->que_date_modified))
+                                <div class="col-md-4 mb-3">
+                                    <label class="form-label">Last Modified</label>
+                                    <div class="form-control-plaintext">
+                                        {{ \Carbon\Carbon::parse($question->que_date_modified)->format('m/d/Y | h:i A') }}
+                                    </div>
+                                </div>
+
+                                <div class="col-md-4 mb-3">
+                                    <label class="form-label">Modified By</label>
+                                    <div class="form-control-plaintext">
+                                        @if ($question->modifier_first_name || $question->modifier_last_name)
+                                            {{ $question->modifier_first_name }} {{ $question->modifier_last_name }}
+                                        @else
+                                            —
+                                        @endif
+                                    </div>
+                                </div>
+                            @endif
+
                             <div class="col-md-12 mb-3">
                                 <label class="form-label">Question</label>
                                 <div class="form-control-plaintext text-break">
@@ -210,6 +244,69 @@
                             <span class="fa fa-close"></span> Close
                         </button>
                     </div>
+                </div>
+            </div>
+        </div>
+
+        {{-- Edit Modal --}}
+        <div class="modal fade" id="editModal-{{ $question->que_id }}" tabindex="-1"
+            aria-labelledby="editModalLabel-{{ $question->que_id }}" aria-hidden="true">
+            <div class="modal-dialog modal-lg">
+                <div class="modal-content">
+                    <form action="{{ url('admin/homepage/questions/approved/edit/' . $question->que_id) }}"
+                        method="POST">
+                        @csrf
+                        <div class="modal-header bg-warning">
+                            <h5 class="modal-title" id="editModalLabel-{{ $question->que_id }}">
+                                <span class="fa fa-edit"></span> Edit Answer
+                            </h5>
+                            <button type="button" class="btn-close" data-bs-dismiss="modal"
+                                aria-label="Close"></button>
+                        </div>
+
+                        <div class="modal-body">
+                            <div class="row">
+                                <div class="col-md-12 mb-3">
+                                    <label class="form-label">Question</label>
+                                    <div class="form-control-plaintext text-break">
+                                        {{ trim($question->que_question) }}</div>
+                                </div>
+
+                                <div class="col-md-12 mb-3">
+                                    <div class="alert alert-info py-2 mb-0">
+                                        Provide an <strong>answer</strong>, a <strong>YouTube video</strong>, or
+                                        <strong>both</strong>.
+                                    </div>
+                                </div>
+
+                                <div class="col-md-12 mb-3">
+                                    <label for="edit_que_answer-{{ $question->que_id }}"
+                                        class="form-label">Answer</label>
+                                    <textarea class="form-control" id="edit_que_answer-{{ $question->que_id }}"
+                                        name="que_answer" rows="4"
+                                        placeholder="Type the answer here...">{{ $question->que_answer }}</textarea>
+                                </div>
+
+                                <div class="col-md-12 mb-3">
+                                    <label for="edit_que_video_link-{{ $question->que_id }}"
+                                        class="form-label">Youtube Video</label>
+                                    <input class="form-control" type="text"
+                                        id="edit_que_video_link-{{ $question->que_id }}" name="que_video_link"
+                                        value="{{ $question->que_video_link }}"
+                                        placeholder="Paste the YouTube embed code here">
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="modal-footer">
+                            <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">
+                                <span class="fa fa-close"></span> Close
+                            </button>
+                            <button type="submit" class="btn btn-warning">
+                                <span class="fa fa-save"></span> Save Changes
+                            </button>
+                        </div>
+                    </form>
                 </div>
             </div>
         </div>
