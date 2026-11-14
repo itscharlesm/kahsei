@@ -406,6 +406,7 @@ class HomepageController extends Controller
     {
         $questions = DB::table('homepage_questions')
             ->leftJoin('users', 'homepage_questions.usr_id', '=', 'users.usr_id')
+            ->leftJoin('users as rejector', 'homepage_questions.que_rejected_by', '=', 'rejector.usr_id')
             ->where('homepage_questions.que_status', '=', 'REJECTED')
             ->select(
                 'homepage_questions.que_id',
@@ -413,13 +414,16 @@ class HomepageController extends Controller
                 'homepage_questions.que_question',
                 'homepage_questions.que_date_created',
                 'homepage_questions.que_date_rejected',
+                'homepage_questions.que_rejected_by',
                 'users.usr_first_name',
                 'users.usr_last_name',
+                'rejector.usr_first_name as rejector_first_name',
+                'rejector.usr_last_name as rejector_last_name',
                 DB::raw('CASE
-            WHEN homepage_questions.que_is_anonymous = 1
-                OR homepage_questions.usr_id IS NULL
-                OR homepage_questions.usr_id = 0
-            THEN 1 ELSE 0 END AS is_anonymous')
+                WHEN homepage_questions.que_is_anonymous = 1
+                    OR homepage_questions.usr_id IS NULL
+                    OR homepage_questions.usr_id = 0
+                THEN 1 ELSE 0 END AS is_anonymous')
             )
             ->orderBy('homepage_questions.que_date_rejected', 'desc')
             ->get();
@@ -483,6 +487,34 @@ class HomepageController extends Controller
             ->get();
 
         return view('admin.homepage.questions.archived', compact('questions'));
+    }
+
+    public function questions_activate(Request $request, $que_id)
+    {
+        $question = DB::table('homepage_questions')
+            ->where('que_id', '=', $que_id)
+            ->first();
+
+        if (!$question) {
+            alert()->error('Error', 'Question not found.');
+            return redirect()->back();
+        }
+
+        DB::table('homepage_questions')
+            ->where('que_id', '=', $que_id)
+            ->update([
+                'que_status' => 'ARCHIVED',
+                'que_active' => 0,
+                'que_date_archived' => Carbon::now(),
+                'que_archived_by' => session('usr_id'),
+                'que_date_modified' => Carbon::now(),
+                'que_modified_by' => session('usr_id'),
+            ]);
+
+        logUserActivity('Manage Homepage', 'Archived question #' . $que_id);
+
+        session()->flash('successMessage', 'Question has been archived.');
+        return redirect()->back();
     }
     // END QUESTIONS
 }

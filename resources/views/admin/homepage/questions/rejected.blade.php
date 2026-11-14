@@ -125,17 +125,28 @@
                                 <div><span class="badge bg-danger">REJECTED</span></div>
                             </div>
 
-                            <div class="col-md-6 mb-3">
+                            <div class="col-md-4 mb-3">
                                 <label class="form-label">Date Submitted</label>
                                 <div class="form-control-plaintext">
                                     {{ \Carbon\Carbon::parse($question->que_date_created)->format('m/d/Y | h:i A') }}
                                 </div>
                             </div>
 
-                            <div class="col-md-6 mb-3">
+                            <div class="col-md-4 mb-3">
                                 <label class="form-label">Date Rejected</label>
                                 <div class="form-control-plaintext">
                                     {{ $question->que_date_rejected ? \Carbon\Carbon::parse($question->que_date_rejected)->format('m/d/Y | h:i A') : '—' }}
+                                </div>
+                            </div>
+
+                            <div class="col-md-4 mb-3">
+                                <label class="form-label">Rejected By</label>
+                                <div class="form-control-plaintext">
+                                    @if ($question->rejector_first_name || $question->rejector_last_name)
+                                        {{ $question->rejector_first_name }} {{ $question->rejector_last_name }}
+                                    @else
+                                        —
+                                    @endif
                                 </div>
                             </div>
 
