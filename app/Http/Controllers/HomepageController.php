@@ -408,6 +408,7 @@ class HomepageController extends Controller
             ->leftJoin('users', 'homepage_questions.usr_id', '=', 'users.usr_id')
             ->leftJoin('users as rejector', 'homepage_questions.que_rejected_by', '=', 'rejector.usr_id')
             ->where('homepage_questions.que_status', '=', 'REJECTED')
+            ->where('homepage_questions.que_active', '=', 0)
             ->select(
                 'homepage_questions.que_id',
                 'homepage_questions.que_is_anonymous',
@@ -503,17 +504,15 @@ class HomepageController extends Controller
         DB::table('homepage_questions')
             ->where('que_id', '=', $que_id)
             ->update([
-                'que_status' => 'ARCHIVED',
-                'que_active' => 0,
-                'que_date_archived' => Carbon::now(),
-                'que_archived_by' => session('usr_id'),
+                'que_status' => 'APPROVED',
+                'que_active' => 1,
                 'que_date_modified' => Carbon::now(),
                 'que_modified_by' => session('usr_id'),
             ]);
 
-        logUserActivity('Manage Homepage', 'Archived question #' . $que_id);
+        logUserActivity('Manage Homepage', 'Activated question #' . $que_id);
 
-        session()->flash('successMessage', 'Question has been archived.');
+        session()->flash('successMessage', 'Question has been activated.');
         return redirect()->back();
     }
     // END QUESTIONS

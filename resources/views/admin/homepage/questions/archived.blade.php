@@ -81,6 +81,11 @@
                                                     data-bs-toggle="modal" data-bs-target="#viewModal-{{ $question->que_id }}">
                                                     <span class="fa fa-eye"></span>
                                                 </a>
+                                                <a class="btn btn-success btn-sm mb-1" href="javascript:void(0)"
+                                                    data-bs-toggle="modal"
+                                                    data-bs-target="#activateModal-{{ $question->que_id }}">
+                                                    <span class="fa fa-check"></span>
+                                                </a>
                                             </td>
                                         </tr>
                                     @endforeach
@@ -163,6 +168,38 @@
                             <span class="fa fa-close"></span> Close
                         </button>
                     </div>
+                </div>
+            </div>
+        </div>
+
+        {{-- Activate Modal --}}
+        <div class="modal fade" id="activateModal-{{ $question->que_id }}" tabindex="-1"
+            aria-labelledby="activateModalLabel-{{ $question->que_id }}" aria-hidden="true">
+            <div class="modal-dialog">
+                <div class="modal-content">
+                    <form method="POST" action="{{ url('admin/homepage/questions/activate/' . $question->que_id) }}">
+                        @csrf
+                        <div class="modal-header bg-success text-white">
+                            <h5 class="modal-title text-white" id="activateModalLabel-{{ $question->que_id }}">
+                                Please Confirm
+                            </h5>
+                            <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"
+                                aria-label="Close"></button>
+                        </div>
+                        <div class="modal-body">
+                            <p>Are you sure you want to <strong>ACTIVATE</strong> this question?</p>
+                            <p class="mb-0 text-muted text-break">
+                                {{ trim($question->que_question) }}</p>
+                        </div>
+                        <div class="modal-footer">
+                            <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">
+                                <span class="fa fa-close"></span> Close
+                            </button>
+                            <button type="submit" class="btn btn-success">
+                                <span class="fa fa-times"></span> Confirm Activate
+                            </button>
+                        </div>
+                    </form>
                 </div>
             </div>
         </div>
