@@ -81,10 +81,10 @@
                                                     data-bs-toggle="modal" data-bs-target="#viewModal-{{ $question->que_id }}">
                                                     <span class="fa fa-eye"></span>
                                                 </a>
-                                                <a class="btn btn-danger btn-sm mb-1" href="javascript:void(0)"
+                                                <a class="btn btn-success btn-sm mb-1" href="javascript:void(0)"
                                                     data-bs-toggle="modal"
                                                     data-bs-target="#activateModal-{{ $question->que_id }}">
-                                                    <span class="fa fa-archive"></span>
+                                                    <span class="fa fa-check"></span>
                                                 </a>
                                             </td>
                                         </tr>
