@@ -125,17 +125,28 @@
                                 <div><span class="badge bg-danger">REJECTED</span></div>
                             </div>
 
-                            <div class="col-md-6 mb-3">
+                            <div class="col-md-4 mb-3">
                                 <label class="form-label">Date Submitted</label>
                                 <div class="form-control-plaintext">
                                     {{ \Carbon\Carbon::parse($question->que_date_created)->format('m/d/Y | h:i A') }}
                                 </div>
                             </div>
 
-                            <div class="col-md-6 mb-3">
+                            <div class="col-md-4 mb-3">
                                 <label class="form-label">Date Archived</label>
                                 <div class="form-control-plaintext">
                                     {{ $question->que_date_archived ? \Carbon\Carbon::parse($question->que_date_archived)->format('m/d/Y | h:i A') : '—' }}
+                                </div>
+                            </div>
+
+                            <div class="col-md-4 mb-3">
+                                <label class="form-label">Archived By</label>
+                                <div class="form-control-plaintext">
+                                    @if ($question->archiver_first_name || $question->archiver_last_name)
+                                        {{ $question->archiver_first_name }} {{ $question->archiver_last_name }}
+                                    @else
+                                        —
+                                    @endif
                                 </div>
                             </div>
 

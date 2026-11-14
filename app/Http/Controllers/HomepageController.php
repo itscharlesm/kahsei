@@ -459,6 +459,7 @@ class HomepageController extends Controller
     {
         $questions = DB::table('homepage_questions')
             ->leftJoin('users', 'homepage_questions.usr_id', '=', 'users.usr_id')
+            ->leftJoin('users as archiver', 'homepage_questions.que_archived_by', '=', 'archiver.usr_id')
             ->where('homepage_questions.que_status', '=', 'ARCHIVED')
             ->where('homepage_questions.que_active', '=', 0)
             ->select(
@@ -467,13 +468,16 @@ class HomepageController extends Controller
                 'homepage_questions.que_question',
                 'homepage_questions.que_date_created',
                 'homepage_questions.que_date_archived',
+                'homepage_questions.que_archived_by',
                 'users.usr_first_name',
                 'users.usr_last_name',
+                'archiver.usr_first_name as archiver_first_name',
+                'archiver.usr_last_name as archiver_last_name',
                 DB::raw('CASE
-            WHEN homepage_questions.que_is_anonymous = 1
-                OR homepage_questions.usr_id IS NULL
-                OR homepage_questions.usr_id = 0
-            THEN 1 ELSE 0 END AS is_anonymous')
+                WHEN homepage_questions.que_is_anonymous = 1
+                    OR homepage_questions.usr_id IS NULL
+                    OR homepage_questions.usr_id = 0
+                THEN 1 ELSE 0 END AS is_anonymous')
             )
             ->orderBy('homepage_questions.que_date_archived', 'desc')
             ->get();
