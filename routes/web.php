@@ -94,6 +94,7 @@ Route::middleware('role:SUPERADMIN,ADMIN')->group(function () {
     Route::get('admin/homepage/questions/for-approval', [HomepageController::class, 'questions_for_approval']);
     Route::post('admin/homepage/questions/approve/{que_id}', [HomepageController::class, 'questions_approve']);
     Route::get('admin/homepage/questions/approved', [HomepageController::class, 'questions_approved']);
+    Route::get('admin/homepage/questions/approved/edit/{que_id}', [HomepageController::class, 'questions_approved_edit']);
     Route::post('admin/homepage/questions/archive/{que_id}', [HomepageController::class, 'questions_archive']);
     Route::get('admin/homepage/questions/archived', [HomepageController::class, 'questions_archived']);
     Route::post('admin/homepage/questions/activate/{que_id}', [HomepageController::class, 'questions_activate']);

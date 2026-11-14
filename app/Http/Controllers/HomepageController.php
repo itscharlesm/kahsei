@@ -424,8 +424,6 @@ class HomepageController extends Controller
                 'que_active' => 0,
                 'que_date_archived' => Carbon::now(),
                 'que_archived_by' => session('usr_id'),
-                'que_date_modified' => Carbon::now(),
-                'que_modified_by' => session('usr_id'),
             ]);
 
         logUserActivity('Manage Homepage', 'Archived question #' . $que_id);
@@ -538,8 +536,6 @@ class HomepageController extends Controller
                 'que_active' => 0,
                 'que_date_rejected' => Carbon::now(),
                 'que_rejected_by' => session('usr_id'),
-                'que_date_modified' => Carbon::now(),
-                'que_modified_by' => session('usr_id'),
             ]);
 
         logUserActivity('Manage Homepage', 'Rejected question #' . $que_id);
