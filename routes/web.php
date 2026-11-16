@@ -177,3 +177,13 @@ Route::get('/laravel/clear-all', function () {
 });
 // ------------------------------------------------------------------------------------------------------------------------------------ //
 // -----------------------------------------------------ADMIN SIDE--------------------------------------------------------------------- //
+
+// ----------------------------------------------------HOMEPAGE SIDE------------------------------------------------------------------- //
+Route::get('/', [MainController::class, 'home']);
+Route::get('/about/vision-mission', [MainController::class, 'vision_mission']);
+Route::get('/about/goals-objectives', [MainController::class, 'goals_objectives']);
+Route::get('/about/board-of-members', [MainController::class, 'board_members']);
+Route::get('/about/partners', [MainController::class, 'board_members']);
+Route::get('/itanong-mo-kay-attorney/ask-question', [MainController::class, 'attorney_ask']);
+Route::get('/itanong-mo-kay-attorney/answers', [MainController::class, 'attorney_answers']);
+// ----------------------------------------------------HOMEPAGE SIDE------------------------------------------------------------------- //
