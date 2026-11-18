@@ -401,6 +401,7 @@ class ProfilingController extends Controller
                 'users.usr_civil_status',
                 'users.usr_position',
                 'users.usr_active',
+                'positions.pos_id',
                 'positions.pos_name',
                 'user_addresses.uadd_street',
                 'user_addresses.uadd_barangay',
@@ -408,6 +409,7 @@ class ProfilingController extends Controller
                 'user_addresses.uadd_province',
                 'user_addresses.uadd_region'
             )
+            ->orderBy('positions.pos_id')
             ->orderBy('users.usr_last_name')
             ->orderBy('users.usr_first_name');
 
@@ -439,7 +441,7 @@ class ProfilingController extends Controller
 
         $positions = DB::table('positions')
             ->select('pos_id', 'pos_name')
-            ->orderBy('pos_name')
+            ->orderBy('pos_id')
             ->get();
 
         $regions = DB::table('location_regions')
@@ -483,6 +485,7 @@ class ProfilingController extends Controller
                 'users.usr_civil_status',
                 'users.usr_position',
                 'users.usr_active',
+                'positions.pos_id',
                 'positions.pos_name',
                 'user_addresses.uadd_street',
                 'user_addresses.uadd_barangay',
@@ -490,6 +493,7 @@ class ProfilingController extends Controller
                 'user_addresses.uadd_province',
                 'user_addresses.uadd_region'
             )
+            ->orderBy('positions.pos_id')
             ->orderBy('users.usr_last_name')
             ->orderBy('users.usr_first_name');
 

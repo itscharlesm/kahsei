@@ -105,7 +105,7 @@ Route::middleware('role:SUPERADMIN,ADMIN')->group(function () {
 
 // ------------------------------------------------------------------------------------------------------------------------------------ //
 // MANAGEMENT
-Route::middleware('role:SUPERADMIN,ADMIN,MANAGER,DATA OFFICER')->group(function () {
+Route::middleware('role:SUPERADMIN,ADMIN')->group(function () {
     // - Addresses
     Route::get('admin/management/addresses/active', [ManagementController::class, 'addresses_active']);
     Route::get('admin/management/addresses/deleted', [ManagementController::class, 'addresses_deleted']);
@@ -131,7 +131,7 @@ Route::middleware('role:SUPERADMIN,ADMIN')->group(function () {
 
 // ------------------------------------------------------------------------------------------------------------------------------------ //
 // PROFILING
-Route::middleware('role:SUPERADMIN,ADMIN,MANAGER,PROFILING OFFICER')->group(function () {
+Route::middleware('role:SUPERADMIN,ADMIN')->group(function () {
     // - Users
     Route::get('admin/profiling/users/active', [ProfilingController::class, 'users_active']);
     Route::get('admin/profiling/users/deleted', [ProfilingController::class, 'users_deleted']);
@@ -180,10 +180,11 @@ Route::get('/laravel/clear-all', function () {
 
 // ----------------------------------------------------HOMEPAGE SIDE------------------------------------------------------------------- //
 Route::get('/', [MainController::class, 'home']);
+Route::get('/about', [MainController::class, 'about']);
 Route::get('/about/vision-mission', [MainController::class, 'vision_mission']);
 Route::get('/about/goals-objectives', [MainController::class, 'goals_objectives']);
 Route::get('/about/board-of-members', [MainController::class, 'board_members']);
-Route::get('/about/partners', [MainController::class, 'board_members']);
+Route::get('/about/partners', [MainController::class, 'partners']);
 Route::get('/itanong-mo-kay-attorney/ask-question', [MainController::class, 'attorney_ask']);
 Route::get('/itanong-mo-kay-attorney/answers', [MainController::class, 'attorney_answers']);
 // ----------------------------------------------------HOMEPAGE SIDE------------------------------------------------------------------- //
