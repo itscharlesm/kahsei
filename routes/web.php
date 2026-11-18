@@ -26,7 +26,6 @@ use App\Http\Controllers\LocationController;
 
 // ------------------------------------------------------------------------------------------------------------------------------------ //
 // LOGIN
-Route::get('/', [MainController::class, 'main']);
 Route::post('/forgot/password', [LoginController::class, 'forgot_password']);
 Route::post('/validate', [LoginController::class, 'validate_user']);
 Route::get('logout', [LoginController::class, 'logout']);
