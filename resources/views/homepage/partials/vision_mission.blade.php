@@ -1,4 +1,4 @@
-{{-- Vision & Mission: text is Summernote HTML, printed raw so its layout is untouched --}}
+{{-- Vision & Mission --}}
 <section class="section" id="vision-mission">
     <div class="container">
         <div class="row g-4 g-lg-5">

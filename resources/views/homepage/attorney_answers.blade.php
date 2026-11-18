@@ -22,7 +22,7 @@
                         <span id="qaShown">{{ $questions->count() }}</span> of {{ $questions->count() }} question(s)
                     </p>
 
-                    {{-- Latest to oldest (ordered in the controller) --}}
+                    {{-- Latest to oldest --}}
                     <div id="qaList">
                         @foreach ($questions as $q)
                             @php

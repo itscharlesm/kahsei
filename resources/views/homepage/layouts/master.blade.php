@@ -23,7 +23,7 @@
 <body>
     @include('admin.vendor.sweetalert.alert')
 
-    {{-- ============ Logo / name (top center) ============ --}}
+    {{-- Logo / name --}}
     <header class="site-header">
         <span class="hdr-orb hdr-orb-1"></span>
         <span class="hdr-orb hdr-orb-2"></span>
@@ -47,7 +47,7 @@
         </svg>
     </header>
 
-    {{-- ============ Navigation ============ --}}
+    {{-- Navigation --}}
     @php
         $isHome = request()->is('/');
         $isAbout = request()->is('about') || request()->is('about/*');
@@ -150,7 +150,7 @@
         </div>
     </nav>
 
-    {{-- ============ Page banner (inner pages only) ============ --}}
+    {{-- Page banner --}}
     @hasSection('page_title')
         <section class="page-hero">
             <div class="container">
@@ -175,7 +175,7 @@
         @yield('content')
     </main>
 
-    {{-- ============ Footer ============ --}}
+    {{-- Footer --}}
     <footer class="site-footer">
         <div class="container text-center">
             <img class="footer-logo" src="{{ asset('images/logos/kahsei.png') }}" alt="KAHSEI">
@@ -215,7 +215,7 @@
         {{-- Logged in: change password modal --}}
         @include('homepage.partials.change_password_modal')
     @else
-        {{-- ============ Login modal (guests only) ============ --}}
+        {{-- Login modal --}}
         <div class="modal fade kx-modal" id="loginModal" tabindex="-1" aria-labelledby="loginModalLabel" aria-hidden="true">
             <div class="modal-dialog modal-dialog-centered">
                 <div class="modal-content">
@@ -274,7 +274,7 @@
             </div>
         </div>
 
-        {{-- ============ Forgot password modal (guests only) ============ --}}
+        {{-- Forgot password modal --}}
         <div class="modal fade kx-modal" id="forgotPasswordModal" tabindex="-1" aria-labelledby="forgotPasswordModalLabel"
             aria-hidden="true">
             <div class="modal-dialog modal-dialog-centered">

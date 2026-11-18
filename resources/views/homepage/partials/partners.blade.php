@@ -1,4 +1,4 @@
-{{-- Partners: every logo is shown in an identical tile, whatever the image size --}}
+{{-- Partners --}}
 <section class="section section-alt" id="partners">
     <div class="container">
         @if ($showHeading ?? true)

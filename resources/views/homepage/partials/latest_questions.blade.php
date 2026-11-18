@@ -1,4 +1,4 @@
-{{-- Latest 2 approved questions, shown on Home above the Board of Members --}}
+{{-- Latest 2 approved questions --}}
 @if ($latestQuestions->count())
     <section class="section section-divided" id="latest-questions">
         <div class="container">

@@ -1,4 +1,4 @@
-{{-- Board of Members: org-chart style, one centered row per position (pos_id 1 on top ... 6 at the bottom) --}}
+{{-- Board of Members --}}
 <section class="section" id="board">
     <div class="container">
         @if ($showHeading ?? true)
