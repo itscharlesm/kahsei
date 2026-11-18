@@ -1259,3 +1259,7 @@ img {
 .kx-modal .modal-footer .btn-kx {
     height: 46px;
 }
+
+.qa-card.is-approved { border-left-color: #16a34a; }
+.qa-card.is-waiting  { border-left-color: #f59e0b; }
+.qa-card.is-archived { border-left-color: #dc2626; }

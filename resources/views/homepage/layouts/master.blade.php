@@ -104,7 +104,11 @@
                             <li><a class="dropdown-item {{ request()->is('itanong-mo-kay-attorney/ask-question') ? 'active' : '' }}"
                                     href="{{ url('itanong-mo-kay-attorney/ask-question') }}">Ask Questions</a></li>
                             <li><a class="dropdown-item {{ request()->is('itanong-mo-kay-attorney/answers') ? 'active' : '' }}"
-                                    href="{{ url('itanong-mo-kay-attorney/answers') }}">Answered Questions</a></li>
+                                    href="{{ url('itanong-mo-kay-attorney/answers') }}">Questions</a></li>
+                            @if ($isLoggedIn)
+                                <li><a class="dropdown-item {{ request()->is('itanong-mo-kay-attorney/my-questions') ? 'active' : '' }}"
+                                        href="{{ url('itanong-mo-kay-attorney/my-questions') }}">My Questions</a></li>
+                            @endif
                         </ul>
                     </li>
 
@@ -208,9 +212,10 @@
     </button>
 
     @if ($isLoggedIn)
+        {{-- Logged in: change password modal --}}
         @include('homepage.partials.change_password_modal')
     @else
-        {{-- ============ Login modal ============ --}}
+        {{-- ============ Login modal (guests only) ============ --}}
         <div class="modal fade kx-modal" id="loginModal" tabindex="-1" aria-labelledby="loginModalLabel" aria-hidden="true">
             <div class="modal-dialog modal-dialog-centered">
                 <div class="modal-content">
@@ -269,7 +274,7 @@
             </div>
         </div>
 
-        {{-- ============ Forgot password modal ============ --}}
+        {{-- ============ Forgot password modal (guests only) ============ --}}
         <div class="modal fade kx-modal" id="forgotPasswordModal" tabindex="-1" aria-labelledby="forgotPasswordModalLabel"
             aria-hidden="true">
             <div class="modal-dialog modal-dialog-centered">
@@ -290,7 +295,8 @@
                             <div class="form-floating mb-3">
                                 <input type="text" class="form-control" id="identifier" name="identifier"
                                     placeholder="Email or Mobile Number" required>
-                                <label for="identifier"><i class="bi bi-person me-1"></i> Email or Mobile Number</label>
+                                <label for="identifier"><i class="bi bi-person me-1"></i> Email or Mobile
+                                    Number</label>
                             </div>
                             <div class="d-flex gap-2">
                                 <button type="button" class="btn btn-light flex-fill" data-bs-toggle="modal"
@@ -306,7 +312,6 @@
                 </div>
             </div>
         </div>
-
     @endif
 
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>

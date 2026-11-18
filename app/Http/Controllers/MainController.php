@@ -35,6 +35,29 @@ class MainController extends Controller
             ->orderBy('users.usr_first_name', 'asc')
             ->get();
 
+        // Latest 2 approved questions (newest answered first)
+        $latestQuestions = DB::table('homepage_questions')
+            ->leftJoin('users', 'homepage_questions.usr_id', '=', 'users.usr_id')
+            ->where('homepage_questions.que_status', '=', 'APPROVED')
+            ->where('homepage_questions.que_active', '=', 1)
+            ->select(
+                'homepage_questions.que_id',
+                'homepage_questions.que_question',
+                'homepage_questions.que_answer',
+                'homepage_questions.que_video_link',
+                'homepage_questions.que_date_answered',
+                'users.usr_first_name',
+                'users.usr_last_name',
+                DB::raw('CASE
+                    WHEN homepage_questions.que_is_anonymous = 1
+                        OR homepage_questions.usr_id IS NULL
+                        OR homepage_questions.usr_id = 0
+                    THEN 1 ELSE 0 END AS is_anonymous')
+            )
+            ->orderBy('homepage_questions.que_date_answered', 'desc')
+            ->limit(2)
+            ->get();
+
         $levels = $members->groupBy('pos_id');
 
         $partners = DB::table('homepage_partners')
@@ -47,6 +70,7 @@ class MainController extends Controller
             'mission',
             'goals',
             'objectives',
+            'latestQuestions',
             'levels',
             'partners'
         ));
@@ -165,6 +189,31 @@ class MainController extends Controller
         return redirect()->back();
     }
 
+    public function attorney_my_questions()
+    {
+        $usrId = session('usr_id');
+
+        if (empty($usrId)) {
+            alert()->error('Login Required', 'Please log in to view your questions.');
+            return redirect('/');
+        }
+
+        $questions = DB::table('homepage_questions')
+            ->where('que_created_by', '=', $usrId)
+            ->select(
+                'que_id',
+                'que_question',
+                'que_answer',
+                'que_video_link',
+                'que_status',
+                'que_date_created',
+                'que_date_answered'
+            )
+            ->orderBy('que_date_created', 'desc')
+            ->get();
+
+        return view('homepage.attorney_my_questions', compact('questions'));
+    }
 
     public function attorney_answers()
     {

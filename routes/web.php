@@ -187,5 +187,6 @@ Route::get('/about/partners', [MainController::class, 'partners']);
 Route::get('/itanong-mo-kay-attorney/ask-question', [MainController::class, 'attorney_ask']);
 Route::post('/itanong-mo-kay-attorney/ask-question/submit', [MainController::class, 'attorney_ask_submit']);
 Route::get('/itanong-mo-kay-attorney/answers', [MainController::class, 'attorney_answers']);
+Route::get('/itanong-mo-kay-attorney/my-questions', [MainController::class, 'attorney_my_questions']);
 Route::post('account/update/password', [UserController::class, 'homepage_account_update_password']);
 // ----------------------------------------------------HOMEPAGE SIDE------------------------------------------------------------------- //
