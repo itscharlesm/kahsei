@@ -1260,6 +1260,19 @@ img {
     height: 46px;
 }
 
-.qa-card.is-approved { border-left-color: #16a34a; }
-.qa-card.is-waiting  { border-left-color: #f59e0b; }
-.qa-card.is-archived { border-left-color: #dc2626; }
+.qa-card.is-approved {
+    border-left-color: #16a34a;
+}
+
+.qa-card.is-waiting {
+    border-left-color: #f59e0b;
+}
+
+.qa-card.is-archived {
+    border-left-color: #dc2626;
+}
+
+/* Divider between the alternating-background Goals section and the Home questions */
+.section-divided {
+    border-top: 1px solid var(--c-line);
+}
