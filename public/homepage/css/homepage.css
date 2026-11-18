@@ -1238,3 +1238,24 @@ img {
         transform: none;
     }
 }
+
+/* ---------- Logged-in user dropdown (navbar) ---------- */
+.site-nav .nav-user {
+    padding: .35rem .9rem .35rem .4rem;
+    border-radius: 999px;
+    background: var(--c-sand);
+}
+
+.site-nav .nav-user::after {
+    margin-left: .5rem;
+}
+
+.nav-avatar {
+    object-fit: cover;
+    border: 2px solid var(--c-teal);
+    background: #fff;
+}
+
+.kx-modal .modal-footer .btn-kx {
+    height: 46px;
+}

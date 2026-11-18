@@ -186,4 +186,5 @@ Route::get('/about/board-of-members', [MainController::class, 'board_members']);
 Route::get('/about/partners', [MainController::class, 'partners']);
 Route::get('/itanong-mo-kay-attorney/ask-question', [MainController::class, 'attorney_ask']);
 Route::get('/itanong-mo-kay-attorney/answers', [MainController::class, 'attorney_answers']);
+Route::post('account/update/password', [UserController::class, 'homepage_account_update_password']);
 // ----------------------------------------------------HOMEPAGE SIDE------------------------------------------------------------------- //

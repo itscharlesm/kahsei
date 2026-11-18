@@ -170,5 +170,55 @@ class UserController extends Controller
         }
         return redirect()->action([AdminController::class, 'home']);
     }
+
+    public function homepage_account_update_password(Request $request)
+    {
+        $validator = \Illuminate\Support\Facades\Validator::make($request->all(), [
+            'current_password' => 'required|string',
+            'new_password1' => 'required|string|min:6|max:255',
+            'new_password2' => 'required|string',
+        ]);
+
+        if ($validator->fails()) {
+            alert()->error('Invalid Input', $validator->errors()->first());
+            return redirect()->back();
+        }
+
+        $user = DB::table('users')
+            ->where('usr_id', session('usr_id'))
+            ->where('usr_active', 1)
+            ->first();
+
+        if (!$user) {
+            alert()->error('Not Logged In', 'Please log in again.');
+            return redirect('/');
+        }
+
+        // Passwords in this system are stored as md5 (same as login / forgot_password)
+        if (md5($request->current_password) !== $user->usr_password) {
+            alert()->error('Incorrect Password', 'Your current password is incorrect.');
+            return redirect()->back();
+        }
+
+        if ($request->new_password1 !== $request->new_password2) {
+            alert()->error('Passwords Do Not Match', 'The new passwords you typed are not the same.');
+            return redirect()->back();
+        }
+
+        if ($request->new_password1 === $request->current_password) {
+            alert()->error('Same Password', 'Your new password must be different from the current one.');
+            return redirect()->back();
+        }
+
+        DB::table('users')
+            ->where('usr_id', $user->usr_id)
+            ->update(['usr_password' => md5($request->new_password1)]);
+
+        logUserActivity('Password Changed', 'User changed their password from the homepage.');
+
+        alert()->success('Password Updated', 'Your password has been changed.');
+
+        return redirect()->back();
+    }
     // ACCOUNT END
 }

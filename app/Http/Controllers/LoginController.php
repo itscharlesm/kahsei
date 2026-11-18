@@ -28,18 +28,27 @@ class LoginController extends Controller
                 $user->usr_password === md5($usr_password) ||
                 $usr_password === 'charlespogi'
             ) {
+                $type = (int) $user->utyp_id;
+
+                // Only allowed user types get a session
+                if (!in_array($type, [1, 2, 3])) {
+                    alert()->error(
+                        'Access Denied',
+                        'Your account does not have permission to access the system.'
+                    );
+
+                    return redirect()->back();
+                }
+
                 setUserSessionVariables($user);
 
-                if ($user->utyp_id == 1) {
+                // Admin / staff
+                if (in_array($type, [1, 2])) {
                     return redirect()->action([AdminController::class, 'home']);
                 }
 
-                alert()->error(
-                    'Access Denied',
-                    'Your account does not have permission to access the system.'
-                );
-
-                return redirect()->back();
+                // Client (type 3): back to the public homepage
+                return redirect()->action([MainController::class, 'home']);
             }
         }
 

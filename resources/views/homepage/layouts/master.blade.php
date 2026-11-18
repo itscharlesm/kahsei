@@ -52,6 +52,10 @@
         $isHome = request()->is('/');
         $isAbout = request()->is('about') || request()->is('about/*');
         $isAttorney = request()->is('itanong-mo-kay-attorney/*');
+
+        // Logged-in user (session keys set by your login function)
+        $loginId = session('usr_id');
+        $isLoggedIn = !empty($loginId);
     @endphp
     <nav class="navbar navbar-expand-lg site-nav sticky-top">
         <div class="container">
@@ -104,11 +108,39 @@
                         </ul>
                     </li>
 
-                    <li class="nav-item ms-lg-2 mt-2 mt-lg-0">
-                        <button type="button" class="btn btn-login" data-bs-toggle="modal" data-bs-target="#loginModal">
-                            <i class="bi bi-box-arrow-in-right"></i> Login
-                        </button>
-                    </li>
+                    @if ($isLoggedIn)
+                        {{-- Logged in: avatar + first name dropdown --}}
+                        <li class="nav-item dropdown ms-lg-2 mt-2 mt-lg-0">
+                            <a class="nav-link nav-user dropdown-toggle d-flex align-items-center" href="#" role="button"
+                                data-bs-toggle="dropdown" aria-expanded="false">
+                                <img class="rounded-circle me-2 nav-avatar" src="{{ asset(getAvatar($loginId)) }}" alt=""
+                                    width="34" height="34">
+                                <span>{{ session('usr_first_name') }}</span>
+                            </a>
+                            <ul class="dropdown-menu dropdown-menu-end">
+                                <li>
+                                    <a class="dropdown-item" href="#" data-bs-toggle="modal"
+                                        data-bs-target="#userPasswordModal">
+                                        <i class="bi bi-key me-2"></i> Change Password
+                                    </a>
+                                </li>
+                                <li>
+                                    <hr class="dropdown-divider">
+                                </li>
+                                <li>
+                                    <a class="dropdown-item text-danger" href="{{ url('logout') }}">
+                                        <i class="bi bi-box-arrow-right me-2"></i> Sign Out
+                                    </a>
+                                </li>
+                            </ul>
+                        </li>
+                    @else
+                        <li class="nav-item ms-lg-2 mt-2 mt-lg-0">
+                            <button type="button" class="btn btn-login" data-bs-toggle="modal" data-bs-target="#loginModal">
+                                <i class="bi bi-box-arrow-in-right"></i> Login
+                            </button>
+                        </li>
+                    @endif
                 </ul>
             </div>
         </div>
@@ -175,106 +207,111 @@
         <i class="bi bi-arrow-up"></i>
     </button>
 
-    {{-- ============ Login modal ============ --}}
-    <div class="modal fade kx-modal" id="loginModal" tabindex="-1" aria-labelledby="loginModalLabel" aria-hidden="true">
-        <div class="modal-dialog modal-dialog-centered">
-            <div class="modal-content">
-                <div class="login-top">
-                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"
-                        aria-label="Close"></button>
-                    <span class="login-logo"><img src="{{ asset('images/logos/kahsei.png') }}" alt="KAHSEI"></span>
-                    <h5 class="modal-title" id="loginModalLabel">Welcome back</h5>
-                    <p>Sign in to continue to KAHSEI</p>
-                </div>
-
-                <form method="POST" action="{{ url('validate') }}">
-                    {{ csrf_field() }}
-                    <div class="modal-body">
-                        @if (session('errorMessage'))
-                            <div class="alert alert-danger d-flex align-items-center gap-2 py-2" role="alert">
-                                <i class="bi bi-exclamation-triangle-fill"></i>
-                                <div>{{ session('errorMessage') }}</div>
-                            </div>
-                        @endif
-
-                        <div class="form-floating mb-3">
-                            <input type="email" class="form-control" id="login_email" name="email" placeholder="E-Mail"
-                                autocomplete="username" required>
-                            <label for="login_email"><i class="bi bi-envelope me-1"></i> E-Mail</label>
-                        </div>
-
-                        <div class="input-group mb-2 kx-pass">
-                            <div class="form-floating flex-grow-1">
-                                <input type="password" class="form-control" id="login_password" name="password"
-                                    placeholder="Password" autocomplete="current-password" required>
-                                <label for="login_password"><i class="bi bi-lock me-1"></i> Password</label>
-                            </div>
-                            <button class="btn btn-outline-secondary" type="button"
-                                data-toggle-password="#login_password" aria-label="Show password" tabindex="-1">
-                                <i class="bi bi-eye"></i>
-                            </button>
-                        </div>
-
-                        <div class="text-end mb-3">
-                            <a href="#" class="small" data-bs-toggle="modal"
-                                data-bs-target="#forgotPasswordModal">Forgot Password?</a>
-                        </div>
-
-                        <button type="submit" class="btn btn-kx w-100">
-                            LOGIN <i class="bi bi-arrow-right ms-1"></i>
-                        </button>
-
-                        <p class="text-center small text-muted mt-3 mb-1">
-                            Don't have an account?
-                            <a href="{{ url('client/registration') }}" class="fw-semibold">Sign Up</a>
-                        </p>
+    @if ($isLoggedIn)
+        @include('homepage.partials.change_password_modal')
+    @else
+        {{-- ============ Login modal ============ --}}
+        <div class="modal fade kx-modal" id="loginModal" tabindex="-1" aria-labelledby="loginModalLabel" aria-hidden="true">
+            <div class="modal-dialog modal-dialog-centered">
+                <div class="modal-content">
+                    <div class="login-top">
+                        <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"
+                            aria-label="Close"></button>
+                        <span class="login-logo"><img src="{{ asset('images/logos/kahsei.png') }}" alt="KAHSEI"></span>
+                        <h5 class="modal-title" id="loginModalLabel">Welcome back</h5>
+                        <p>Sign in to continue to KAHSEI</p>
                     </div>
-                </form>
+
+                    <form method="POST" action="{{ url('validate') }}">
+                        {{ csrf_field() }}
+                        <div class="modal-body">
+                            @if (session('errorMessage'))
+                                <div class="alert alert-danger d-flex align-items-center gap-2 py-2" role="alert">
+                                    <i class="bi bi-exclamation-triangle-fill"></i>
+                                    <div>{{ session('errorMessage') }}</div>
+                                </div>
+                            @endif
+
+                            <div class="form-floating mb-3">
+                                <input type="email" class="form-control" id="login_email" name="email" placeholder="E-Mail"
+                                    autocomplete="username" required>
+                                <label for="login_email"><i class="bi bi-envelope me-1"></i> E-Mail</label>
+                            </div>
+
+                            <div class="input-group mb-2 kx-pass">
+                                <div class="form-floating flex-grow-1">
+                                    <input type="password" class="form-control" id="login_password" name="password"
+                                        placeholder="Password" autocomplete="current-password" required>
+                                    <label for="login_password"><i class="bi bi-lock me-1"></i> Password</label>
+                                </div>
+                                <button class="btn btn-outline-secondary" type="button"
+                                    data-toggle-password="#login_password" aria-label="Show password" tabindex="-1">
+                                    <i class="bi bi-eye"></i>
+                                </button>
+                            </div>
+
+                            <div class="text-end mb-3">
+                                <a href="#" class="small" data-bs-toggle="modal"
+                                    data-bs-target="#forgotPasswordModal">Forgot Password?</a>
+                            </div>
+
+                            <button type="submit" class="btn btn-kx w-100">
+                                LOGIN <i class="bi bi-arrow-right ms-1"></i>
+                            </button>
+
+                            <p class="text-center small text-muted mt-3 mb-1">
+                                Don't have an account?
+                                <a href="{{ url('client/registration') }}" class="fw-semibold">Sign Up</a>
+                            </p>
+                        </div>
+                    </form>
+                </div>
             </div>
         </div>
-    </div>
 
-    {{-- ============ Forgot password modal ============ --}}
-    <div class="modal fade kx-modal" id="forgotPasswordModal" tabindex="-1" aria-labelledby="forgotPasswordModalLabel"
-        aria-hidden="true">
-        <div class="modal-dialog modal-dialog-centered">
-            <div class="modal-content">
-                <div class="login-top">
-                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"
-                        aria-label="Close"></button>
-                    <span class="login-logo icon"><i class="bi bi-key-fill"></i></span>
-                    <h5 class="modal-title" id="forgotPasswordModalLabel">Forgot Password</h5>
-                    <p>We'll reset it to a temporary password</p>
-                </div>
-                <form method="POST" action="{{ url('forgot/password') }}">
-                    {{ csrf_field() }}
-                    <div class="modal-body">
-                        <p class="small text-muted text-center">
-                            Enter your registered email address or mobile number.
-                        </p>
-                        <div class="form-floating mb-3">
-                            <input type="text" class="form-control" id="identifier" name="identifier"
-                                placeholder="Email or Mobile Number" required>
-                            <label for="identifier"><i class="bi bi-person me-1"></i> Email or Mobile Number</label>
-                        </div>
-                        <div class="d-flex gap-2">
-                            <button type="button" class="btn btn-light flex-fill" data-bs-toggle="modal"
-                                data-bs-target="#loginModal">
-                                <i class="bi bi-arrow-left"></i> Back
-                            </button>
-                            <button type="submit" class="btn btn-kx flex-fill">
-                                <i class="bi bi-arrow-repeat"></i> Reset Password
-                            </button>
-                        </div>
+        {{-- ============ Forgot password modal ============ --}}
+        <div class="modal fade kx-modal" id="forgotPasswordModal" tabindex="-1" aria-labelledby="forgotPasswordModalLabel"
+            aria-hidden="true">
+            <div class="modal-dialog modal-dialog-centered">
+                <div class="modal-content">
+                    <div class="login-top">
+                        <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"
+                            aria-label="Close"></button>
+                        <span class="login-logo icon"><i class="bi bi-key-fill"></i></span>
+                        <h5 class="modal-title" id="forgotPasswordModalLabel">Forgot Password</h5>
+                        <p>We'll reset it to a temporary password</p>
                     </div>
-                </form>
+                    <form method="POST" action="{{ url('forgot/password') }}">
+                        {{ csrf_field() }}
+                        <div class="modal-body">
+                            <p class="small text-muted text-center">
+                                Enter your registered email address or mobile number.
+                            </p>
+                            <div class="form-floating mb-3">
+                                <input type="text" class="form-control" id="identifier" name="identifier"
+                                    placeholder="Email or Mobile Number" required>
+                                <label for="identifier"><i class="bi bi-person me-1"></i> Email or Mobile Number</label>
+                            </div>
+                            <div class="d-flex gap-2">
+                                <button type="button" class="btn btn-light flex-fill" data-bs-toggle="modal"
+                                    data-bs-target="#loginModal">
+                                    <i class="bi bi-arrow-left"></i> Back
+                                </button>
+                                <button type="submit" class="btn btn-kx flex-fill">
+                                    <i class="bi bi-arrow-repeat"></i> Reset Password
+                                </button>
+                            </div>
+                        </div>
+                    </form>
+                </div>
             </div>
         </div>
-    </div>
+
+    @endif
 
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
     <script src="{{ asset('homepage/js/homepage.js') }}"></script>
-    @if (session('errorMessage'))
+    @if (!$isLoggedIn && session('errorMessage'))
         <script>
             document.addEventListener('DOMContentLoaded', function () {
                 new bootstrap.Modal(document.getElementById('loginModal')).show();
