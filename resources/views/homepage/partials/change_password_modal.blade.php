@@ -1,4 +1,4 @@
-{{-- Change password modal (Bootstrap 5). Shown only when a user is logged in. --}}
+{{-- Change password modal --}}
 <div class="modal fade kx-modal" id="userPasswordModal" tabindex="-1" aria-labelledby="userPasswordModalLabel"
     aria-hidden="true">
     <div class="modal-dialog modal-dialog-centered">

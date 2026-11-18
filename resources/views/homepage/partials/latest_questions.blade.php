@@ -16,6 +16,18 @@
                         }
                         $hasAnswer = trim((string) $q->que_answer) !== '';
                         $hasVideo = trim((string) $q->que_video_link) !== '';
+
+                        $videoId = null;
+                        if (
+                            $hasVideo &&
+                            preg_match(
+                                '~(?:youtu\.be/|youtube\.com/(?:watch\?(?:.*&)?v=|embed/|shorts/|live/))([A-Za-z0-9_-]{11})~',
+                                $q->que_video_link,
+                                $m,
+                            )
+                        ) {
+                            $videoId = $m[1];
+                        }
                     @endphp
 
                     <div class="col-lg-6 reveal">
@@ -46,11 +58,21 @@
                                 </div>
                             @endif
 
+                            {{-- Video plays right here on Home --}}
                             @if ($hasVideo)
-                                <a href="{{ url('itanong-mo-kay-attorney/answers') }}"
-                                    class="small fw-semibold text-decoration-none">
-                                    <i class="bi bi-play-circle-fill"></i> Video answer included
-                                </a>
+                                <div class="qa-video">
+                                    @if ($videoId)
+                                        <div class="ratio ratio-16x9">
+                                            <iframe src="https://www.youtube.com/embed/{{ $videoId }}" title="Answer video"
+                                                loading="lazy" allowfullscreen referrerpolicy="strict-origin-when-cross-origin"
+                                                allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"></iframe>
+                                        </div>
+                                    @else
+                                        <a href="{{ $q->que_video_link }}" target="_blank" rel="noopener" class="text-break"><i
+                                                class="bi bi-play-circle"></i>
+                                            {{ $q->que_video_link }}</a>
+                                    @endif
+                                </div>
                             @endif
                         </article>
                     </div>

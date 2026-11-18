@@ -46,7 +46,7 @@
                             <header class="qa-meta justify-content-between flex-wrap">
                                 <small class="text-muted">
                                     <i class="bi bi-calendar3"></i>
-                                    {{ \Carbon\Carbon::parse($q->que_date_created)->format('F j, Y g:i A') }}
+                                    {{ \Carbon\Carbon::parse($q->que_date_created)->format('F j, Y - g:i A') }}
                                 </small>
 
                                 @if ($state === 'approved')
@@ -103,14 +103,13 @@
                                 <div class="qa-video">
                                     @if ($videoId)
                                         <div class="ratio ratio-16x9">
-                                            <iframe src="https://www.youtube.com/embed/{{ $videoId }}"
-                                                title="Answer video" loading="lazy" allowfullscreen
-                                                referrerpolicy="strict-origin-when-cross-origin"
+                                            <iframe src="https://www.youtube.com/embed/{{ $videoId }}" title="Answer video"
+                                                loading="lazy" allowfullscreen referrerpolicy="strict-origin-when-cross-origin"
                                                 allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"></iframe>
                                         </div>
                                     @else
-                                        <a href="{{ $q->que_video_link }}" target="_blank" rel="noopener"
-                                            class="text-break"><i class="bi bi-play-circle"></i>
+                                        <a href="{{ $q->que_video_link }}" target="_blank" rel="noopener" class="text-break"><i
+                                                class="bi bi-play-circle"></i>
                                             {{ $q->que_video_link }}</a>
                                     @endif
                                 </div>
@@ -120,7 +119,8 @@
                         <div class="qa-empty text-center text-muted">
                             <i class="bi bi-chat-square-dots"></i>
                             <p class="mb-3">You haven't asked any questions yet.</p>
-                            <a href="{{ url('itanong-mo-kay-attorney/ask-question') }}" class="btn btn-kx px-4 d-inline-flex align-items-center">
+                            <a href="{{ url('itanong-mo-kay-attorney/ask-question') }}"
+                                class="btn btn-kx px-4 d-inline-flex align-items-center">
                                 Ask a Question
                             </a>
                         </div>
