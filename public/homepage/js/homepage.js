@@ -104,16 +104,19 @@
                 count.textContent = box.value.length;
             });
 
+            count.textContent = box.value.length;
+
+            // Only block empty questions; otherwise the form posts normally
             askForm.addEventListener('submit', function (e) {
-                e.preventDefault();
                 if (box.value.trim() === '') {
+                    e.preventDefault();
                     box.focus();
                     notice.innerHTML = '<div class="alert alert-warning py-2" role="alert">' +
                         'Please type your question first.</div>';
                     return;
                 }
-                notice.innerHTML = '<div class="alert alert-info py-2" role="alert">' +
-                    'Question submission is not available yet. Please check back soon.</div>';
+                var btn = askForm.querySelector('button[type="submit"]');
+                if (btn) btn.disabled = true; // avoid double submit
             });
         }
     });

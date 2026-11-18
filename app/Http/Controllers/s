@@ -1,242 +1,335 @@
-change password modal: (make it bootstrap 5)
-<div class="modal fade" id="userPasswordModal" tabindex="-1" aria-labelledby="userPasswordModalLabel"
-    aria-hidden="true">
-    <div class="modal-dialog">
-        <div class="modal-content">
-            <div class="modal-header bg-primary text-white">
-                <h5 class="modal-title" id="userPasswordModalLabel">Change Password</h5>
-                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
-            </div>
-            <form method="POST" action="{{ url('account/update/password') }}">
-                @csrf
-                <div class="modal-body">
-                    <div class="mb-3">
-                        <label for="current_password">Current Password <span class="text-danger">*</span></label>
-                        <input class="form-control" type="password" name="current_password" id="current_password"
-                            placeholder="Current Password" required />
-                    </div>
-                    <hr />
-                    <div class="mb-3">
-                        <label for="new_password1">New Password <span class="text-danger">*</span></label>
-                        <input class="form-control" type="password" name="new_password1" id="new_password1"
-                            placeholder="New Password" required />
-                    </div>
-                    <div class="mb-3">
-                        <label for="new_password2">Retype Password <span class="text-danger">*</span></label>
-                        <input class="form-control" type="password" name="new_password2" id="new_password2"
-                            placeholder="Retype Password" required />
-                    </div>
-                </div>
-                <div class="modal-footer">
-                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">
-                        <span class="fa fa-close"></span> Close
-                    </button>
-                    <button type="submit" class="btn btn-primary">
-                        <span class="fa fa-save"></span> Update password
-                    </button>
-                </div>
-            </form>
-        </div>
-    </div>
-</div>
-
-Route::post('admin/account/update/password', [UserController::class, 'account_update_password']);
-
-login function:
-public function forgot_password(Request $request)
+itanong mo kay attoryney admin side:
+// START QUESTIONS
+public function questions_for_approval(Request $request)
 {
-    $validator = \Illuminate\Support\Facades\Validator::make($request->all(), [
-        'identifier' => 'required|string|max:255',
+    $questions = DB::table('homepage_questions')
+        ->leftJoin('users', 'homepage_questions.usr_id', '=', 'users.usr_id')
+        ->where('homepage_questions.que_status', '=', 'FOR APPROVAL')
+        ->where('homepage_questions.que_active', '=', 1)
+        ->select(
+            'homepage_questions.que_id',
+            'homepage_questions.que_is_anonymous',
+            'homepage_questions.que_question',
+            'homepage_questions.que_date_created',
+            'users.usr_first_name',
+            'users.usr_last_name',
+            DB::raw('CASE
+            WHEN homepage_questions.que_is_anonymous = 1
+                OR homepage_questions.usr_id IS NULL
+                OR homepage_questions.usr_id = 0
+            THEN 1 ELSE 0 END AS is_anonymous')
+        )
+        ->orderBy('homepage_questions.que_date_created', 'desc')
+        ->get();
+
+    return view('admin.homepage.questions.for_approval', compact('questions'));
+}
+
+public function questions_approve(Request $request, $que_id)
+{
+    $request->validate([
+        'que_answer' => 'nullable|string|required_without:que_video_link',
+        'que_video_link' => 'nullable|string|required_without:que_answer',
+    ], [
+        'que_answer.required_without' => 'Please provide an answer, a YouTube video, or both.',
+        'que_video_link.required_without' => 'Please provide an answer, a YouTube video, or both.',
     ]);
 
-    if ($validator->fails()) {
-        alert()->error('Invalid Input', $validator->errors()->first());
-        return redirect()->back();
-    }
-
-    $identifier = trim($request->identifier);
-
-    // Normalize mobile number in case user enters +63 or leading 0
-    $normalizedMobile = preg_replace('/^(\+?63|0)/', '', $identifier);
-
-    $user = DB::table('users')
-        ->where('usr_active', 1)
-        ->where(function ($query) use ($identifier, $normalizedMobile) {
-            $query->where('usr_email', $identifier)
-                ->orWhere('usr_mobile', $identifier)
-                ->orWhere('usr_mobile', $normalizedMobile);
-        })
+    $question = DB::table('homepage_questions')
+        ->where('que_id', '=', $que_id)
+        ->where('que_status', '=', 'FOR APPROVAL')
+        ->where('que_active', '=', 1)
         ->first();
 
-    if (!$user) {
-        alert()->error('Account Not Found', 'No account found with that email or mobile number.');
+    if (!$question) {
+        alert()->error('Error', 'Question not found.');
         return redirect()->back();
     }
 
-    DB::table('users')
-        ->where('usr_id', $user->usr_id)
+    $answer = trim((string) $request->que_answer);
+    $video = trim((string) $request->que_video_link);
+
+    DB::table('homepage_questions')
+        ->where('que_id', '=', $que_id)
         ->update([
-            'usr_password' => md5('123456'),
+            'que_answer' => $answer !== '' ? $answer : null,
+            'que_video_link' => $video !== '' ? $video : null,
+            'que_status' => 'APPROVED',
+            'que_date_answered' => Carbon::now(),
+            'que_answered_by' => session('usr_id'),
+            'que_date_created' => Carbon::now(),
+            'que_created_by' => session('usr_id'),
         ]);
 
-    logUserActivity('Password Reset', 'Password reset requested via forgot password for: ' . $identifier);
+    logUserActivity('Manage Homepage', 'Approved question #' . $que_id);
 
-    alert()->success('Password Reset Successful', 'Your temporary password is 123456. Please log in and change it immediately.');
-
-    return redirect('/');
+    session()->flash('successMessage', 'Question has been approved.');
+    return redirect()->back();
 }
 
-public function home()
-    {
-        $vision = DB::table('homepage_vision')->where('vis_active', 1)->first();
-        $mission = DB::table('homepage_mission')->where('mis_active', 1)->first();
-
-        $goals = DB::table('homepage_goals')->where('goals_active', 1)->first();
-        $objectives = DB::table('homepage_objectives')->where('obj_active', 1)->first();
-
-        // Board members grouped by position (pos_id 1..6) -> one org-chart level each.
-        $members = DB::table('users')
-            ->join('positions', 'users.usr_position', '=', 'positions.pos_id')
-            ->where('users.usr_active', 1)
-            ->where('positions.pos_active', 1)
-            ->whereIn('positions.pos_id', [1, 2, 3, 4, 5, 6])
-            ->select(
-                'users.usr_id',
-                'users.usr_first_name',
-                'users.usr_middle_name',
-                'users.usr_last_name',
-                'positions.pos_id',
-                'positions.pos_name'
-            )
-            ->orderBy('positions.pos_id', 'asc')
-            ->orderBy('users.usr_last_name', 'asc')
-            ->orderBy('users.usr_first_name', 'asc')
-            ->get();
-
-        $levels = $members->groupBy('pos_id');
-
-        $partners = DB::table('homepage_partners')
-            ->where('prt_active', 1)
-            ->orderBy('prt_title', 'asc')
-            ->get();
-
-        return view('homepage.home', compact(
-            'vision',
-            'mission',
-            'goals',
-            'objectives',
-            'levels',
-            'partners'
-        ));
-    }
-
-    public function about()
-    {
-        $about = DB::table('homepage_about')
-            ->where('about_active', 1)
-            ->first();
-
-        return view('homepage.about', compact('about'));
-    }
-
-    public function vision_mission()
-    {
-        $vision = DB::table('homepage_vision')->where('vis_active', 1)->first();
-        $mission = DB::table('homepage_mission')->where('mis_active', 1)->first();
-
-        return view('homepage.vision_mission', compact('vision', 'mission'));
-    }
-
-    public function goals_objectives()
-    {
-        $goals = DB::table('homepage_goals')->where('goals_active', 1)->first();
-        $objectives = DB::table('homepage_objectives')->where('obj_active', 1)->first();
-
-        return view('homepage.goals_objectives', compact('goals', 'objectives'));
-    }
-
-    public function board_members()
-    {
-        $members = DB::table('users')
-            ->join('positions', 'users.usr_position', '=', 'positions.pos_id')
-            ->where('users.usr_active', 1)
-            ->where('positions.pos_active', 1)
-            ->whereIn('positions.pos_id', [1, 2, 3, 4, 5, 6])
-            ->select(
-                'users.usr_id',
-                'users.usr_first_name',
-                'users.usr_middle_name',
-                'users.usr_last_name',
-                'positions.pos_id',
-                'positions.pos_name'
-            )
-            ->orderBy('positions.pos_id', 'asc')
-            ->orderBy('users.usr_last_name', 'asc')
-            ->orderBy('users.usr_first_name', 'asc')
-            ->get();
-
-        $levels = $members->groupBy('pos_id');
-
-        return view('homepage.board_members', compact('levels'));
-    }
-
-    public function partners()
-    {
-        $partners = DB::table('homepage_partners')
-            ->where('prt_active', 1)
-            ->orderBy('prt_title', 'asc')
-            ->get();
-
-        return view('homepage.partners', compact('partners'));
-    }
-
-    public function attorney_ask()
-    {
-        return view('homepage.attorney_ask');
-    }
-
-    public function attorney_answers()
-    {
-        $questions = DB::table('homepage_questions')
-            ->leftJoin('users', 'homepage_questions.usr_id', '=', 'users.usr_id')
-            ->where('homepage_questions.que_status', '=', 'APPROVED')
-            ->where('homepage_questions.que_active', '=', 1)
-            ->select(
-                'homepage_questions.que_id',
-                'homepage_questions.que_question',
-                'homepage_questions.que_answer',
-                'homepage_questions.que_video_link',
-                'homepage_questions.que_date_created',
-                'homepage_questions.que_date_answered',
-                'users.usr_first_name',
-                'users.usr_last_name',
-                DB::raw('CASE
-                    WHEN homepage_questions.que_is_anonymous = 1
-                        OR homepage_questions.usr_id IS NULL
-                        OR homepage_questions.usr_id = 0
-                    THEN 1 ELSE 0 END AS is_anonymous')
-            )
-            ->orderBy('homepage_questions.que_date_answered', 'desc')
-            ->get();
-
-        return view('homepage.attorney_answers', compact('questions'));
-    }
-
-logout function:
-public function logout()
+public function questions_approved(Request $request)
 {
-    session()->flush();
-    return redirect()->action([MainController::class, 'home']);
+    $questions = DB::table('homepage_questions')
+        ->leftJoin('users', 'homepage_questions.usr_id', '=', 'users.usr_id')
+        ->leftJoin('users as answerer', 'homepage_questions.que_answered_by', '=', 'answerer.usr_id')
+        ->leftJoin('users as modifier', 'homepage_questions.que_modified_by', '=', 'modifier.usr_id')
+        ->where('homepage_questions.que_status', '=', 'APPROVED')
+        ->where('homepage_questions.que_active', '=', 1)
+        ->select(
+            'homepage_questions.que_id',
+            'homepage_questions.que_is_anonymous',
+            'homepage_questions.que_question',
+            'homepage_questions.que_date_created',
+            'homepage_questions.que_answer',
+            'homepage_questions.que_video_link',
+            'homepage_questions.que_date_answered',
+            'homepage_questions.que_answered_by',
+            'homepage_questions.que_date_modified',
+            'homepage_questions.que_modified_by',
+            'users.usr_first_name',
+            'users.usr_last_name',
+            'answerer.usr_first_name as answerer_first_name',
+            'answerer.usr_last_name as answerer_last_name',
+            'modifier.usr_first_name as modifier_first_name',
+            'modifier.usr_last_name as modifier_last_name',
+            DB::raw('CASE
+        WHEN homepage_questions.que_is_anonymous = 1
+            OR homepage_questions.usr_id IS NULL
+            OR homepage_questions.usr_id = 0
+        THEN 1 ELSE 0 END AS is_anonymous')
+        )
+        ->orderBy('homepage_questions.que_date_answered', 'desc')
+        ->get();
+
+    return view('admin.homepage.questions.approved', compact('questions'));
 }
 
-use this url and function:
-Route::post('account/update/password', [UserController::class, 'homepage_account_update_password']);
 
-now here in homepage i want is if usr_type = 1 and 2 it will redirect to return redirect()->action([AdminController::class, 'home']);
+public function questions_approved_edit(Request $request, $que_id)
+{
+    $request->validate([
+        'que_answer' => 'nullable|string|required_without:que_video_link',
+        'que_video_link' => 'nullable|string|required_without:que_answer',
+    ], [
+        'que_answer.required_without' => 'Please provide an answer, a YouTube video, or both.',
+        'que_video_link.required_without' => 'Please provide an answer, a YouTube video, or both.',
+    ]);
 
-if usr_type = 3, it will redirect the same page in the homepage if there's login account we change the login button (modal) to <img class="rounded-circle me-3" src="{{ asset(getAvatar($login->usr_id)) }}" then beside is the session('usr_first_name')
+    $question = DB::table('homepage_questions')
+        ->where('que_id', '=', $que_id)
+        ->where('que_status', '=', 'APPROVED')
+        ->where('que_active', '=', 1)
+        ->first();
 
-if click it will do dropdown
+    if (!$question) {
+        alert()->error('Error', 'Question not found.');
+        return redirect()->back();
+    }
 
-change password
-sign out (Route::get('logout', [LoginController::class, 'logout']);)
+    $answer = trim((string) $request->que_answer);
+    $video = trim((string) $request->que_video_link);
+
+    DB::table('homepage_questions')
+        ->where('que_id', '=', $que_id)
+        ->update([
+            'que_answer' => $answer !== '' ? $answer : null,
+            'que_video_link' => $video !== '' ? $video : null,
+            'que_date_modified' => Carbon::now(),
+            'que_modified_by' => session('usr_id'),
+        ]);
+
+    logUserActivity('Manage Homepage', 'Edited approved question #' . $que_id);
+
+    session()->flash('successMessage', 'Question has been updated.');
+    return redirect()->back();
+}
+
+public function questions_archive(Request $request, $que_id)
+{
+    $question = DB::table('homepage_questions')
+        ->where('que_id', '=', $que_id)
+        ->first();
+
+    if (!$question) {
+        alert()->error('Error', 'Question not found.');
+        return redirect()->back();
+    }
+
+    DB::table('homepage_questions')
+        ->where('que_id', '=', $que_id)
+        ->update([
+            'que_status' => 'ARCHIVED',
+            'que_active' => 0,
+            'que_date_archived' => Carbon::now(),
+            'que_archived_by' => session('usr_id'),
+        ]);
+
+    logUserActivity('Manage Homepage', 'Archived question #' . $que_id);
+
+    session()->flash('successMessage', 'Question has been archived.');
+    return redirect()->back();
+}
+
+public function questions_archived(Request $request)
+{
+    $questions = DB::table('homepage_questions')
+        ->leftJoin('users', 'homepage_questions.usr_id', '=', 'users.usr_id')
+        ->leftJoin('users as archiver', 'homepage_questions.que_archived_by', '=', 'archiver.usr_id')
+        ->where('homepage_questions.que_status', '=', 'ARCHIVED')
+        ->where('homepage_questions.que_active', '=', 0)
+        ->select(
+            'homepage_questions.que_id',
+            'homepage_questions.que_is_anonymous',
+            'homepage_questions.que_question',
+            'homepage_questions.que_date_created',
+            'homepage_questions.que_date_archived',
+            'homepage_questions.que_archived_by',
+            'users.usr_first_name',
+            'users.usr_last_name',
+            'archiver.usr_first_name as archiver_first_name',
+            'archiver.usr_last_name as archiver_last_name',
+            DB::raw('CASE
+            WHEN homepage_questions.que_is_anonymous = 1
+                OR homepage_questions.usr_id IS NULL
+                OR homepage_questions.usr_id = 0
+            THEN 1 ELSE 0 END AS is_anonymous')
+        )
+        ->orderBy('homepage_questions.que_date_archived', 'desc')
+        ->get();
+
+    return view('admin.homepage.questions.archived', compact('questions'));
+}
+
+public function questions_activate(Request $request, $que_id)
+{
+    $question = DB::table('homepage_questions')
+        ->where('que_id', '=', $que_id)
+        ->first();
+
+    if (!$question) {
+        alert()->error('Error', 'Question not found.');
+        return redirect()->back();
+    }
+
+    DB::table('homepage_questions')
+        ->where('que_id', '=', $que_id)
+        ->update([
+            'que_status' => 'APPROVED',
+            'que_active' => 1,
+            'que_date_modified' => Carbon::now(),
+            'que_modified_by' => session('usr_id'),
+        ]);
+
+    logUserActivity('Manage Homepage', 'Activated question #' . $que_id);
+
+    session()->flash('successMessage', 'Question has been activated.');
+    return redirect()->back();
+}
+
+public function questions_rejected(Request $request)
+{
+    $questions = DB::table('homepage_questions')
+        ->leftJoin('users', 'homepage_questions.usr_id', '=', 'users.usr_id')
+        ->leftJoin('users as rejector', 'homepage_questions.que_rejected_by', '=', 'rejector.usr_id')
+        ->where('homepage_questions.que_status', '=', 'REJECTED')
+        ->where('homepage_questions.que_active', '=', 0)
+        ->select(
+            'homepage_questions.que_id',
+            'homepage_questions.que_is_anonymous',
+            'homepage_questions.que_question',
+            'homepage_questions.que_date_created',
+            'homepage_questions.que_date_rejected',
+            'homepage_questions.que_rejected_by',
+            'users.usr_first_name',
+            'users.usr_last_name',
+            'rejector.usr_first_name as rejector_first_name',
+            'rejector.usr_last_name as rejector_last_name',
+            DB::raw('CASE
+            WHEN homepage_questions.que_is_anonymous = 1
+                OR homepage_questions.usr_id IS NULL
+                OR homepage_questions.usr_id = 0
+            THEN 1 ELSE 0 END AS is_anonymous')
+        )
+        ->orderBy('homepage_questions.que_date_rejected', 'desc')
+        ->get();
+
+    return view('admin.homepage.questions.rejected', compact('questions'));
+}
+
+public function questions_reject(Request $request, $que_id)
+{
+    $question = DB::table('homepage_questions')
+        ->where('que_id', '=', $que_id)
+        ->first();
+
+    if (!$question) {
+        alert()->error('Error', 'Question not found.');
+        return redirect()->back();
+    }
+
+    DB::table('homepage_questions')
+        ->where('que_id', '=', $que_id)
+        ->update([
+            'que_status' => 'REJECTED',
+            'que_active' => 0,
+            'que_date_rejected' => Carbon::now(),
+            'que_rejected_by' => session('usr_id'),
+        ]);
+
+    logUserActivity('Manage Homepage', 'Rejected question #' . $que_id);
+
+    session()->flash('successMessage', 'Question has been rejected.');
+    return redirect()->back();
+}
+// END QUESTIONS
+
+@extends('homepage.layouts.master')
+
+@section('title', 'Ask Questions')
+@section('crumb', 'Itanong mo kay Attorney')
+@section('page_title', 'Ask Questions')
+@section('page_sub', 'Itanong mo kay Attorney')
+
+@section('content')
+    <section class="section">
+        <div class="container">
+            <div class="row justify-content-center">
+                <div class="col-lg-8 col-xl-7 reveal">
+                    <div class="ask-card">
+                        <span class="ask-icon"><i class="bi bi-chat-square-text-fill"></i></span>
+                        <h2>Have a question?</h2>
+                        <p class="text-muted">Type your question below and send it to our attorney.</p>
+
+                        {{-- No function yet: submitting only shows a notice (see homepage.js) --}}
+                        <form id="askForm" novalidate>
+                            <div class="mb-3">
+                                <label for="ask_question" class="form-label fw-semibold">Your question</label>
+                                <textarea class="form-control" id="ask_question" name="question" rows="6" maxlength="2000"
+                                    placeholder="Write your question here..." required></textarea>
+                                <div class="form-text text-end"><span id="askCount">0</span> / 2000</div>
+                            </div>
+                            <div id="askNotice"></div>
+                            <button type="submit" class="btn btn-kx w-100">
+                                <i class="bi bi-send-fill me-1"></i> Submit Question
+                            </button>
+                        </form>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+@endsection
+
+Route::post('/itanong-mo-kay-attorney/ask-question/submit', [MainController::class, 'attorney_ask_submit']);
+
+make me a function in attorney_ask_submit
+
+so if there's a login account, there will be a check box (Make me an Anonymous)
+
+if check it means que_is_anonymous = 1 but still save usr_id
+
+if there's no account login there shoudl be no checkbox and automatic
+
+que_is_annymous = 1 then usr_id = null
+
+then we make que_status = FOR APPROVAL, que_active = 1 que_uuid = generateuuid() (copy it since i already have function for generateuuid), que_question, que_date_created = Carbon::now(), que_created_by = null if there's no account login, 

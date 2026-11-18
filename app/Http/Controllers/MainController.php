@@ -2,7 +2,9 @@
 
 namespace App\Http\Controllers;
 
-use Illuminate\Support\Facades\DB;
+use Illuminate\Http\Request;
+use Carbon\Carbon;
+use DB;
 
 class MainController extends Controller
 {
@@ -114,6 +116,55 @@ class MainController extends Controller
     {
         return view('homepage.attorney_ask');
     }
+
+    public function attorney_ask_submit(Request $request)
+    {
+        $validator = \Illuminate\Support\Facades\Validator::make($request->all(), [
+            'question' => 'required|string|max:2000',
+        ], [
+            'question.required' => 'Please type your question first.',
+            'question.max' => 'Your question must not be more than 2000 characters.',
+        ]);
+
+        if ($validator->fails()) {
+            alert()->error('Invalid Input', $validator->errors()->first());
+            return redirect()->back()->withInput();
+        }
+
+        $question = trim($request->question);
+
+        if ($question === '') {
+            alert()->error('Invalid Input', 'Please type your question first.');
+            return redirect()->back();
+        }
+
+        $usrId = session('usr_id');
+        $isLoggedIn = !empty($usrId);
+
+        // Logged in: anonymous only if the box is checked (usr_id is still saved)
+        // Not logged in: always anonymous, usr_id = null
+        $isAnonymous = $isLoggedIn ? ($request->has('is_anonymous') ? 1 : 0) : 1;
+
+        DB::table('homepage_questions')->insert([
+            'que_uuid' => generateuuid(),
+            'usr_id' => $isLoggedIn ? $usrId : null,
+            'que_is_anonymous' => $isAnonymous,
+            'que_question' => $question,
+            'que_status' => 'FOR APPROVAL',
+            'que_active' => 1,
+            'que_date_created' => Carbon::now(),
+            'que_created_by' => $isLoggedIn ? $usrId : null,
+        ]);
+
+        if ($isLoggedIn) {
+            logUserActivity('Itanong mo kay Attorney', 'Submitted a question for approval.');
+        }
+
+        alert()->success('Question Submitted', 'Thank you! Your question will be posted once it has been reviewed.');
+
+        return redirect()->back();
+    }
+
 
     public function attorney_answers()
     {

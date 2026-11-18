@@ -185,6 +185,7 @@ Route::get('/about/goals-objectives', [MainController::class, 'goals_objectives'
 Route::get('/about/board-of-members', [MainController::class, 'board_members']);
 Route::get('/about/partners', [MainController::class, 'partners']);
 Route::get('/itanong-mo-kay-attorney/ask-question', [MainController::class, 'attorney_ask']);
+Route::post('/itanong-mo-kay-attorney/ask-question/submit', [MainController::class, 'attorney_ask_submit']);
 Route::get('/itanong-mo-kay-attorney/answers', [MainController::class, 'attorney_answers']);
 Route::post('account/update/password', [UserController::class, 'homepage_account_update_password']);
 // ----------------------------------------------------HOMEPAGE SIDE------------------------------------------------------------------- //
