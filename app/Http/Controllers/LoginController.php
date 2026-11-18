@@ -94,6 +94,6 @@ class LoginController extends Controller
     public function logout()
     {
         session()->flush();
-        return redirect()->action([MainController::class, 'main']);
+        return redirect()->action([MainController::class, 'home']);
     }
 }
