@@ -1,5 +1,6 @@
 {{-- Board of Members --}}
 <section class="section" id="board">
+    @include('homepage.partials.preloader')
     <div class="container">
         @if ($showHeading ?? true)
             <div class="section-head reveal">

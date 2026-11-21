@@ -1,5 +1,6 @@
 {{-- Partners --}}
 <section class="section section-alt" id="partners">
+    @include('homepage.partials.preloader')
     <div class="container">
         @if ($showHeading ?? true)
             <div class="section-head reveal">

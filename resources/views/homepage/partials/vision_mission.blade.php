@@ -1,5 +1,6 @@
 {{-- Vision & Mission --}}
 <section class="section" id="vision-mission">
+    @include('homepage.partials.preloader')
     <div class="container">
         <div class="row g-4 g-lg-5">
             <div class="col-lg-6 reveal">

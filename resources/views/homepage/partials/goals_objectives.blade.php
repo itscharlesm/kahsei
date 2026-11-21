@@ -1,5 +1,6 @@
 {{-- Goals & Objectives --}}
 <section class="section section-alt" id="goals-objectives">
+    @include('homepage.partials.preloader')
     <div class="container">
         <div class="row g-4 g-lg-5">
             <div class="col-lg-6 reveal">

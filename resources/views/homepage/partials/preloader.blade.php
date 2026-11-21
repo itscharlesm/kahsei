@@ -1,8 +1,11 @@
 {{-- resources/views/homepage/partials/preloader.blade.php --}}
 <style>
     :root {
-        /* Set this to the exact color behind your home logo (e.g. #0b3d2e) */
-        --kx-preloader-bg: #ffffff;
+        /* Same background as the home header (.site-header) */
+        --kx-preloader-bg:
+            radial-gradient(circle at 15% 20%, rgba(20, 184, 166, .45), transparent 45%),
+            radial-gradient(circle at 85% 10%, rgba(163, 230, 53, .22), transparent 40%),
+            linear-gradient(160deg, #062f2c 0%, #0b4a45 55%, #0f766e 100%);
     }
 
     #kx-preloader {
@@ -29,10 +32,17 @@
     .kx-coin {
         width: 110px;
         height: 110px;
-        object-fit: contain;
+        object-fit: cover;
         display: block;
+        padding: 5px;
+        border-radius: 50%;
+        background: #fff content-box; /* white face inside the lime-teal ring, like the header logo */
+        border: 0;
+        box-shadow: inset 0 0 0 5px transparent, 0 0 0 8px rgba(255, 255, 255, .1), 0 14px 30px rgba(0, 0, 0, .35);
+        background-image: linear-gradient(#fff, #fff), linear-gradient(135deg, #a3e635, #14b8a6);
+        background-clip: content-box, border-box;
+        background-origin: content-box, border-box;
         animation: kx-coin-spin 2.6s linear infinite; /* bigger number = slower spin */
-        filter: drop-shadow(0 6px 10px rgba(0, 0, 0, .15));
     }
 
     @keyframes kx-coin-spin {

@@ -7,6 +7,7 @@
 
 @section('content')
     <section class="section">
+        @include('homepage.partials.preloader')
         <div class="container">
             <div class="row justify-content-center">
                 <div class="col-lg-10 col-xl-9 reveal">
