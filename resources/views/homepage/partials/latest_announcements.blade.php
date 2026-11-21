@@ -18,7 +18,7 @@
                         <article class="ann-card h-100 mb-0">
                             @if ($hasImage)
                                 <div class="ann-image">
-                                    <img src="{{ asset('    images/announcements/' . $a->ann_image) }}"
+                                    <img src="{{ asset('images/announcements/' . $a->ann_image) }}"
                                         alt="{{ $a->ann_title }}" loading="lazy">
                                 </div>
                             @endif
