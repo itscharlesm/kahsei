@@ -76,6 +76,13 @@
                         </a>
                     </li>
 
+                    @if (session('usr_id'))
+                        <li class="nav-item">
+                            <a class="nav-link {{ request()->is('announcements') ? 'active' : '' }}"
+                                href="{{ url('announcements') }}">Announcement</a>
+                        </li>
+                    @endif
+
                     <li class="nav-item dropdown">
                         <a class="nav-link dropdown-toggle {{ $isAbout ? 'active' : '' }}" href="#" role="button"
                             data-bs-toggle="dropdown" aria-expanded="false">

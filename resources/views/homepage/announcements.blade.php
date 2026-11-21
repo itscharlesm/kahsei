@@ -22,7 +22,7 @@
                         <article class="ann-card reveal">
                             @if ($hasImage)
                                 <div class="ann-image">
-                                    <img src="{{ asset('storage/images/announcements/' . $a->ann_image) }}"
+                                    <img src="{{ asset('images/announcements/' . $a->ann_image) }}"
                                         alt="{{ $a->ann_title }}" loading="lazy">
                                 </div>
                             @endif
