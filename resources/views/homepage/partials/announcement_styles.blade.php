@@ -1,4 +1,3 @@
-{{-- resources/views/homepage/partials/announcement-styles.blade.php --}}
 @once
     <style>
         .ann-card {

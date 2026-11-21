@@ -55,5 +55,5 @@
         </div>
     </section>
 
-    @include('homepage.partials.announcement-styles')
+    @include('homepage.partials.announcement_styles')
 @endsection

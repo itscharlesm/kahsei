@@ -1,4 +1,3 @@
-{{-- resources/views/homepage/partials/latest-announcements.blade.php --}}
 {{-- Latest 2 active announcements, logged-in users only --}}
 @if (session('usr_id') && isset($latestAnnouncements) && $latestAnnouncements->count())
     <section class="section" id="latest-announcements">
@@ -19,7 +18,7 @@
                         <article class="ann-card h-100 mb-0">
                             @if ($hasImage)
                                 <div class="ann-image">
-                                    <img src="{{ asset('storage/images/announcements/' . $a->ann_image) }}"
+                                    <img src="{{ asset('    images/announcements/' . $a->ann_image) }}"
                                         alt="{{ $a->ann_title }}" loading="lazy">
                                 </div>
                             @endif
@@ -51,5 +50,5 @@
         </div>
     </section>
 
-    @include('homepage.partials.announcement-styles')
+    @include('homepage.partials.announcement_styles')
 @endif
