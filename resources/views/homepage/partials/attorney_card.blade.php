@@ -1,13 +1,14 @@
+{{-- resources/views/homepage/partials/attorney-card.blade.php --}}
 @once
     <style>
-        /* Attorney card */
+        /* ===== Attorney card (fixed size, reusable) ===== */
         .atty-sticky {
             position: relative;
         }
 
         .atty-card {
             width: 100%;
-            max-width: 280px;
+            max-width: 300px;
             margin-inline: auto;
             padding: 14px;
             background: #fff;
@@ -19,22 +20,18 @@
 
         /* Fixed-size portrait frame: the full-body image is never stretched or cropped */
         .atty-photo {
-            height: 420px;
-            display: flex;
-            align-items: flex-end;
-            justify-content: center;
+            aspect-ratio: 2 / 3; /* fixed portrait ratio, scales with card width */
             overflow: hidden;
             border-radius: 12px;
-            background: linear-gradient(180deg, #f4f7fb 0%, #e3e9f2 100%);
+            background: #b08968; /* matches the photo backdrop, no empty strip */
         }
 
         .atty-photo img {
             display: block;
+            width: 100%;
             height: 100%;
-            width: auto;
-            max-width: 100%;
-            object-fit: contain;
-            object-position: bottom center;
+            object-fit: cover; /* fills the frame, no vacant space */
+            object-position: center top;
         }
 
         .atty-info {
@@ -79,13 +76,11 @@
             .atty-photo {
                 flex: 0 0 96px;
                 height: 130px;
+                aspect-ratio: auto;
             }
 
             .atty-photo img {
-                width: 100%;
-                object-fit: cover;
-                object-position: top center;
-                /* show face/upper body in the small frame */
+                object-position: top center; /* show face/upper body in the small frame */
             }
 
             .atty-info {
