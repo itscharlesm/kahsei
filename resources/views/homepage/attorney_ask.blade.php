@@ -8,8 +8,10 @@
 @section('content')
     <section class="section">
         <div class="container">
-            <div class="row justify-content-center">
-                <div class="col-lg-8 col-xl-7 reveal">
+            <div class="row g-4 justify-content-center">
+
+                {{-- Main content --}}
+                <div class="col-lg-8 order-2 order-lg-1 reveal">
                     <div class="ask-card">
                         <span class="ask-icon"><i class="bi bi-chat-square-text-fill"></i></span>
                         <h2>Have a question?</h2>
@@ -48,6 +50,12 @@
                         </form>
                     </div>
                 </div>
+
+                {{-- Attorney --}}
+                <aside class="col-lg-4 col-xl-3 order-1 order-lg-2 reveal">
+                    @include('homepage.partials.attorney_card')
+                </aside>
+
             </div>
         </div>
     </section>
