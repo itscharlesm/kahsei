@@ -10,6 +10,17 @@ class MainController extends Controller
 {
     public function home()
     {
+        $latestAnnouncements = collect();
+
+        if (session('usr_id')) {
+            $latestAnnouncements = DB::table('announcements')
+                ->join('users', 'users.usr_id', 'announcements.ann_created_by')
+                ->where('ann_active', '=', '1')
+                ->orderBy('ann_date_created', 'DESC')
+                ->limit(2)
+                ->get();
+        }
+
         $vision = DB::table('homepage_vision')->where('vis_active', 1)->first();
         $mission = DB::table('homepage_mission')->where('mis_active', 1)->first();
 
@@ -66,6 +77,7 @@ class MainController extends Controller
             ->get();
 
         return view('homepage.home', compact(
+            'latestAnnouncements',
             'vision',
             'mission',
             'goals',
@@ -75,6 +87,23 @@ class MainController extends Controller
             'partners'
         ));
     }
+
+    public function announcements()
+    {
+        // Logged-in users only
+        if (!session('usr_id')) {
+            return redirect('/');
+        }
+
+        $announcements = DB::table('announcements')
+            ->join('users', 'users.usr_id', 'announcements.ann_created_by')
+            ->where('ann_active', '=', '1')
+            ->orderBy('ann_date_created', 'DESC')
+            ->get();
+
+        return view('homepage.announcements', compact('announcements'));
+    }
+
 
     public function about()
     {

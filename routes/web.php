@@ -179,6 +179,7 @@ Route::get('/laravel/clear-all', function () {
 
 // ----------------------------------------------------HOMEPAGE SIDE------------------------------------------------------------------- //
 Route::get('/', [MainController::class, 'home']);
+Route::get('/announcements', [MainController::class, 'announcements']);
 Route::get('/about', [MainController::class, 'about']);
 Route::get('/about/vision-mission', [MainController::class, 'vision_mission']);
 Route::get('/about/goals-objectives', [MainController::class, 'goals_objectives']);
